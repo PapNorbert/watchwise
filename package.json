@@ -1,0 +1,29 @@
+{
+  "name": "watchwise",
+  "version": "1.0.0",
+  "description": "thesis watchwise application",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/papnorbi4/allamvizsga.git"
+  },
+  "author": "Pap Norbert-Raymond",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/papnorbi4/allamvizsga/issues"
+  },
+  "homepage": "https://gitlab.com/papnorbi4/allamvizsga#readme",
+  "dependencies": {
+    "arangojs": "^8.1.0",
+    "body-parser": "^1.20.2",
+    "express": "^4.18.2",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.21"
+  }
+}

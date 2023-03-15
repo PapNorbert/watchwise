@@ -1,0 +1,23 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+
+# Compiled binary addons 
+build/Release
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# dotenv environment variables file
+.env
+.env.test
+
+# Optional npm cache directory
+.npm
+
+# Output of 'npm pack'
+*.tgz
+
