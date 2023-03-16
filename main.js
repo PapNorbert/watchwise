@@ -3,7 +3,7 @@ import morgan from 'morgan';
 import bodyParser from 'body-parser';
 import { createCollections, createEdgeCollections } from './db/setup_db.js';
 
-
+import moviesApiRoute from './api/movies.js';
 
 const app = express();
 
@@ -12,6 +12,12 @@ app.use(morgan('tiny'));
 
 // json formatum feldolgozas
 app.use(bodyParser.json());
+
+
+//routes
+app.use('/api/movies',  moviesApiRoute);
+
+
 
 createCollections()
   .then(createEdgeCollections)
