@@ -1,17 +1,17 @@
 import express from 'express';
 import { 
-  insertMovieAndGenreEdges, findMovies, findMovieByKey, updateMovie, deleteMovieAndEdges
- } from '../db/movies_db.js'
+  insertSeriesAndGenreEdges, findSeries, findSeriesByKey, updateSeries, deleteSeriesAndEdges
+ } from '../db/series_db.js'
 
 const router = express.Router();
 
 
-router.get('', async (request, response) => {
+router.get('', async (_request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    const movies = await findMovies();
-    response.json(movies);
+    const series = await findSeries();
+    response.json(series);
   } catch (err) {
     console.log(err);
     response.status(400);
@@ -28,9 +28,9 @@ router.get('/:id', async (request, response) => {
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
     const id = request.params.id;
     try {
-      const movie = await findMovieByKey(id);
-      if (movie != null) {
-        response.json(movie);
+      const series = await findSeriesByKey(id);
+      if (series != null) {
+        response.json(series);
       } else { // no entity found with id
         response.status(404).end();
       }
@@ -52,10 +52,10 @@ router.get('/:id', async (request, response) => {
 router.post('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   try {
-    let movieJson = request.body;
-    const genres = movieJson.genres;
-    delete movieJson.genres;
-    const id = await insertMovieAndGenreEdges(movieJson, genres);
+    let seriesJson = request.body;
+    const genres = seriesJson.genres;
+    delete seriesJson.genres;
+    const id = await insertSeriesAndGenreEdges(seriesJson, genres);
     response.status(201).json({id: id});
   } catch (err) {
     console.log(err);
@@ -73,8 +73,8 @@ router.put('/:id', async (request, response) => {
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
     const id = request.params.id;
     try {
-      let newMovieAttributes = request.body;
-      const succesfull = await updateMovie(id, newMovieAttributes);
+      let newSeriesAttributes = request.body;
+      const succesfull = await updateSeries(id, newSeriesAttributes);
       if (!succesfull) {
         response.status(404);
       }
@@ -100,7 +100,7 @@ router.delete('/:id', async (request, response) => {
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
     const id = request.params.id;
     try {
-      const succesfull = await deleteMovieAndEdges(id);
+      const succesfull = await deleteSeriesAndEdges(id);
       if (!succesfull) {
         response.status(404);
       }
