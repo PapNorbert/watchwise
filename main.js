@@ -6,7 +6,7 @@ import { createCollections, createEdgeCollections } from './db/setup_db.js';
 import moviesApiRoute from './api/movies.js';
 import seriesApiRoute from './api/series.js';
 import genresApiRoute from './api/genres.js';
-import opinionThreadApiRoute from './api/opinion_threads.js';
+import opinionThreadApiRoute from './api/opinion_threads_and_comments.js';
 import watchGroupApiRoute from './api/watch_groups.js';
 
 
