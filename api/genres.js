@@ -1,17 +1,35 @@
 import express from 'express';
 import { 
   findGenres, findGenreByKey, insertGenre, updateGenre, deleteGenreAndEdges,
- } from '../db/genres_db.js'
+  getGenreCount
+} from '../db/genres_db.js'
+import { createPaginationInfo } from '../util/util.js'
+import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
+
+
 
 const router = express.Router();
 
 
-router.get('', async (_request, response) => {
+router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    const genres = await findGenres();
-    response.json(genres);
+    let { page = 1, limit = 10 } = request.query;
+    if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
+      page = parseInt(page);
+      limit= parseInt(limit);
+      const [genres, count] = await Promise.all([
+        findGenres(page, limit),
+        getGenreCount(),
+      ]); 
+      response.json({
+        "data": createResponseDtos(genres),
+        "pagination": createPaginationInfo(page, limit, count)
+      });
+    } else {
+      response.status(400).json({error: "Bad paging information!"})
+    }
   } catch (err) {
     console.log(err);
     response.status(400);
@@ -30,7 +48,7 @@ router.get('/:id', async (request, response) => {
     try {
       const genres = await findGenreByKey(id);
       if (genres != null) {
-        response.json(genres);
+        response.json(createResponseDto(genres));
       } else { // no entity found with id
         response.status(404).end();
       }

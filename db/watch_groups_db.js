@@ -3,9 +3,12 @@ import pool from './connection_db.js';
 const watchGroupCollection = pool.collection("watch_groups");
 
 
-export async function findWatchGroups() {
+export async function findWatchGroups(page, limit) {
   try {
-    const cursor = await watchGroupCollection.all();
+    const aqlQuery = `FOR doc IN watch_groups
+    LIMIT @offset, @count
+    RETURN doc`;
+    const cursor = await pool.query(aqlQuery, { offset: (page-1)*limit, count: limit });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -28,6 +31,18 @@ export async function findWatchGroupByKey(key) {
 
   }
 }
+
+export async function getWatchGroupCount() {
+  try {
+    const cursor = await watchGroupCollection.count();
+    return cursor.count;
+  } catch (err) {
+      console.log(err);
+      throw err;
+    }
+
+}
+
 
 export async function insertWatchGroup(watchGroupDocument) {
   try {

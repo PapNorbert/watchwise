@@ -3,9 +3,12 @@ import pool from './connection_db.js';
 const seriesCollection = pool.collection("series");
 
 
-export async function findSeries() {
+export async function findSeries(page, limit) {
   try {
-    const cursor = await seriesCollection.all();
+    const aqlQuery = `FOR doc IN series
+    LIMIT @offset, @count
+    RETURN doc`;
+    const cursor = await pool.query(aqlQuery, { offset: (page-1)*limit, count: limit });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -27,6 +30,17 @@ export async function findSeriesByKey(key) {
     }
 
   }
+}
+
+export async function getSeriesCount() {
+  try {
+    const cursor = await seriesCollection.count();
+    return cursor.count;
+  } catch (err) {
+      console.log(err);
+      throw err;
+    }
+
 }
 
 export async function checkSeriesExistsWithName(name) {

@@ -1,19 +1,35 @@
 import express from 'express';
 import { 
-  insertWatchGroup, findWatchGroupByKey, findWatchGroups, updateWatchGroup, deleteWatchGroup
- } from '../db/watch_groups_db.js'
+  insertWatchGroup, findWatchGroupByKey, findWatchGroups, updateWatchGroup, deleteWatchGroup,
+  getWatchGroupCount
+} from '../db/watch_groups_db.js'
 import { checkMovieExistsWithName } from '../db/movies_db.js'
 import { checkSeriesExistsWithName } from '../db/series_db.js'
+import { createPaginationInfo } from '../util/util.js'
+import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
 
 const router = express.Router();
 
 
-router.get('', async (_request, response) => {
+router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    const watchGroup = await findWatchGroups();
-    response.json(watchGroup);
+    let { page = 1, limit = 10 } = request.query;
+    if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
+      page = parseInt(page);
+      limit= parseInt(limit);
+      const [watchGroups, count] = await Promise.all([
+        findWatchGroups(page, limit),
+        getWatchGroupCount(),
+      ]); 
+      response.json({
+        "data": createResponseDtos(watchGroups),
+        "pagination": createPaginationInfo(page, limit, count)
+      });
+    } else {
+      response.status(400).json({error: "Bad paging information!"})
+    }
   } catch (err) {
     console.log(err);
     response.status(400);
@@ -32,7 +48,7 @@ router.get('/:id', async (request, response) => {
     try {
       const watchGroup = await findWatchGroupByKey(id);
       if (watchGroup != null) {
-        response.json(watchGroup);
+        response.json(createResponseDto(watchGroup));
       } else { // no entity found with id
         response.status(404).end();
       }

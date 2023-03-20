@@ -1,7 +1,10 @@
 import express from 'express';
 import { 
-  insertMovieAndGenreEdges, findMovies, findMovieByKey, updateMovie, deleteMovieAndEdges
- } from '../db/movies_db.js'
+  findMovies, findMovieByKey, getMovieCount,
+  insertMovieAndGenreEdges, updateMovie, deleteMovieAndEdges
+} from '../db/movies_db.js'
+import { createPaginationInfo } from '../util/util.js'
+import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
 
 const router = express.Router();
 
@@ -10,8 +13,21 @@ router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    const movies = await findMovies();
-    response.json(movies);
+    let { page = 1, limit = 10 } = request.query;
+    if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
+      page = parseInt(page);
+      limit= parseInt(limit);
+      const [movies, count] = await Promise.all([
+        findMovies(page, limit),
+        getMovieCount(),
+      ]); 
+      response.json({
+        "data": createResponseDtos(movies),
+        "pagination": createPaginationInfo(page, limit, count)
+      });
+    } else {
+      response.status(400).json({error: "Bad paging information!"})
+    }
   } catch (err) {
     console.log(err);
     response.status(400);
@@ -30,7 +46,7 @@ router.get('/:id', async (request, response) => {
     try {
       const movie = await findMovieByKey(id);
       if (movie != null) {
-        response.json(movie);
+        response.json(createResponseDto(movie));
       } else { // no entity found with id
         response.status(404).end();
       }

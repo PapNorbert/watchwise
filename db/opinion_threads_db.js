@@ -3,9 +3,12 @@ import pool from './connection_db.js';
 const opinionThreadCollection = pool.collection("opinion_threads");
 
 
-export async function findOpinionThreads() {
+export async function findOpinionThreads(page, limit) {
   try {
-    const cursor = await opinionThreadCollection.all();
+    const aqlQuery = `FOR doc IN opinion_threads
+    LIMIT @offset, @count
+    RETURN doc`;
+    const cursor = await pool.query(aqlQuery, { offset: (page-1)*limit, count: limit });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -27,6 +30,17 @@ export async function findOpinionThreadByKey(key) {
     }
 
   }
+}
+
+export async function getOpinionThreadCount() {
+  try {
+    const cursor = await opinionThreadCollection.count();
+    return cursor.count;
+  } catch (err) {
+      console.log(err);
+      throw err;
+    }
+
 }
 
 export async function insertOpinionThread(opinionThreadDocument) {

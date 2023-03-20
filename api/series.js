@@ -1,17 +1,33 @@
 import express from 'express';
 import { 
-  insertSeriesAndGenreEdges, findSeries, findSeriesByKey, updateSeries, deleteSeriesAndEdges
- } from '../db/series_db.js'
+  insertSeriesAndGenreEdges, findSeries, findSeriesByKey, updateSeries, deleteSeriesAndEdges,
+  getSeriesCount
+} from '../db/series_db.js'
+import { createPaginationInfo } from '../util/util.js'
+import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
 
 const router = express.Router();
 
 
-router.get('', async (_request, response) => {
+router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    const series = await findSeries();
-    response.json(series);
+    let { page = 1, limit = 10 } = request.query;
+    if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
+      page = parseInt(page);
+      limit= parseInt(limit);
+      const [series, count] = await Promise.all([
+        findSeries(page, limit),
+        getSeriesCount(),
+      ]); 
+      response.json({
+        "data": createResponseDtos(series),
+        "pagination": createPaginationInfo(page, limit, count)
+      });
+    } else {
+      response.status(400).json({error: "Bad paging information!"})
+    }
   } catch (err) {
     console.log(err);
     response.status(400);
@@ -30,7 +46,7 @@ router.get('/:id', async (request, response) => {
     try {
       const series = await findSeriesByKey(id);
       if (series != null) {
-        response.json(series);
+        response.json(createResponseDto(series));
       } else { // no entity found with id
         response.status(404).end();
       }

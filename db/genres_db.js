@@ -3,9 +3,12 @@ import pool from './connection_db.js';
 const genresCollection = pool.collection("genres");
 
 
-export async function findGenres() {
+export async function findGenres(page, limit) {
   try {
-    const cursor = await genresCollection.all();
+    const aqlQuery = `FOR doc IN genres
+    LIMIT @offset, @count
+    RETURN doc`;
+    const cursor = await pool.query(aqlQuery, { offset: (page-1)*limit, count: limit });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -27,6 +30,17 @@ export async function findGenreByKey(key) {
     }
 
   }
+}
+
+export async function getGenreCount() {
+  try {
+    const cursor = await genresCollection.count();
+    return cursor.count;
+  } catch (err) {
+      console.log(err);
+      throw err;
+    }
+
 }
 
 export async function insertGenre(genreDocument) {

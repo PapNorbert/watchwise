@@ -3,9 +3,12 @@ import pool from './connection_db.js';
 const moviesCollection = pool.collection("movies");
 
 
-export async function findMovies() {
+export async function findMovies(page, limit) {
   try {
-    const cursor = await moviesCollection.all();
+    const aqlQuery = `FOR doc IN movies
+    LIMIT @offset, @count
+    RETURN doc`;
+    const cursor = await pool.query(aqlQuery, { offset: (page-1)*limit, count: limit });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -27,6 +30,17 @@ export async function findMovieByKey(key) {
     }
 
   }
+}
+
+export async function getMovieCount() {
+  try {
+    const cursor = await moviesCollection.count();
+    return cursor.count;
+  } catch (err) {
+      console.log(err);
+      throw err;
+    }
+
 }
 
 export async function checkMovieExistsWithName(name) {

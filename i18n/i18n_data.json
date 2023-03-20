@@ -1,4 +1,5 @@
 {
+  "_key": "ID",
   "name": "Title",
   "director": "Director",
   "story_by": "Story written by",
@@ -13,7 +14,7 @@
   "distributed_by": "Distributed by",
   "writer": "Writer",
   "created_by": "Created by",
-  "nr_seasons": "Number of Seasons",
+  "nr_seasons": "Number of seasons",
   "nr_episodes": "Number of episodes",
   "production_locations": "Production locations",
   "original_network": "Original network",
