@@ -3,10 +3,10 @@ import { getCurrentLanguage, readSelectedLanguageDataFile } from '../i18n/conver
 
 const router = express.Router();
 
+
 router.get('', (_request, response) => {
   response.set('Content-Type', 'application/json');
-  response.status(200).json({ "language": getCurrentLanguage() })
-
+  response.status(200).json({ "language": getCurrentLanguage() });
 });
 
 router.post('', (request, response) => {
@@ -24,8 +24,7 @@ router.post('', (request, response) => {
   } else {
     response.status(400).json({ "error": "No language selected"});
   }
-  
-
 });
+
 
 export default router;

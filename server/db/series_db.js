@@ -1,4 +1,4 @@
-import pool from './connection_db.js';
+import pool from './connection_db.js'
 
 const seriesCollection = pool.collection("series");
 

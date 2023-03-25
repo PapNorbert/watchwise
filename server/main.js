@@ -1,14 +1,15 @@
-import express from 'express';
-import morgan from 'morgan';
-import bodyParser from 'body-parser';
-import { createCollections, createEdgeCollections } from './db/setup_db.js';
-import { readSelectedLanguageDataFile } from './i18n/conversion.js';
+import express from 'express'
+import morgan from 'morgan'
+import bodyParser from 'body-parser'
+import cors from 'cors'
 
-import moviesApiRoute from './api/movies.js';
-import seriesApiRoute from './api/series.js';
-import genresApiRoute from './api/genres.js';
-import opinionThreadApiRoute from './api/opinion_threads_and_comments.js';
-import watchGroupApiRoute from './api/watch_groups.js';
+import { createCollections, createEdgeCollections } from './db/setup_db.js'
+import { readSelectedLanguageDataFile } from './i18n/conversion.js'
+import moviesApiRoute from './api/movies.js'
+import seriesApiRoute from './api/series.js'
+import genresApiRoute from './api/genres.js'
+import opinionThreadApiRoute from './api/opinion_threads_and_comments.js'
+import watchGroupApiRoute from './api/watch_groups.js'
 import languageApiRoute from './api/languages.js'
 
 
@@ -20,6 +21,10 @@ app.use(morgan('tiny'));
 // json formatum feldolgozas
 app.use(bodyParser.json());
 
+// for requests from react
+app.use(cors({
+  origin: 'http://localhost:3800'
+}))
 
 //routes
 app.use('/api/movies', moviesApiRoute);

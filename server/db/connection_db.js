@@ -1,5 +1,6 @@
-import dbRootPasswd from './dbSecret.js';
 import createPool from 'arangojs'
+
+import dbRootPasswd from '../config/dbSecret.js'
 
 let pool;
 

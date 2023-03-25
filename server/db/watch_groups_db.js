@@ -1,4 +1,4 @@
-import pool from './connection_db.js';
+import pool from './connection_db.js'
 
 const watchGroupCollection = pool.collection("watch_groups");
 
