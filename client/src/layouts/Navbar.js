@@ -1,19 +1,27 @@
 import React from 'react'
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'
+import { Navbar, Nav, Container } from 'react-bootstrap'
 
 
-function Navbar() {
+function Navigationbar() {
+  const navigate = useNavigate();
 
   return (
-    <nav>
-      <Link to="/">
-        <button>Home</button>
-      </Link>
-      <Link to="/watch_groups">
-        <button>Watch Groups</button>
-      </Link>
-    </nav>
+    <Navbar bg='customColor' sticky='top'>
+      <Container>
+        <Navbar.Brand>
+          WatchWise
+        </Navbar.Brand>
+          <Nav className='me-auto'>
+            <Nav.Link onClick={() =>{navigate('/');} }>
+              Home
+              </Nav.Link>
+            <Nav.Link onClick={() => {navigate('/watch_groups')} }>Watch Groups</Nav.Link>
+          </Nav>
+        </Container>
+
+    </Navbar>
   )
 }
 
-export default Navbar;
+export default Navigationbar;
