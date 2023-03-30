@@ -1,46 +1,41 @@
-import React, { useEffect, useState } from 'react'
-import Axios from 'axios'
-import { useQuery } from '@tanstack/react-query'
+import React, { useEffect, useState, useContext } from 'react'
 
 import serverUrl from '../../config/serverName'
+import { convertToSelectedLanguage } from '../../i18n/conversion'
 import WatchGroup from '../../components/WatchGroup'
 import Limit from '../../components/Limit'
 import PaginationElements from '../../components/PaginationElements'
+import {LanguageContext} from '../../components/LanguageContextProvider'
+import useGetFetch from '../../hooks/useGetFetch'
+
 
 export default function WatchGroupsAll() {
-  const [queryParam, setQueryParam] = useState(' ');
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
-
-  const {data: watch_groups, isLoading, isError} = useQuery(["watchGroups", queryParam], async (queryParams) => {
-    const resp = await Axios.get(`${serverUrl}/api/watch_groups${queryParam}`);
-    return resp.data;
-  }, [queryParam])
+  const {i18nData} = useContext(LanguageContext);
+  const [url, setUrl] = useState(`${serverUrl}/api/watch_groups`)
+  const {data: watch_groups, error } = useGetFetch(url)
 
   useEffect(() => {
-    setQueryParam(`?page=${page}&limit=${limit}`);
+    setUrl(`${serverUrl}/api/watch_groups/?page=${page}&limit=${limit}`);
   }, [limit, page])
 
 
-  if( isLoading ) {
-    return <div>Loading..</div>
-  }
-
-  if( isError ) {
+  if( error ) {
     return <h2 className='error'>Sorry, there was an error</h2>
   }
 
   return (
     <>
-      <Limit limit={limit} setLimit={setLimit} setPage={setPage}/>
-      {watch_groups.data.map( currentElement => {
+      <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit'/>
+      { watch_groups?.data.map( currentElement => {
         return (
-          <WatchGroup  watch_group={currentElement} key={currentElement.ID}/>
+          <WatchGroup  watch_group={convertToSelectedLanguage(currentElement, i18nData)} key={currentElement._key}/>
         );
       })}
       <PaginationElements currentPage={page} 
         totalPages={watch_groups?.pagination.totalPages}
-        onPageChange={setPage} />
+        onPageChange={setPage} key='pagination'/>
     </>
   )
 }

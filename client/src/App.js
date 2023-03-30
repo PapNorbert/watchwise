@@ -7,6 +7,7 @@ import WatchGroupsPage from './pages/WatchGroups/WatchGroupsPage'
 import Home from './pages/Home'
 import ErrorPage from './pages/ErrorPage'
 import Navigationbar from './layouts/Navbar'
+import LanguageContextProvider from './components/LanguageContextProvider'
 
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
   return (
     <div className='App'>
       <QueryClientProvider client={client}>
+      <LanguageContextProvider>
         <Router>
           <Navigationbar />
           <div className='container container-fluid'>
@@ -27,6 +29,7 @@ function App() {
             </Routes>
           </div>
         </Router>
+      </LanguageContextProvider>
       </QueryClientProvider>
     </div>
   );
