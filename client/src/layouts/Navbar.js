@@ -2,7 +2,7 @@ import React, {useContext} from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Navbar, Nav, Container, Form } from 'react-bootstrap'
 
-import {LanguageContext} from '../components/LanguageContextProvider'
+import {LanguageContext} from '../context/LanguageContextProvider'
 
 function Navigationbar() {
   const navigate = useNavigate();

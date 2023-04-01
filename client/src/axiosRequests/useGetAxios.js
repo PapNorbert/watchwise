@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
+
+import axios from '../api/configuredAxios'
 import Axios from 'axios'
 
-export default function useGetFetch(url) {
+export default function useGetAxios(url) {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() =>  {
     const controller = new AbortController();
     const signal = controller.signal;
-    Axios.get(url,
+    axios.get(url,
       { 
         signal: signal
       })
@@ -18,7 +20,7 @@ export default function useGetFetch(url) {
     .catch((err) => {
       if(!Axios.isCancel(err)) {
         setError(true);
-        console.log('Error obtaining language data', err);
+        console.log('Error during connection', err.message);
       }
     })
      

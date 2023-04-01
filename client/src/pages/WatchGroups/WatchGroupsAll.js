@@ -1,23 +1,22 @@
 import React, { useEffect, useState, useContext } from 'react'
 
-import serverUrl from '../../config/serverName'
 import { convertToSelectedLanguage } from '../../i18n/conversion'
 import WatchGroup from '../../components/WatchGroup'
 import Limit from '../../components/Limit'
 import PaginationElements from '../../components/PaginationElements'
-import {LanguageContext} from '../../components/LanguageContextProvider'
-import useGetFetch from '../../hooks/useGetFetch'
+import {LanguageContext} from '../../context/LanguageContextProvider'
+import useGetAxios from '../../axiosRequests/useGetAxios'
 
 
 export default function WatchGroupsAll() {
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   const {i18nData} = useContext(LanguageContext);
-  const [url, setUrl] = useState(`${serverUrl}/api/watch_groups`)
-  const {data: watch_groups, error } = useGetFetch(url)
+  const [url, setUrl] = useState(`/api/watch_groups`)
+  const {data: watch_groups, error } = useGetAxios(url)
 
   useEffect(() => {
-    setUrl(`${serverUrl}/api/watch_groups/?page=${page}&limit=${limit}`);
+    setUrl(`/api/watch_groups/?page=${page}&limit=${limit}`);
   }, [limit, page])
 
 

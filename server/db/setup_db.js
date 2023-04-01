@@ -1,5 +1,8 @@
-import pool from './connection_db.js'
+import bcrypt from 'bcrypt'
 
+import pool from './connection_db.js'
+import { adminRoleCode } from '../config/UserRoleCodes.js'
+import { checkUserExistsWithUsername, insertUser } from './users_db.js'
 
 export async function createCollections() {
   if( ! await pool.collection('movies').exists() ) {
@@ -37,6 +40,21 @@ export async function createEdgeCollections() {
   }
   if( ! await pool.collection('his_type').exists() ) {
     await pool.createEdgeCollection('his_type');
+  }
+
+}
+
+export async function insertAdminUser() {
+  const exists = await checkUserExistsWithUsername('admin')
+  if( !exists ) {
+    const adminData = {
+      first_name: 'Admin First Name',
+      last_name: 'Admin First Name',
+      username: 'admin',
+      role: adminRoleCode,
+    }
+    adminData['password'] = await bcrypt.hash('Admin123', 10);
+    insertUser(adminData);
   }
 
 }

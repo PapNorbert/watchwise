@@ -7,7 +7,9 @@ import WatchGroupsPage from './pages/WatchGroups/WatchGroupsPage'
 import Home from './pages/Home'
 import ErrorPage from './pages/ErrorPage'
 import Navigationbar from './layouts/Navbar'
-import LanguageContextProvider from './components/LanguageContextProvider'
+import LanguageContextProvider from './context/LanguageContextProvider'
+import Register from './pages/Register'
+import Login from './pages/Login'
 
 
 function App() {
@@ -22,6 +24,8 @@ function App() {
           <div className='container container-fluid'>
             <Routes>
               <Route path='/' element={<Home />} />
+              <Route path='/register' element={<Register />} />
+              <Route path='/login' element={<Login />} />
               <Route path='/watch_groups/*' element={<WatchGroupsPage />} />
               <Route path='/error-page' element={<ErrorPage />} />
               <Route path='*' element={ <Navigate to="/error-page" /> } />

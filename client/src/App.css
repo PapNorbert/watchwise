@@ -60,7 +60,7 @@ h2 {
   width: 5em;
 }
 
-.small-error {
+.small-error, .small-input {
   width: 60%;
 }
 
