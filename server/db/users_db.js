@@ -35,6 +35,22 @@ export async function findUserByUsername(username) {
   }
 }
 
+export async function findUserByRefreshToken(refreshToken) {
+  try {
+    const cursor = await usersCollection.firstExample({refreshToken: refreshToken});
+    return cursor;
+  } catch (err) {
+    if (err.message == "no match") {
+      console.log(`User document with refreshToken ${refreshToken} not found: `, err.message);
+      return null;
+    } else {
+      console.log(err);
+      throw err;  
+    }
+
+  }
+}
+
 export async function checkUserExistsWithUsername(username) {
   try {
     const aqlQuery = `RETURN LENGTH(FOR doc IN users

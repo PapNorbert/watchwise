@@ -7,8 +7,3 @@ export default axios.create({
   headers: {'Content-Type': 'application/json'},
   withCredentials: true
 });
-
-// export const withCredentialsOptions = {
-//   headers: {'Content-Type': 'application/json'},
-//   withCredentials: true
-// }

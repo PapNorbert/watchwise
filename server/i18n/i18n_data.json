@@ -43,7 +43,7 @@
   "empty_username": "Please choose a Username",
   "empty_passwd": "Please choose a Password",
   "empty_passwd_confirm": "Please confirm your Password",
-  "error_passwd": "Password must be at least 8 characters long, containing one uppercase letter, one lowercase letter, one number",
+  "error_passwd": "Password must be at least 8 characters long, containing one uppercase letter, one lowercase letter, one number with only allowed charactert",
   "allowed_spec_char": "Allowed special characters are - _ * ! @ # $ % ^ & * ( ) < > . , ~ | : ;",
   "match_error_passwd": "The given Passwords must match",
   "login_empty_field_error": "Please fill out your username and password",
@@ -51,7 +51,11 @@
   "permission_error_unauth" : "Unauthorized: Login required",
   "permission_error_forbidden" : "Forbidden: Not appropriate role",
   "invalid_jwt": "Forbidden: Invalid cookie. Please Log in",
+  "expired_jwt": "Your sign in expired. Please sign in again, or continue as a guest user.",
   "register": "Register",
+  "succesfull_reg": "Succesfull registration",
   "login": "Login",
-  "no_account": "Don't have an account? Register now!"
+  "logged_in_as": "Signed in as:",
+  "no_account": "Don't have an account? Register now!",
+  "log_out": "Log out"
 }

@@ -1,35 +1,80 @@
-import React, {useContext} from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Navbar, Nav, Container, Form } from 'react-bootstrap'
+import { Navbar, Nav, Container, Form, NavDropdown } from 'react-bootstrap'
 
-import {LanguageContext} from '../context/LanguageContextProvider'
+import useLanguage from '../hooks/useLanguage'
+import useAuth from '../hooks/useAuth'
+import { getAxios } from '../axiosRequests/GetAxios'
+import { convertKeyToSelectedLanguage } from '../i18n/conversion'
+
+
 
 function Navigationbar() {
   const navigate = useNavigate();
 
-  const {language, setLanguage} = useContext(LanguageContext)
+  const { language, setLanguage, i18nData } = useLanguage();
+  const { auth, setAuth } = useAuth();
+
+  function logout() {
+    getAxios('/api/auth/logout')
+      .then((response) => {
+        if (response.statusCode === 204) {
+          setAuth({ logged_in: false });
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+  }
 
   return (
     <Navbar bg='customColor' sticky='top'>
       <Container>
-        <Navbar.Brand>
-          WatchWise
-        </Navbar.Brand>
+        <Navbar.Collapse>
+          <Navbar.Brand>
+            WatchWise
+          </Navbar.Brand>
           <Nav className='me-auto'>
-            <Nav.Link onClick={() =>{navigate('/');} }>
+            <Nav.Link onClick={() => { navigate('/'); }}>
               Home
             </Nav.Link>
-            <Nav.Link onClick={() => {navigate('/watch_groups')} }>Watch Groups</Nav.Link>
+            <Nav.Link onClick={() => { navigate('/watch_groups') }}>Watch Groups</Nav.Link>
           </Nav>
-          <Form className="d-flex">
-            <Form.Select aria-label='Default select example' className='lang-input' 
-                onChange={(e) => {setLanguage(e.target.value)}}
-                defaultValue={language}>
-              <option value='eng'>English</option>
-              <option value='hu' >Magyar</option>
-            </Form.Select>
-          </Form>
-        </Container>
+        </Navbar.Collapse>
+
+        {!auth.logged_in &&
+          <>
+            <Nav.Link className='me-4' onClick={() => { navigate('/login') }}>
+              Login
+            </Nav.Link>
+            {/* <Nav.Link className='me-4' onClick={() => { navigate('/register') }}>
+              Register
+            </Nav.Link> */}
+          </>
+        }
+        {
+          auth.logged_in &&
+          <>
+            <Navbar.Text className='me-1'>
+              {convertKeyToSelectedLanguage('logged_in_as', i18nData)}
+            </Navbar.Text>
+            <NavDropdown title={auth.username} className='me-4'>
+              <NavDropdown.Item onClick={logout}>
+              {convertKeyToSelectedLanguage('log_out', i18nData)}
+              </NavDropdown.Item>
+            </NavDropdown>
+          </>
+        }
+
+        <Form className="d-flex m">
+          <Form.Select aria-label='Default select example' className='lang-input'
+            onChange={(e) => { setLanguage(e.target.value) }}
+            defaultValue={language}>
+            <option value='eng'>English</option>
+            <option value='hu' >Magyar</option>
+          </Form.Select>
+        </Form>
+      </Container>
     </Navbar>
   )
 }

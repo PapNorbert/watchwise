@@ -44,7 +44,7 @@
   "empty_username": "Kérem válasszon egy Felhasználónevet",
   "empty_passwd": "Kérem válasszon egy Jelszavat",
   "empty_passwd_confirm": "Kérem erősítése meg a Jelszavát",
-  "error_passwd": "A Jelszó legalább 8 hosszú kell legyen, és tartalmaznia kell egy számot, egy kis-, és nagybetűt ",
+  "error_passwd": "A Jelszó legalább 8 hosszú kell legyen, tartalmaznia kell egy számot, egy kis-, egy nagybetűt, és csak meg karaktereket",
   "allowed_spec_char": "A megengedett speciális karakterek - _ * ! @ # $ % ^ & * ( ) < > . , ~ | : ;",
   "match_error_passwd": "A két Jelszónak egyeznie kell",
   "login_empty_field_error": "Kérem adja meg a felhasználónevét és jelszavát",
@@ -52,7 +52,11 @@
   "permission_error_unauth" : "Nem engedélyezett: Bejelentkezés szükséges",
   "permission_error_forbidden" : "Tiltott: Nem megfelelő szerep",
   "invalid_jwt": "Tiltott: érvénytelen süti. Kérem jelentkezzen be.",
+  "expired_jwt": "A bejelentkezés lejárt. Kérem jelentkezzen be újra, vagy folytassa mint vendég felhasználó.",
   "register": "Regisztráció",
+  "succesfull_reg": "Sikeres regisztráció",
   "login": "Bejelentkezés",
-  "no_account": "Nincs fiókod? Regisztrálj most!"
+  "logged_in_as": "Bejelentkezve:",
+  "no_account": "Nincs fiókod? Regisztrálj most!",
+  "log_out": "Kijelentkezés"
 }
