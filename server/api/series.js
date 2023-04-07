@@ -1,7 +1,7 @@
 import express from 'express';
-import { 
+import {
   insertSeriesAndGenreEdges, findSeries, findSeriesByKey, updateSeries, deleteSeriesAndEdges,
-  getSeriesCount
+  getSeriesCount, findSeriesShort
 } from '../db/series_db.js'
 import { createPaginationInfo } from '../util/util.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
@@ -13,27 +13,38 @@ router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10 } = request.query;
+    let { page = 1, limit = 10, short = false } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
       page = parseInt(page);
-      limit= parseInt(limit);
-      const [series, count] = await Promise.all([
-        findSeries(page, limit),
-        getSeriesCount(),
-      ]); 
-      response.json({
-        "data": createResponseDtos(series),
-        "pagination": createPaginationInfo(page, limit, count)
-      });
+      limit = parseInt(limit);
+      if (short) {
+        const [series, count] = await Promise.all([
+          findSeriesShort(page, limit),
+          getSeriesCount(),
+        ]);
+        response.json({
+          "data": createResponseDtos(series),
+          "pagination": createPaginationInfo(page, limit, count)
+        });
+      } else {
+        const [series, count] = await Promise.all([
+          findSeries(page, limit),
+          getSeriesCount(),
+        ]);
+        response.json({
+          "data": createResponseDtos(series),
+          "pagination": createPaginationInfo(page, limit, count)
+        });
+      }
     } else {
-      response.status(400).json({error: "Bad paging information!"})
+      response.status(400).json({ error: "Bad paging information!" })
     }
   } catch (err) {
     console.log(err);
     response.status(400);
     response.json({
       error: "error"
-    }); 
+    });
   }
 
 });
@@ -50,17 +61,17 @@ router.get('/:id', async (request, response) => {
       } else { // no entity found with id
         response.status(404).end();
       }
-      
-    } catch (err) { 
+
+    } catch (err) {
       console.log(err);
       response.status(400);
       response.json({
         error: err.message
-      }); 
+      });
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({error: "Bad request parameter, not a number!"});
+    response.json({ error: "Bad request parameter, not a number!" });
   }
 
 });
@@ -71,14 +82,15 @@ router.post('', async (request, response) => {
     let seriesJson = request.body;
     const genres = seriesJson.genres;
     delete seriesJson.genres;
+    // check title	nr_seasons	nr_episodes	release_date
     const id = await insertSeriesAndGenreEdges(seriesJson, genres);
-    response.status(201).json({id: id});
+    response.status(201).json({ id: id });
   } catch (err) {
     console.log(err);
     response.status(400);
     response.json({
       error: "error"
-    }); 
+    });
   }
 
 });
@@ -101,11 +113,11 @@ router.put('/:id', async (request, response) => {
       response.status(400);
       response.json({
         error: "error"
-      }); 
+      });
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({error: "Bad request parameter, not a number!"});
+    response.json({ error: "Bad request parameter, not a number!" });
   }
 
 });
@@ -121,17 +133,17 @@ router.delete('/:id', async (request, response) => {
         response.status(404);
       }
       response.end();
-      
-    } catch (err) { 
+
+    } catch (err) {
       console.log(err);
       response.status(400);
       response.json({
         error: err.message
-      }); 
+      });
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({error: "Bad request parameter, not a number!"});
+    response.json({ error: "Bad request parameter, not a number!" });
   }
 
 });

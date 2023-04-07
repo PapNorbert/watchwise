@@ -20,6 +20,7 @@ function Navigationbar() {
       .then((response) => {
         if (response.statusCode === 204) {
           setAuth({ logged_in: false });
+          navigate('/');
         }
       })
       .catch((err) => {
@@ -38,7 +39,15 @@ function Navigationbar() {
             <Nav.Link onClick={() => { navigate('/'); }}>
               Home
             </Nav.Link>
-            <Nav.Link onClick={() => { navigate('/watch_groups') }}>Watch Groups</Nav.Link>
+            <Nav.Link onClick={() => { navigate('/watch_groups') }}>
+              Watch Groups
+            </Nav.Link>
+            <Nav.Link onClick={() => { navigate('/movies') }}>
+              Movies
+            </Nav.Link>
+            <Nav.Link onClick={() => { navigate('/series') }}>
+              TV Series
+            </Nav.Link>
           </Nav>
         </Navbar.Collapse>
 

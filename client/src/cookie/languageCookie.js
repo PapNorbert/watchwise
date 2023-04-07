@@ -8,9 +8,7 @@ export function setLanguageCookie(language) {
 
 export function getLanguageCookie() {
   const savedLanguage = Cookies.get('Lang');
-  console.log(supportedLanguages)
   if (savedLanguage && supportedLanguages.includes(savedLanguage)) {
-    console.log(savedLanguage);
     return savedLanguage;
   }
   return defaultLanguage;

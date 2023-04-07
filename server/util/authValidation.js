@@ -9,24 +9,24 @@ export function checkLoginInformation(loginInformation) {
 export async function checkRegistrationInformation(userInformation) {
   let correct = true;
   let error = ''
-  if( !checkRegistrationInformationNotEmpty(userInformation)) {
+  if (!checkRegistrationInformationNotEmpty(userInformation)) {
     correct = false;
-    error += 'Empty field.'
+    error += 'empty_field'
   }
-  if ( !correctRegistrationPasswords(userInformation) ) {
+  if (!correctRegistrationPasswords(userInformation)) {
     correct = false;
-    error += ' Bad password.'
+    error += 'error_passwd'
   }
-  if (! await usernameAvailabe(userInformation.username) ) {
+  if (! await usernameAvailabe(userInformation.username)) {
     correct = false;
-    error += ' Username not available.'
+    error = 'username_occupied'
   }
-  return { correct, error}
+  return { correct, error }
 }
 
 
 export function checkRegistrationInformationNotEmpty(userInformation) {
-  return userInformation.first_name !== undefined && userInformation.first_name !== '' 
+  return userInformation.first_name !== undefined && userInformation.first_name !== ''
     && userInformation.last_name !== undefined && userInformation.last_name !== ''
     && userInformation.username !== undefined && userInformation.username !== ''
     && userInformation.passwd !== undefined && userInformation.passwd !== ''

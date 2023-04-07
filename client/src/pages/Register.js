@@ -10,13 +10,14 @@ import useLanguage from '../hooks/useLanguage'
 
 export default function Register() {
   const { i18nData } = useLanguage(0);
-  const [form, setForm] = useState({
+  const emptyForm = {
     'first_name': '',
     'last_name': '',
     'username': '',
     'passwd': '',
     'passwd_confirm': ''
-  });
+  }
+  const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [succesfullReg, setSuccesfullReg] = useState(false);
   // axios post 
@@ -31,7 +32,7 @@ export default function Register() {
     setForm(newForm); // only changes value of the selected field
     let newErrors = { ...errors }
     if (!value || value === '') {
-      newErrors = { ...errors, [field]: convertKeyToSelectedLanguage(`empty_${field}`, i18nData) }
+      newErrors = { ...errors, [field]: `empty_${field}`}
     } else if (errors[field] !== null) {
       newErrors = { ...errors, [field]: null }
     }
@@ -44,19 +45,19 @@ export default function Register() {
     const newErrors = {}
     for (const [key, value] of Object.entries(form)) {
       if (!value || value === '') {
-        newErrors[key] = convertKeyToSelectedLanguage(`empty_${key}`, i18nData);
+        newErrors[key] = `empty_${key}`;
         noErrors = false;
       }
       if (key === 'passwd') {
         if (!value.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\-_*!@#$%^&*()<>.,~|:;]{8,}$/gm)) {
           // password must be at least 8 long, with 1 digit, lowercase letter, uppercase letter
           noErrors = false;
-          newErrors[key] = convertKeyToSelectedLanguage(`error_passwd`, i18nData);
+          newErrors[key] = `error_passwd`;
         }
       }
       if (key === 'passwd_confirm' && value !== form['passwd']) {
         noErrors = false;
-        newErrors[key] = convertKeyToSelectedLanguage(`match_error_passwd`, i18nData);
+        newErrors[key] = `match_error_passwd`;
       }
     }
     setErrors(newErrors);
@@ -68,15 +69,7 @@ export default function Register() {
             // 201 expected
             registered = true;
             // Clear form inputs
-            setForm({
-              'first_name': '',
-              'last_name': '',
-              'username': '',
-              'passwd': '',
-              'passwd_confirm': ''
-            });
-
-            //navigate('/login');
+            setForm(emptyForm);
           }
           setSubmitError(res.errorMessage);
         })
@@ -102,7 +95,7 @@ export default function Register() {
             value={form.first_name} isInvalid={errors.first_name} autoComplete='off'
             onChange={e => { setField('first_name', e.target.value) }} />
           <Form.Control.Feedback type='invalid'>
-            {errors['first_name']}
+            {convertKeyToSelectedLanguage(errors['first_name'], i18nData)}
           </Form.Control.Feedback>
         </FloatingLabel>
 
@@ -112,7 +105,7 @@ export default function Register() {
             value={form.last_name} isInvalid={!!errors.last_name} autoComplete='off'
             onChange={e => { setField('last_name', e.target.value) }} />
           <Form.Control.Feedback type='invalid'>
-            {errors['last_name']}
+            {convertKeyToSelectedLanguage(errors['last_name'], i18nData)}
           </Form.Control.Feedback>
         </FloatingLabel>
 
@@ -122,7 +115,7 @@ export default function Register() {
             value={form.username} isInvalid={!!errors.username} autoComplete='off'
             onChange={e => { setField('username', e.target.value) }} />
           <Form.Control.Feedback type='invalid'>
-            {errors['username']}
+            {convertKeyToSelectedLanguage(errors['username'], i18nData)}
           </Form.Control.Feedback>
         </FloatingLabel>
 
@@ -135,7 +128,7 @@ export default function Register() {
             {convertKeyToSelectedLanguage('allowed_spec_char', i18nData)}
           </Form.Text>
           <Form.Control.Feedback type='invalid'>
-            {errors['passwd']}
+            {convertKeyToSelectedLanguage(errors['passwd'], i18nData)}
           </Form.Control.Feedback>
         </FloatingLabel>
 
@@ -145,12 +138,12 @@ export default function Register() {
             value={form.passwd_confirm} isInvalid={!!errors.passwd_confirm} autoComplete='off'
             onChange={e => { setField('passwd_confirm', e.target.value) }} />
           <Form.Control.Feedback type='invalid'>
-            {errors['passwd_confirm']}
+            {convertKeyToSelectedLanguage(errors['passwd_confirm'], i18nData)}
           </Form.Control.Feedback>
         </FloatingLabel>
 
         <Alert key='danger' variant='danger' show={submitError !== null} onClose={() => setSubmitError(null)} dismissible >
-          {submitError}
+          {convertKeyToSelectedLanguage(submitError, i18nData)}
         </Alert>
         <Alert key='success' variant='success' show={succesfullReg} onClose={() => setSuccesfullReg(false)} dismissible >
           {convertKeyToSelectedLanguage('succesfull_reg', i18nData)}

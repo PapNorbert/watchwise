@@ -12,6 +12,8 @@ import Register from './pages/Register'
 import Login from './pages/Login'
 import AuthContextProvider from './context/AuthContextProvider'
 import LoginExpired from './layouts/LoginExpired'
+import MoviesPage from './pages/Movies/MoviesPage'
+import SeriesPage from './pages/Series/SeriesPage'
 
 
 function App() {
@@ -31,6 +33,8 @@ function App() {
               <Route path='/register' element={<Register />} />
               <Route path='/login' element={<Login />} />
               <Route path='/watch_groups/*' element={<WatchGroupsPage />} />
+              <Route path='/movies/*' element={<MoviesPage />} />
+              <Route path='/series/*' element={<SeriesPage />} />
               <Route path='/error-page' element={<ErrorPage />} />
               <Route path='*' element={ <Navigate to="/error-page" /> } />
               

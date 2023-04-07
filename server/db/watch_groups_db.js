@@ -8,7 +8,21 @@ export async function findWatchGroups(page, limit) {
     const aqlQuery = `FOR doc IN watch_groups
     LIMIT @offset, @count
     RETURN doc`;
-    const cursor = await pool.query(aqlQuery, { offset: (page-1)*limit, count: limit });
+    const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findWatchGroupsByCreator(creator, page, limit) {
+  try {
+    const aqlQuery = `FOR doc IN watch_groups
+    FILTER doc.creator == @creator
+    LIMIT @offset, @count
+    RETURN doc`;
+    const cursor = await pool.query(aqlQuery, { creator: creator, offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -18,11 +32,11 @@ export async function findWatchGroups(page, limit) {
 
 export async function findWatchGroupByKey(key) {
   try {
-    const cursor = await watchGroupCollection.firstExample({_key: key});
+    const cursor = await watchGroupCollection.firstExample({ _key: key });
     return cursor;
   } catch (err) {
     if (err.message == "no match") {
-      console.log(`WatchGroup document with _key ${key} not found: ` ,err.message);
+      console.log(`WatchGroup document with _key ${key} not found: `, err.message);
       return null;
     } else {
       console.log(err);
@@ -37,12 +51,25 @@ export async function getWatchGroupCount() {
     const cursor = await watchGroupCollection.count();
     return cursor.count;
   } catch (err) {
-      console.log(err);
-      throw err;
-    }
+    console.log(err);
+    throw err;
+  }
 
 }
 
+export async function getWatchGroupCountByCreator(creator) {
+  try {
+    const aqlQuery = `RETURN LENGTH(
+      FOR doc IN watch_groups
+        FILTER doc.creator == @creator
+        RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { creator: creator });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
 
 export async function insertWatchGroup(watchGroupDocument) {
   try {
@@ -60,7 +87,7 @@ export async function updateWatchGroup(key, newWatchGroupAttributes) {
     return true;
   } catch (err) {
     if (err.message == "document not found") {
-      console.log(`Error for watchGroup document with _key ${key} during update request: ` ,err.message);
+      console.log(`Error for watchGroup document with _key ${key} during update request: `, err.message);
       return false;
     } else {
       console.log(err);
@@ -72,11 +99,11 @@ export async function updateWatchGroup(key, newWatchGroupAttributes) {
 
 export async function deleteWatchGroup(key) {
   try {
-    const cursor = await watchGroupCollection.remove({_key: key});
+    const cursor = await watchGroupCollection.remove({ _key: key });
     return true;
   } catch (err) {
     if (err.message == "document not found") {
-      console.log(`Warning for watchGroup document with _key ${key} during delete request: `,err.message);
+      console.log(`Warning for watchGroup document with _key ${key} during delete request: `, err.message);
       return false;
     } else {
       console.log(err);

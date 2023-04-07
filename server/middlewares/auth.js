@@ -7,14 +7,26 @@ export function addJwtCookie(req, response, next) {
   if (req.cookies.Auth) {
     try {
       response.locals.jwt = req.cookies.Auth;
-      const payload = jwt.verify(response.locals.jwt, process.env.JWT_SECRET);  
-        // check if jwt is valid
+      const payload = jwt.verify(response.locals.jwt, process.env.JWT_SECRET);
       response.locals.payload = payload;
-      next();
+      // check if jwt is valid
+      findUserByRefreshToken(req.cookies.Auth)
+        .then((user) => {
+          if (user === null || user.username !== response.locals.payload.username) {
+            // the user doesn't match with the user from the jwt
+            response.clearCookie('Auth', {
+              httpOnly: true, sameSite: 'None',
+              secure: true
+            });
+            response.sendStatus(403);
+          } else {
+            next();
+          }
+        })
     } catch (err) {
       let errorMessage = 'invalid_jwt';
       response.status(401);
-      if(err.name === 'TokenExpiredError') {
+      if (err.name === 'TokenExpiredError') {
         console.log('Request with expired token');
         errorMessage = 'expired_jwt';
       }
@@ -23,12 +35,12 @@ export function addJwtCookie(req, response, next) {
         secure: true
       });
       findUserByRefreshToken(req.cookies.Auth)
-      .then((user) => {
-        if (user !== null ) {
-          // delete refresh token in db if user is found
-          updateUser(user._key, { refreshToken: null });
-        }
-      })
+        .then((user) => {
+          if (user !== null) {
+            // delete refresh token in db if user is found
+            updateUser(user._key, { refreshToken: null });
+          }
+        })
       response.json({ error: errorMessage });
     }
   } else {

@@ -1,12 +1,13 @@
 import express from 'express';
-import { 
+import {
   insertWatchGroup, findWatchGroupByKey, findWatchGroups, updateWatchGroup, deleteWatchGroup,
-  getWatchGroupCount
+  getWatchGroupCount, findWatchGroupsByCreator, getWatchGroupCountByCreator
 } from '../db/watch_groups_db.js'
-import { checkMovieExistsWithName } from '../db/movies_db.js'
-import { checkSeriesExistsWithName } from '../db/series_db.js'
+import { getMovieKeyByName } from '../db/movies_db.js'
+import { getSerieKeyByName } from '../db/series_db.js'
 import { createPaginationInfo } from '../util/util.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
+import { validateWatchGroupCreation } from '../util/watchGroupValidation.js'
 
 const router = express.Router();
 
@@ -15,27 +16,38 @@ router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10 } = request.query;
+    let { page = 1, limit = 10, creator } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
       page = parseInt(page);
-      limit= parseInt(limit);
-      const [watchGroups, count] = await Promise.all([
-        findWatchGroups(page, limit),
-        getWatchGroupCount(),
-      ]); 
-      response.json({
-        "data": createResponseDtos(watchGroups),
-        "pagination": createPaginationInfo(page, limit, count)
-      });
+      limit = parseInt(limit);
+      if (creator) {
+        const [watchGroups, count] = await Promise.all([
+          findWatchGroupsByCreator(creator, page, limit),
+          getWatchGroupCountByCreator(creator),
+        ]);
+        response.json({
+          "data": createResponseDtos(watchGroups),
+          "pagination": createPaginationInfo(page, limit, count)
+        });
+      } else {
+        const [watchGroups, count] = await Promise.all([
+          findWatchGroups(page, limit),
+          getWatchGroupCount(),
+        ]);
+        response.json({
+          "data": createResponseDtos(watchGroups),
+          "pagination": createPaginationInfo(page, limit, count)
+        });
+      }
     } else {
-      response.status(400).json({error: "Bad paging information!"})
+      response.status(400).json({ error: "Bad paging information!" })
     }
   } catch (err) {
     console.log(err);
     response.status(400);
     response.json({
       error: "error"
-    }); 
+    });
   }
 
 });
@@ -52,17 +64,17 @@ router.get('/:id', async (request, response) => {
       } else { // no entity found with id
         response.status(404).end();
       }
-      
-    } catch (err) { 
+
+    } catch (err) {
       console.log(err);
       response.status(400);
       response.json({
         error: err.message
-      }); 
+      });
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({error: "Bad request parameter, not a number!"});
+    response.json({ error: "Bad request parameter, not a number!" });
   }
 
 });
@@ -71,38 +83,34 @@ router.post('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   try {
     let watchGroupJson = request.body;
-    if (watchGroupJson.watch_date == "" || watchGroupJson.watch_date == null) {
-      response.status(400).json({
-        error: "Watch group must specify the date of the event!"
-      });
-      return
-    }
-    if (watchGroupJson.location == "" || watchGroupJson.location == null) {
-      response.status(400).json({
-        error: "Watch group must specify the location of the event!"
-      });
-      return
-    }
-
-    watchGroupJson.creation_date = new Date(Date.now());
-
-    if (watchGroupJson.show != "" && watchGroupJson.show != null ) {
-      const movieExists = await checkMovieExistsWithName(watchGroupJson.show);
-      const seriesExists = await checkSeriesExistsWithName(watchGroupJson.show);
-
-      if( movieExists || seriesExists) {
+    const { correct, error } = await validateWatchGroupCreation(watchGroupJson);
+    if (correct) {
+      watchGroupJson.creation_date = new Date(Date.now());
+      const movieKey = await getMovieKeyByName(watchGroupJson.show);
+      if (movieKey) {
+        watchGroupJson['show_id'] = movieKey;
+        watchGroupJson['show_type'] = 'movie';
         const id = await insertWatchGroup(watchGroupJson);
-        response.status(201).json({id: id});
+        response.status(201).json({ id: id });
       } else {
-        response.status(400).json({
-          error: "The specified show does not exists in the current database."
-        }); 
+        // movie not found, check series
+        const seriesKey = await getSerieKeyByName(watchGroupJson.show);
+        if (seriesKey) {
+          watchGroupJson['show_id'] = seriesKey;
+          watchGroupJson['show_type'] = 'serie';
+          const id = await insertWatchGroup(watchGroupJson);
+          response.status(201).json({ id: id });
+        } else {
+          // show not found
+          response.status(400).json({
+            error: 'show_not_exists'
+          });
+        }
       }
     } else {
-      response.status(400);
-      response.json({
-        error: "Watch group must specify the selected show name!"
-      }); 
+      response.status(400).json({
+        error: error
+      });
     }
 
   } catch (err) {
@@ -110,7 +118,7 @@ router.post('', async (request, response) => {
     response.status(400);
     response.json({
       error: "error"
-    }); 
+    });
   }
 
 });
@@ -123,12 +131,12 @@ router.put('/:id', async (request, response) => {
     try {
       let newSeriesAttributes = request.body;
 
-      if (newSeriesAttributes.show != "" && newSeriesAttributes.show != null ) {
-          // new attributes change the show
+      if (newSeriesAttributes.show !== "" && newSeriesAttributes.show !== null) {
+        // new attributes change the show
         const movieExists = await checkMovieExistsWithName(newSeriesAttributes.show);
         const seriesExists = await checkSeriesExistsWithName(newSeriesAttributes.show);
-  
-        if( movieExists || seriesExists) {
+
+        if (movieExists || seriesExists) {
           const succesfull = await updateWatchGroup(id, newSeriesAttributes);
           if (!succesfull) {
             response.status(404);
@@ -137,14 +145,14 @@ router.put('/:id', async (request, response) => {
         } else {
           response.status(400).json({
             error: "The specified show does not exists in the current database."
-          }); 
+          });
         }
       } else { // does not change the show
         const succesfull = await updateWatchGroup(id, newSeriesAttributes);
-          if (!succesfull) {
-            response.status(404);
-          }
-          response.end();
+        if (!succesfull) {
+          response.status(404);
+        }
+        response.end();
       }
 
     } catch (err) {
@@ -152,11 +160,11 @@ router.put('/:id', async (request, response) => {
       response.status(400);
       response.json({
         error: "error"
-      }); 
+      });
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({error: "Bad request parameter, not a number!"});
+    response.json({ error: "Bad request parameter, not a number!" });
   }
 
 });
@@ -172,17 +180,17 @@ router.delete('/:id', async (request, response) => {
         response.status(404);
       }
       response.end();
-      
-    } catch (err) { 
+
+    } catch (err) {
       console.log(err);
       response.status(400);
       response.json({
         error: err.message
-      }); 
+      });
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({error: "Bad request parameter, not a number!"});
+    response.json({ error: "Bad request parameter, not a number!" });
   }
 
 });

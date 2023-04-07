@@ -1,5 +1,5 @@
 export function convertToSelectedLanguage(databaseObject, i18nData) {
-  if (i18nData) {
+  if (i18nData && databaseObject) {
     let convertedKeysObject = {}
     for (const [key, value] of Object.entries(databaseObject)) {
       const convertedKey = convertKeyToSelectedLanguage(key, i18nData);
@@ -10,7 +10,7 @@ export function convertToSelectedLanguage(databaseObject, i18nData) {
 }
 
 export function convertKeyToSelectedLanguage(key, i18nData) {
-  if (i18nData) {
+  if (i18nData && key) {
     const convertedKey = i18nData[key];
     switch (convertedKey) {
       case undefined:

@@ -1,6 +1,6 @@
 import express from 'express';
-import { 
-  findMovies, findMovieByKey, getMovieCount,
+import {
+  findMovies, findMovieByKey, getMovieCount, findMoviesShort,
   insertMovieAndGenreEdges, updateMovie, deleteMovieAndEdges
 } from '../db/movies_db.js'
 import { createPaginationInfo } from '../util/util.js'
@@ -13,27 +13,38 @@ router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10 } = request.query;
+    let { page = 1, limit = 10, short = false } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
       page = parseInt(page);
-      limit= parseInt(limit);
-      const [movies, count] = await Promise.all([
-        findMovies(page, limit),
-        getMovieCount(),
-      ]); 
-      response.json({
-        "data": createResponseDtos(movies),
-        "pagination": createPaginationInfo(page, limit, count)
-      });
+      limit = parseInt(limit);
+      if (short) {
+        const [movies, count] = await Promise.all([
+          findMoviesShort(page, limit),
+          getMovieCount(),
+        ]);
+        response.json({
+          "data": createResponseDtos(movies),
+          "pagination": createPaginationInfo(page, limit, count)
+        });
+      } else {
+        const [movies, count] = await Promise.all([
+          findMovies(page, limit),
+          getMovieCount(),
+        ]);
+        response.json({
+          "data": createResponseDtos(movies),
+          "pagination": createPaginationInfo(page, limit, count)
+        });
+      }
     } else {
-      response.status(400).json({error: "Bad paging information!"})
+      response.status(400).json({ error: "Bad paging information!" })
     }
   } catch (err) {
     console.log(err);
     response.status(400);
     response.json({
       error: "error"
-    }); 
+    });
   }
 
 });
@@ -50,17 +61,17 @@ router.get('/:id', async (request, response) => {
       } else { // no entity found with id
         response.status(404).end();
       }
-      
-    } catch (err) { 
+
+    } catch (err) {
       console.log(err);
       response.status(400);
       response.json({
         error: err.message
-      }); 
+      });
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({error: "Bad request parameter, not a number!"});
+    response.json({ error: "Bad request parameter, not a number!" });
   }
 
 });
@@ -71,14 +82,15 @@ router.post('', async (request, response) => {
     let movieJson = request.body;
     const genres = movieJson.genres;
     delete movieJson.genres;
+    // title	distributed_by	release_date check runtime
     const id = await insertMovieAndGenreEdges(movieJson, genres);
-    response.status(201).json({id: id});
+    response.status(201).json({ id: id });
   } catch (err) {
     console.log(err);
     response.status(400);
     response.json({
       error: "error"
-    }); 
+    });
   }
 
 });
@@ -101,11 +113,11 @@ router.put('/:id', async (request, response) => {
       response.status(400);
       response.json({
         error: "error"
-      }); 
+      });
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({error: "Bad request parameter, not a number!"});
+    response.json({ error: "Bad request parameter, not a number!" });
   }
 
 });
@@ -121,17 +133,17 @@ router.delete('/:id', async (request, response) => {
         response.status(404);
       }
       response.end();
-      
-    } catch (err) { 
+
+    } catch (err) {
       console.log(err);
       response.status(400);
       response.json({
         error: err.message
-      }); 
+      });
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({error: "Bad request parameter, not a number!"});
+    response.json({ error: "Bad request parameter, not a number!" });
   }
 
 });

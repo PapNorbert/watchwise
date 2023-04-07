@@ -23,6 +23,8 @@ export default function AuthContextProvider({ children }) {
     getAxios('/api/auth/refresh')
     .then((response) => {
       setAuth(decodeJwtAccesToken(response?.data?.accesToken || null));
+      // if logged in sets userID, username, role, logged_in
+      // otherwise sets logged_in to false
     }) 
   }, []);
 

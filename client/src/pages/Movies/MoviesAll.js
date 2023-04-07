@@ -1,24 +1,24 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, Navigate } from "react-router-dom"
 
-import WatchGroup from '../../components/WatchGroup'
+import Movie from '../../components/Movie'
 import Limit from '../../components/Limit'
 import PaginationElements from '../../components/PaginationElements'
 import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
 
 
-export default function WatchGroupsAll() {
+export default function MoviesAll() {
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
-  const [url, setUrl] = useState(`/api/watch_groups`);
-  const { data: watch_groups, error, statusCode } = useGetAxios(url);
+  const [url, setUrl] = useState(`/api/movies/?short=true`);
+  const { data: movies, error, statusCode } = useGetAxios(url);
 
   const { auth, setAuth, setLoginExpired } = useAuth()
   const location = useLocation();
 
   useEffect(() => {
-    setUrl(`/api/watch_groups/?page=${page}&limit=${limit}`);
+    setUrl(`/api/movies/?short=true&page=${page}&limit=${limit}`);
   }, [limit, page])
 
 
@@ -42,13 +42,13 @@ export default function WatchGroupsAll() {
   return (
     <>
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
-      {watch_groups?.data.map(currentElement => {
+      {movies?.data.map(currentElement => {
         return (
-          <WatchGroup watch_group={currentElement} buttonType='join' key={currentElement._key} />
+          <Movie movie={currentElement} key={currentElement._key} />
         );
       })}
       <PaginationElements currentPage={page}
-        totalPages={watch_groups?.pagination.totalPages}
+        totalPages={movies?.pagination.totalPages}
         onPageChange={setPage} key='pagination' />
     </>
   )

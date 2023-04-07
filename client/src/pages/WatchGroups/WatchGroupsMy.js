@@ -8,18 +8,18 @@ import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
 
 
-export default function WatchGroupsAll() {
+export default function WatchGroupsMy() {
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
-  const [url, setUrl] = useState(`/api/watch_groups`);
+  const { auth, setAuth, setLoginExpired } = useAuth()
+  const [url, setUrl] = useState(`/api/watch_groups/?creator=${auth?.username}`);
   const { data: watch_groups, error, statusCode } = useGetAxios(url);
 
-  const { auth, setAuth, setLoginExpired } = useAuth()
   const location = useLocation();
 
   useEffect(() => {
-    setUrl(`/api/watch_groups/?page=${page}&limit=${limit}`);
-  }, [limit, page])
+    setUrl(`/api/watch_groups/?creator=${auth?.username}&page=${page}&limit=${limit}`);
+  }, [limit, page, auth?.username])
 
 
   if (statusCode === 401) {
@@ -38,13 +38,12 @@ export default function WatchGroupsAll() {
     return <h2 className='error'>Sorry, there was an error</h2>
   }
 
-
   return (
     <>
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
       {watch_groups?.data.map(currentElement => {
         return (
-          <WatchGroup watch_group={currentElement} buttonType='join' key={currentElement._key} />
+          <WatchGroup watch_group={currentElement} buttonType='manage' key={currentElement._key} />
         );
       })}
       <PaginationElements currentPage={page}
@@ -52,4 +51,5 @@ export default function WatchGroupsAll() {
         onPageChange={setPage} key='pagination' />
     </>
   )
+
 }

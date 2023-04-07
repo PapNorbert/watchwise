@@ -20,7 +20,7 @@ router.post('/register', async (req, response) => {
     // check required fields not empty, passwords correct format, username is available
     if (!correctData.correct) {
       console.log('Bad registration information')
-      response.status(400).json({ error: `${correctData.error}` });
+      response.status(400).json({ error: correctData.error });
     } else { // correct information
       const userDataToInsert = {
         first_name: userInformation.first_name,

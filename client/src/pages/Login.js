@@ -33,7 +33,7 @@ export default function Login() {
     setForm(newForm); // only changes value of the selected field
     let newErrors = { ...errors }
     if (!value || value === '') {
-      newErrors = { ...errors, [field]: convertKeyToSelectedLanguage(`empty_${field}`, i18nData) }
+      newErrors = { ...errors, [field]: `empty_${field}` }
     } else if (errors[field] !== null) {
       newErrors = { ...errors, [field]: null }
     }
@@ -47,7 +47,7 @@ export default function Login() {
     const newErrors = {}
     for (const [key, value] of Object.entries(form)) {
       if (!value || value === '') {
-        newErrors[key] = convertKeyToSelectedLanguage(`empty_${key}`, i18nData);
+        newErrors[key] = `empty_${key}`;
         noErrors = false;
       }
     }
@@ -63,11 +63,11 @@ export default function Login() {
             let errorMessage = res.errorMessage;
             if (res.errorMessage === 'login_empty_field_error'
               || res.errorMessage === 'login_incorrect') {
-              errorMessage = convertKeyToSelectedLanguage(res.errorMessage, i18nData);
+              errorMessage = res.errorMessage;
             }
             setSubmitError(errorMessage);
           }
-          
+
         })
         .catch((err) => {
           console.log('Error during post request', err.message);
@@ -87,7 +87,7 @@ export default function Login() {
             value={form.username} isInvalid={!!errors.username} autoComplete='off'
             onChange={e => { setField('username', e.target.value) }} />
           <Form.Control.Feedback type='invalid'>
-            {errors['username']}
+            {convertKeyToSelectedLanguage(errors['username'], i18nData)}
           </Form.Control.Feedback>
         </FloatingLabel>
 
@@ -97,13 +97,13 @@ export default function Login() {
             value={form.passwd} isInvalid={!!errors.passwd} autoComplete='off'
             onChange={e => { setField('passwd', e.target.value) }} />
           <Form.Control.Feedback type='invalid'>
-            {errors['passwd']}
+            {convertKeyToSelectedLanguage(errors['passwd'], i18nData)}
           </Form.Control.Feedback>
         </FloatingLabel>
 
 
         <Alert key='danger' variant='danger' show={submitError !== null}>
-          {submitError}
+          {convertKeyToSelectedLanguage(submitError, i18nData)}
         </Alert>
         <Button type='submit' variant='secondary' className='col-md-6 offset-md-3 '>
           {convertKeyToSelectedLanguage('login', i18nData)}
