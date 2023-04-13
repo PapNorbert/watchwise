@@ -14,6 +14,7 @@ import AuthContextProvider from './context/AuthContextProvider'
 import LoginExpired from './layouts/LoginExpired'
 import MoviesPage from './pages/Movies/MoviesPage'
 import SeriesPage from './pages/Series/SeriesPage'
+import OpinionThreadsPage from './pages/OpinionThreads/OpinionThreadsPage'
 
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
               <Route path='/register' element={<Register />} />
               <Route path='/login' element={<Login />} />
               <Route path='/watch_groups/*' element={<WatchGroupsPage />} />
+              <Route path='/opinion_threads/*' element={<OpinionThreadsPage />} />
               <Route path='/movies/*' element={<MoviesPage />} />
               <Route path='/series/*' element={<SeriesPage />} />
               <Route path='/error-page' element={<ErrorPage />} />

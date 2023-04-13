@@ -75,5 +75,13 @@
   "user_not_exists": "A megadott felhasználó nem létezik",
   "show_not_exists": "A megadott TV-műsor nem létezik az aktuális adatbázisban",
   "username_occupied": "A kiválasztott felhasználónév nem érhető el, kérjük, válasszon másikat",
-  "empty_field": "Kérem töltsön ki minden mezőt"
+  "empty_field": "Kérem töltsön ki minden mezőt",
+  "leave": "Kilépés",
+  "no_joined_groups": "Nincsenek csatlakozott megtekintési csoportok",
+  "loading": "Betöltés...",
+  "no_own_groups": "Még nincsenek létrehozva csoportok",
+  "series": "Sorozatok",
+  "movies": "Filmek",
+  "imdb_link": "IMDB oldal",
+  "storyline" : "Történet"
 }

@@ -1,13 +1,16 @@
 import express from 'express';
 import {
   insertWatchGroup, findWatchGroupByKey, findWatchGroups, updateWatchGroup, deleteWatchGroup,
-  getWatchGroupCount, findWatchGroupsByCreator, getWatchGroupCountByCreator
+  getWatchGroupCount, findWatchGroupsByCreator, getWatchGroupCountByCreator,
+  findWatchGroupsByUserJoined, getWatchGroupCountByUserJoined, findWatchGroupsWithJoinedInformation
 } from '../db/watch_groups_db.js'
 import { getMovieKeyByName } from '../db/movies_db.js'
 import { getSerieKeyByName } from '../db/series_db.js'
 import { createPaginationInfo } from '../util/util.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
 import { validateWatchGroupCreation } from '../util/watchGroupValidation.js'
+import { findUserByUsername } from '../db/users_db.js';
+import { checkEdgeExists, deleteJoinedEdge, insertJoinedEdge } from '../db/joined_group_db.js';
 
 const router = express.Router();
 
@@ -16,11 +19,17 @@ router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10, creator } = request.query;
+    let { page = 1, limit = 10, creator, joined = false, userId } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
       page = parseInt(page);
       limit = parseInt(limit);
       if (creator) {
+        // searching for watchgroups that the user created
+        if (creator !== response.locals.payload.username) {
+          response.sendStatus(403);
+          return
+        }
+
         const [watchGroups, count] = await Promise.all([
           findWatchGroupsByCreator(creator, page, limit),
           getWatchGroupCountByCreator(creator),
@@ -29,15 +38,45 @@ router.get('', async (request, response) => {
           "data": createResponseDtos(watchGroups),
           "pagination": createPaginationInfo(page, limit, count)
         });
-      } else {
+      } else if (joined && userId) {
+        // searching for watchgroups that the user joined
+
+        if (userId !== response.locals.payload?.userID) {
+          response.sendStatus(403);
+          return
+        }
+
         const [watchGroups, count] = await Promise.all([
-          findWatchGroups(page, limit),
-          getWatchGroupCount(),
+          findWatchGroupsByUserJoined(`users/${userId}`, page, limit),
+          getWatchGroupCountByUserJoined(`users/${userId}`),
         ]);
         response.json({
           "data": createResponseDtos(watchGroups),
           "pagination": createPaginationInfo(page, limit, count)
         });
+      } else {
+        // searching for all watchgroups
+        if (response.locals?.payload?.userID) {
+          // logged in
+          const [watchGroups, count] = await Promise.all([
+            findWatchGroupsWithJoinedInformation(`users/${response.locals.payload.userID}`, page, limit),
+            getWatchGroupCount(),
+          ]);
+          response.json({
+            "data": createResponseDtos(watchGroups),
+            "pagination": createPaginationInfo(page, limit, count)
+          });
+        } else {
+          // not logged in
+          const [watchGroups, count] = await Promise.all([
+            findWatchGroups(page, limit),
+            getWatchGroupCount(),
+          ]);
+          response.json({
+            "data": createResponseDtos(watchGroups),
+            "pagination": createPaginationInfo(page, limit, count)
+          });
+        }
       }
     } else {
       response.status(400).json({ error: "Bad paging information!" })
@@ -59,7 +98,7 @@ router.get('/:id', async (request, response) => {
     const id = request.params.id;
     try {
       const watchGroup = await findWatchGroupByKey(id);
-      if (watchGroup != null) {
+      if (watchGroup !== null) {
         response.json(createResponseDto(watchGroup));
       } else { // no entity found with id
         response.status(404).end();
@@ -119,6 +158,44 @@ router.post('', async (request, response) => {
     response.json({
       error: "error"
     });
+  }
+
+});
+
+router.post('/:id/joines', async (request, response) => {
+  response.set('Content-Type', 'application/json');
+  response.status(204);
+  if (parseInt(request.params.id) == request.params.id) { // correct parameter
+    const id = request.params.id;
+    try {
+      const watchGroup = await findWatchGroupByKey(id);
+      const user = await findUserByUsername(response.locals.payload.username);
+      if (watchGroup !== null && user !== null) {
+        const exists = await checkEdgeExists(user._id, watchGroup._id);
+        if (exists) {
+          const deleted = await deleteJoinedEdge(user._id, watchGroup._id);
+          if (!deleted) {
+            response.status(404);
+          }
+          response.end();
+        } else {
+          const key = await insertJoinedEdge(user._id, watchGroup._id);
+          response.status(201).json({ id: key })
+        }
+      } else { // watchgroup or user not found
+        response.status(404).end();
+      }
+
+    } catch (err) {
+      console.log(err);
+      response.status(400);
+      response.json({
+        error: err.message
+      });
+    }
+  } else { // incorrect parameter
+    response.status(400);
+    response.json({ error: "Bad request parameter, not a number!" });
   }
 
 });

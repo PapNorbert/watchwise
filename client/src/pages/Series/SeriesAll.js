@@ -6,6 +6,8 @@ import Limit from '../../components/Limit'
 import PaginationElements from '../../components/PaginationElements'
 import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
+import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
+import useLanguage from '../../hooks/useLanguage'
 
 
 export default function SeriesAll() {
@@ -16,6 +18,8 @@ export default function SeriesAll() {
 
   const { auth, setAuth, setLoginExpired } = useAuth()
   const location = useLocation();
+  const { i18nData } = useLanguage();
+
 
   useEffect(() => {
     setUrl(`/api/series/?short=true&page=${page}&limit=${limit}`);
@@ -23,8 +27,8 @@ export default function SeriesAll() {
 
 
   if (statusCode === 401) {
-    if( auth.logged_in ) {
-      setAuth({logged_in: false});
+    if (auth.logged_in) {
+      setAuth({ logged_in: false });
       setLoginExpired(true);
     }
   }
@@ -41,6 +45,7 @@ export default function SeriesAll() {
 
   return (
     <>
+      <h1>{convertKeyToSelectedLanguage('series', i18nData)}</h1>
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
       {series?.data.map(currentElement => {
         return (

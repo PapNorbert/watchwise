@@ -8,9 +8,8 @@ export default function WatchGroupsTab() {
   const navigate = useNavigate();
   const location = useLocation();
   const { auth } = useAuth();
-
   const joinedRoute = `/watch_groups/joined/${auth?.userID}`
-  const myGroupsRoute = `/watch_groups/my_groups/${auth?.username}`
+  const myGroupsRoute = `/watch_groups/my_groups/${auth?.userID}`
   const createRoute = `/watch_groups/create`
 
   return (

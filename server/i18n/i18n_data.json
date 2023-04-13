@@ -74,5 +74,14 @@
   "user_not_exists": "Specified user does not exist",
   "show_not_exists": "The specified show does not exists in the current database",
   "username_occupied": "Selected username not available, please choose a different one",
-  "empty_field": "Please fill out every field"
+  "empty_field": "Please fill out every field",
+  "leave": "Leave",
+  "no_joined_groups": "There are no joined groups",
+  "loading": "Loading...",
+  "no_own_groups": "There are no groups created yet",
+  "series": "TV Series",
+  "movies": "Movies",
+  "imdb_link": "IMDB page",
+  "storyline" : "Storyline"
+
 }

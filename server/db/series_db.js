@@ -25,7 +25,8 @@ export async function findSeriesShort(page, limit) {
       title: doc.name, 
       nr_seasons: doc.nr_seasons, 
       nr_episodes: doc.nr_episodes, 
-      release_date: doc.original_release 
+      release_date: doc.original_release,
+      img_name: doc.img_name
     }`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
     return await cursor.all();

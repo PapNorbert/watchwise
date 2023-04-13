@@ -7,8 +7,14 @@ export default function useGetAxios(url) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [statusCode, setStatusCode] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (url.includes(undefined)) {
+      setLoading(true);
+      return
+    }
+    setLoading(false);
     let newErrorValue = false;
     let newStatusCode = null;
     const controller = new AbortController();
@@ -25,7 +31,7 @@ export default function useGetAxios(url) {
         if (!Axios.isCancel(err)) {
           newStatusCode = err.response?.status;
           newErrorValue = true;
-          if (err.response.status !== 401 && err.response.status !== 403) {
+          if (err.response.status !== 401 && err.response.status !== 403 && err.response.status !== 404) {
             console.log('Error during connection', err.message);
           }
         }
@@ -42,6 +48,11 @@ export default function useGetAxios(url) {
 
 
   function refetch() {
+    if (url.includes(undefined)) {
+      setLoading(true);
+      return
+    }
+    setLoading(false);
     let newErrorValue = false;
     let newStatusCode = null;
     const controller = new AbortController();
@@ -59,7 +70,7 @@ export default function useGetAxios(url) {
           console.log(err)
           newStatusCode = err.response.status;
           newErrorValue = true;
-          if (err.response.status !== 401 && err.response.status !== 403) {
+          if (err.response.status !== 401 && err.response.status !== 403 && err.response.status !== 404) {
             console.log('Error during connection', err.message);
           }
         }
@@ -74,5 +85,5 @@ export default function useGetAxios(url) {
     }
   }
 
-  return { data, error, refetch, statusCode }
+  return { data, error, refetch, statusCode, loading }
 }

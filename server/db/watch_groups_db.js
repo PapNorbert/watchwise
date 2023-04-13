@@ -16,6 +16,23 @@ export async function findWatchGroups(page, limit) {
   }
 }
 
+export async function findWatchGroupsWithJoinedInformation(userId, page, limit) {
+  try {
+    const aqlQuery = `FOR doc IN watch_groups
+    LIMIT @offset, @count
+    LET join = LENGTH(FOR edge IN joined_group
+      FILTER edge._from == @from
+      FILTER edge._to == doc._id
+      LIMIT 1 RETURN true) > 0
+    RETURN { doc, joined: join }`;
+    const cursor = await pool.query(aqlQuery, { from: userId, offset: (page - 1) * limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
 export async function findWatchGroupsByCreator(creator, page, limit) {
   try {
     const aqlQuery = `FOR doc IN watch_groups
@@ -46,6 +63,20 @@ export async function findWatchGroupByKey(key) {
   }
 }
 
+export async function findWatchGroupsByUserJoined(userId, page, limit) {
+  try {
+    const aqlQuery = `FOR vertex IN OUTBOUND
+    @userId joined_group
+    LIMIT @offset, @count
+    RETURN vertex`;
+    const cursor = await pool.query(aqlQuery, { userId: userId, offset: (page - 1) * limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
 export async function getWatchGroupCount() {
   try {
     const cursor = await watchGroupCollection.count();
@@ -70,6 +101,21 @@ export async function getWatchGroupCountByCreator(creator) {
     throw err;
   }
 }
+
+export async function getWatchGroupCountByUserJoined(userId) {
+  try {
+    const aqlQuery = `RETURN LENGTH(
+      FOR vertex IN OUTBOUND
+      @userId joined_group
+        RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { userId: userId });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
 
 export async function insertWatchGroup(watchGroupDocument) {
   try {

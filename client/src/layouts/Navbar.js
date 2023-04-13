@@ -42,6 +42,9 @@ function Navigationbar() {
             <Nav.Link onClick={() => { navigate('/watch_groups') }}>
               Watch Groups
             </Nav.Link>
+            <Nav.Link onClick={() => { navigate('/opinion_threads') }}>
+              Opinions
+            </Nav.Link>
             <Nav.Link onClick={() => { navigate('/movies') }}>
               Movies
             </Nav.Link>

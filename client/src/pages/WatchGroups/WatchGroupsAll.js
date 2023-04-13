@@ -23,8 +23,8 @@ export default function WatchGroupsAll() {
 
 
   if (statusCode === 401) {
-    if( auth.logged_in ) {
-      setAuth({logged_in: false});
+    if (auth.logged_in) {
+      setAuth({ logged_in: false });
       setLoginExpired(true);
     }
   }
@@ -44,7 +44,11 @@ export default function WatchGroupsAll() {
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
       {watch_groups?.data.map(currentElement => {
         return (
-          <WatchGroup watch_group={currentElement} buttonType='join' key={currentElement._key} />
+          <WatchGroup watch_group={
+            auth.logged_in ? currentElement?.doc : currentElement
+          } buttonType={
+            auth.logged_in ? (currentElement?.joined ? 'leave' : 'join') : null
+          } key={currentElement._key} />
         );
       })}
       <PaginationElements currentPage={page}
