@@ -43,7 +43,7 @@ function Navigationbar() {
               Watch Groups
             </Nav.Link>
             <Nav.Link onClick={() => { navigate('/opinion_threads') }}>
-              Opinions
+              Opinion Threads
             </Nav.Link>
             <Nav.Link onClick={() => { navigate('/movies') }}>
               Movies

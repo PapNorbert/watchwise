@@ -7,7 +7,7 @@ import {
 import { getMovieKeyByName } from '../db/movies_db.js'
 import { getSerieKeyByName } from '../db/series_db.js'
 import { createPaginationInfo } from '../util/util.js'
-import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
+import { createResponseDto, createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_dto.js'
 import { validateWatchGroupCreation } from '../util/watchGroupValidation.js'
 import { findUserByUsername } from '../db/users_db.js';
 import { checkEdgeExists, deleteJoinedEdge, insertJoinedEdge } from '../db/joined_group_db.js';
@@ -63,7 +63,7 @@ router.get('', async (request, response) => {
             getWatchGroupCount(),
           ]);
           response.json({
-            "data": createResponseDtos(watchGroups),
+            "data": createResponseDtosLoggedIn(watchGroups),
             "pagination": createPaginationInfo(page, limit, count)
           });
         } else {

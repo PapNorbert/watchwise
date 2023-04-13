@@ -14,7 +14,7 @@ export default function OpinionThreadsPage() {
       <OpinionThreadsTab />
       <Routes>
         <Route path='' element={<OpinionThreadsAll />} />
-        <Route path='/joined/:userId' element={<OpinionThreadsFollowed />} />
+        <Route path='/followed/:userId' element={<OpinionThreadsFollowed />} />
         <Route path='/my_threads/:userId' element={<OpinionThreadsMy />} />
         <Route path='/create' element={<OpinionThreadsCreate />} />
         <Route path='*' element={<Navigate to="/error-page" />} />

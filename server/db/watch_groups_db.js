@@ -7,7 +7,7 @@ export async function findWatchGroups(page, limit) {
   try {
     const aqlQuery = `FOR doc IN watch_groups
     LIMIT @offset, @count
-    RETURN doc`;
+    RETURN UNSET(doc, "comments")`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
@@ -24,7 +24,7 @@ export async function findWatchGroupsWithJoinedInformation(userId, page, limit) 
       FILTER edge._from == @from
       FILTER edge._to == doc._id
       LIMIT 1 RETURN true) > 0
-    RETURN { doc, joined: join }`;
+    RETURN { doc: UNSET(doc, "comments"), joined: join }`;
     const cursor = await pool.query(aqlQuery, { from: userId, offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
@@ -38,7 +38,7 @@ export async function findWatchGroupsByCreator(creator, page, limit) {
     const aqlQuery = `FOR doc IN watch_groups
     FILTER doc.creator == @creator
     LIMIT @offset, @count
-    RETURN doc`;
+    RETURN UNSET(doc, "comments")`;
     const cursor = await pool.query(aqlQuery, { creator: creator, offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {

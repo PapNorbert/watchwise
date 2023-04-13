@@ -82,6 +82,8 @@
   "series": "TV Series",
   "movies": "Movies",
   "imdb_link": "IMDB page",
-  "storyline" : "Storyline"
-
+  "storyline" : "Storyline",
+  "follow": "Follow",
+  "no_own_threads": "There are no threads created yet",
+  "no_followed_threads": "There are no followed threads"
 }

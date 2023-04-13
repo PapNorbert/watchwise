@@ -79,9 +79,12 @@
   "leave": "Kilépés",
   "no_joined_groups": "Nincsenek csatlakozott megtekintési csoportok",
   "loading": "Betöltés...",
-  "no_own_groups": "Még nincsenek létrehozva csoportok",
+  "no_own_groups": "Még nincsenek létrehozva saját csoportok",
   "series": "Sorozatok",
   "movies": "Filmek",
   "imdb_link": "IMDB oldal",
-  "storyline" : "Történet"
+  "storyline" : "Történet",
+  "follow": "Követés",
+  "no_own_threads": "Még nincsenek létrehozva saját threadek",
+  "no_followed_threads": "Nincsenek követett megtekintési threadek"
 }

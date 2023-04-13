@@ -7,8 +7,53 @@ export async function findOpinionThreads(page, limit) {
   try {
     const aqlQuery = `FOR doc IN opinion_threads
     LIMIT @offset, @count
-    RETURN doc`;
+    RETURN UNSET(doc, "comments")`;
     const cursor = await pool.query(aqlQuery, { offset: (page-1)*limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findOpinionThreadsWithFollowedInformation(userId, page, limit) {
+  try {
+    const aqlQuery = `FOR doc IN opinion_threads
+    LIMIT @offset, @count
+    LET follow = LENGTH(FOR edge IN follows_thread
+      FILTER edge._from == @from
+      FILTER edge._to == doc._id
+      LIMIT 1 RETURN true) > 0
+    RETURN { doc: UNSET(doc, "comments"), followed: follow }`;
+    const cursor = await pool.query(aqlQuery, { from: userId, offset: (page - 1) * limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findOpinionThreadsByCreator(creator, page, limit) {
+  try {
+    const aqlQuery = `FOR doc IN opinion_threads
+    FILTER doc.creator == @creator
+    LIMIT @offset, @count
+    RETURN UNSET(doc, "comments")`;
+    const cursor = await pool.query(aqlQuery, { creator: creator, offset: (page - 1) * limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findOpinionThreadsByUserFollowed(userId, page, limit) {
+  try {
+    const aqlQuery = `FOR vertex IN OUTBOUND
+    @userId follows_thread
+    LIMIT @offset, @count
+    RETURN vertex`;
+    const cursor = await pool.query(aqlQuery, { userId: userId, offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -41,6 +86,34 @@ export async function getOpinionThreadCount() {
       throw err;
     }
 
+}
+
+export async function getOpinionThreadCountByCreator(creator) {
+  try {
+    const aqlQuery = `RETURN LENGTH(
+      FOR doc IN opinion_threads
+        FILTER doc.creator == @creator
+        RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { creator: creator });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function getOpinionThreadCountByUserFollowed(userId) {
+  try {
+    const aqlQuery = `RETURN LENGTH(
+      FOR vertex IN OUTBOUND
+      @userId follows_thread
+        RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { userId: userId });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
 }
 
 export async function insertOpinionThread(opinionThreadDocument) {

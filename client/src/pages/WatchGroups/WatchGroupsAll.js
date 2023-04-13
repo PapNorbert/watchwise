@@ -12,9 +12,8 @@ export default function WatchGroupsAll() {
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   const [url, setUrl] = useState(`/api/watch_groups`);
-  const { data: watch_groups, error, statusCode } = useGetAxios(url);
-
   const { auth, setAuth, setLoginExpired } = useAuth()
+  const { data: watch_groups, error, statusCode } = useGetAxios(url);
   const location = useLocation();
 
   useEffect(() => {
@@ -33,11 +32,9 @@ export default function WatchGroupsAll() {
     return <Navigate to='/unauthorized' state={{ from: location }} replace />
   }
 
-
   if (error) {
     return <h2 className='error'>Sorry, there was an error</h2>
   }
-
 
   return (
     <>
