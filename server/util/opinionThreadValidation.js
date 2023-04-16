@@ -5,20 +5,20 @@ export async function validateOpinionTreadCreation(watchGroupJson) {
   let error = null
   let correct = true
 
-  if (watchGroupJson.title === "" || watchGroupJson.title === null) {
-    error = "empty_title";
+  if (watchGroupJson.title === '' || watchGroupJson.title === null) {
+    error = 'empty_title';
     correct = false;
   }
-  if (watchGroupJson.description === "" || watchGroupJson.description === null) {
-    error = "empty_description";
+  if (watchGroupJson.description === '' || watchGroupJson.description === null) {
+    error = 'empty_description';
     correct = false;
   }
-  if (watchGroupJson.creator === "" || watchGroupJson.creator === null) {
-    error = "creator_missing";
+  if (watchGroupJson.creator === '' || watchGroupJson.creator === null) {
+    error = 'creator_missing';
     correct = false;
   }
-  if (watchGroupJson.show === "" && watchGroupJson.show === null) {
-    error = "empty_show";
+  if (watchGroupJson.show === '' && watchGroupJson.show === null) {
+    error = 'empty_show';
     correct = false;
   }
 

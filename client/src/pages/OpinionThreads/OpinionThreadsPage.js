@@ -5,6 +5,7 @@ import OpinionThreadsAll from './OpinionThreadsAll'
 import OpinionThreadsCreate from './OpinionThreadsCreate'
 import OpinionThreadsMy from './OpinionThreadsMy'
 import OpinionThreadsFollowed from './OpinionThreadsFollowed'
+import OpinionThreadsDetailed from './OpinionThreadsDetailed'
 
 
 export default function OpinionThreadsPage() {
@@ -14,6 +15,7 @@ export default function OpinionThreadsPage() {
       <OpinionThreadsTab />
       <Routes>
         <Route path='' element={<OpinionThreadsAll />} />
+        <Route path='/:serieId' element={<OpinionThreadsDetailed />} />
         <Route path='/followed/:userId' element={<OpinionThreadsFollowed />} />
         <Route path='/my_threads/:userId' element={<OpinionThreadsMy />} />
         <Route path='/create' element={<OpinionThreadsCreate />} />

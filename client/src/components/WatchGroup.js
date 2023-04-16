@@ -49,39 +49,40 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
           </Button>
         }
       </Card.Header>
+      <Card.Body>
+        {Object.keys(watch_group).map((key, index) => {
+          if (key === 'show_type' || key === 'show_id' || key === 'title' || key === '_key') {
+            return null;
+          }
+          if (key === 'show') {
+            return (
+              <Row key={`${watch_group._key}_${index}`} className='justify-content-md-center'>
+                <Col xs lg={4} className='object-label' key={`${watch_group._key}_label${index}`} >
+                  {convertKeyToSelectedLanguage(key, i18nData)}
+                </Col>
+                <Col xs lg={7} key={`${watch_group._key}_value${index}`}  >
+                  <span className='btn btn-link p-0 link-dark' key={`${watch_group._key}_show_link_${index}`}
+                    onClick={() => navigate(`/${watch_group['show_type']}s/${watch_group['show_id']}`)}>
+                    {watch_group[key]}
+                  </span>
+                </Col>
 
-      {Object.keys(watch_group).map((key, index) => {
-        if (key === 'show_type' || key === 'show_id' || key === 'title' || key === '_key') {
-          return null;
-        }
-        if (key === 'show') {
+              </Row>
+            )
+          }
           return (
             <Row key={`${watch_group._key}_${index}`} className='justify-content-md-center'>
               <Col xs lg={4} className='object-label' key={`${watch_group._key}_label${index}`} >
                 {convertKeyToSelectedLanguage(key, i18nData)}
               </Col>
-              <Col xs lg={7} key={`${watch_group._key}_value${index}`}  >
-                <span className='btn btn-link p-0 link-dark' key={`${watch_group._key}_show_link_${index}`}
-                  onClick={() => navigate(`/${watch_group['show_type']}s/${watch_group['show_id']}`)}>
-                  {watch_group[key]}
-                </span>
+              <Col xs lg={7} key={`${watch_group._key}_value${index}`} >
+                {watch_group[key]}
               </Col>
 
             </Row>
-          )
-        }
-        return (
-          <Row key={`${watch_group._key}_${index}`} className='justify-content-md-center'>
-            <Col xs lg={4} className='object-label' key={`${watch_group._key}_label${index}`} >
-              {convertKeyToSelectedLanguage(key, i18nData)}
-            </Col>
-            <Col xs lg={7} key={`${watch_group._key}_value${index}`} >
-              {watch_group[key]}
-            </Col>
-
-          </Row>
-        );
-      })}
+          );
+        })}
+      </Card.Body>
     </Card>
   )
 }

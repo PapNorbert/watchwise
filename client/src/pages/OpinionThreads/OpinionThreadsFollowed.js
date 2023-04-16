@@ -18,8 +18,8 @@ export default function OpinionThreadsFollowed() {
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   const [url, setUrl] = useState(`/api/opinion_threads?userId=${userID}&followed=true`);
-  const { data: opinion_thread, error, statusCode, loading, refetch } = useGetAxios(url);
-  const { auth, setAuth, setLoginExpired } = useAuth()
+  const { auth, setAuth, setLoginExpired } = useAuth();
+  const { data: opinion_threads, error, statusCode, loading, refetch } = useGetAxios(url);
   const location = useLocation();
   const { i18nData } = useLanguage();
 
@@ -29,11 +29,11 @@ export default function OpinionThreadsFollowed() {
   }, [limit, page, userID])
 
   useEffect(() => {
-    if (opinion_thread?.data.length === 0) {
+    if (opinion_threads?.data.length === 0) {
       // if we get an empty page load the previous
       setPage(prev => prev > 1 ? prev - 1 : 1);
     }
-  }, [opinion_thread?.data])
+  }, [opinion_threads?.data])
 
 
   if (statusCode === 401) {
@@ -48,20 +48,18 @@ export default function OpinionThreadsFollowed() {
   }
 
   if (loading) {
-    return <h3 className='error'>{convertKeyToSelectedLanguage('loading',i18nData)}</h3>
+    return <h3 className='loading'>{convertKeyToSelectedLanguage('loading',i18nData)}</h3>
   }
 
   if (error) {
-    return <h2 className='error'>Sorry, there was an error</h2>
+    return <h2 className='error'>{convertKeyToSelectedLanguage('error', i18nData)}</h2>
   }
-
-
-  return (
+  return ( opinion_threads &&
     <>
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
-      {opinion_thread?.data.length > 0 ?
+      {opinion_threads?.data.length > 0 ?
         // there are elements returned
-        opinion_thread?.data.map(currentElement => {
+        opinion_threads?.data.map(currentElement => {
           return (
             <OpinionThread opinion_thread={currentElement} buttonType='leave'
               removeOnLeave={true} refetch={refetch} key={currentElement._key} />
@@ -71,7 +69,7 @@ export default function OpinionThreadsFollowed() {
         <h2>{convertKeyToSelectedLanguage('no_followed_threads',i18nData)}</h2>
       }
       <PaginationElements currentPage={page}
-        totalPages={opinion_thread?.pagination.totalPages}
+        totalPages={opinion_threads?.pagination.totalPages}
         onPageChange={setPage} key='pagination' />
     </>
   )

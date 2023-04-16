@@ -52,11 +52,11 @@ export default function WatchGroupsJoined() {
   }
 
   if (error) {
-    return <h2 className='error'>Sorry, there was an error</h2>
+    return <h2 className='error'>{convertKeyToSelectedLanguage('error', i18nData)}</h2>
   }
 
 
-  return (
+  return ( watch_groups &&
     <>
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
       {watch_groups?.data.length > 0 ?

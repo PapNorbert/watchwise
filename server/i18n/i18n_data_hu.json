@@ -86,5 +86,12 @@
   "storyline" : "Történet",
   "follow": "Követés",
   "no_own_threads": "Még nincsenek létrehozva saját threadek",
-  "no_followed_threads": "Nincsenek követett megtekintési threadek"
+  "no_followed_threads": "Nincsenek követett megtekintési threadek",
+  "error": "Elnézést, hiba történt",
+  "comment_write": "Hozzászólás írása...",
+  "add_comment" : "Hozzászólás közzététele",
+  "cancel": "Törlés",
+  "empty_comment": "A hozzászólás nem lehet üres",
+  "no_user_for_comment": "Nincs felhasználó megadva a hozzászóláshoz",
+  "limit_p_pg": "Oldalonkénti korlát"
 }

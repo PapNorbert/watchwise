@@ -6,15 +6,18 @@ import Limit from '../../components/Limit'
 import PaginationElements from '../../components/PaginationElements'
 import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
+import useLanguage from '../../hooks/useLanguage'
+import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 
 
 export default function OpinionThreadsAll() {
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   const [url, setUrl] = useState(`/api/opinion_threads`);
-  const { auth, setAuth, setLoginExpired } = useAuth()
+  const { auth, setAuth, setLoginExpired } = useAuth();
   const { data: opinion_threads, error, statusCode } = useGetAxios(url);
   const location = useLocation();
+  const { i18nData } = useLanguage();
 
   useEffect(() => {
     setUrl(`/api/opinion_threads/?page=${page}&limit=${limit}`);
@@ -33,7 +36,7 @@ export default function OpinionThreadsAll() {
   }
 
   if (error) {
-    return <h2 className='error'>Sorry, there was an error</h2>
+    return <h2 className='error'>{convertKeyToSelectedLanguage('error', i18nData)}</h2>
   }
 
   return ( opinion_threads &&
@@ -42,10 +45,12 @@ export default function OpinionThreadsAll() {
       {opinion_threads?.data.map(currentElement => {
         return (
           <OpinionThread opinion_thread={
-            auth.logged_in ? currentElement?.doc : currentElement
+            currentElement?.doc ? currentElement?.doc : currentElement
           } buttonType={
-            auth.logged_in ? (currentElement?.followed ? 'leave' : 'follow') : null
-          } key={currentElement._key} />
+            currentElement?.doc ? (currentElement?.followed ? 'leave' : 'follow') : null
+          } key={
+            currentElement?.doc ? currentElement?.doc._key : currentElement._key
+          } />
         );
       })}
       <PaginationElements currentPage={page}

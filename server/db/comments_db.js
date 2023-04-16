@@ -30,6 +30,22 @@ export async function findCommentByKey(thread_id, key) {
   }
 }
 
+export async function getCommentCountForThreadByKey(thread_id) {
+  try {
+    const aqlQuery = `RETURN LENGTH(
+      FOR doc IN opinion_threads
+        FILTER doc._key == @thread_key
+        FOR comment in doc.comments
+            RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { thread_key: thread_id });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+
 export async function insertComment(thread_id, commentJson) {
   try {
     const aqlQuery = `FOR doc IN opinion_threads

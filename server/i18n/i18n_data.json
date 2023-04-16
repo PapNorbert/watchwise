@@ -28,7 +28,7 @@
   "creator": "Creator",
   "show": "TV-Show",
   "description": "Description",
-  "creation_date": "Creation date",
+  "creation_date": "Created on",
   "comments": "Comments",
   "watch_date": "Watch date",
   "location": "Location",
@@ -85,5 +85,12 @@
   "storyline" : "Storyline",
   "follow": "Follow",
   "no_own_threads": "There are no threads created yet",
-  "no_followed_threads": "There are no followed threads"
+  "no_followed_threads": "There are no followed threads",
+  "error": "Sorry, there was an error",
+  "comment_write": "Write a comment...",
+  "add_comment" : "Add your comment",
+  "cancel": "Cancel",
+  "empty_comment": "The comment cannot be empty",
+  "no_user_for_comment": "No user specified for comment",
+  "limit_p_pg": "Limit per page"
 }

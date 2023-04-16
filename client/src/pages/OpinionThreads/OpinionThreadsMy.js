@@ -41,10 +41,10 @@ export default function OpinionsThreadsMy() {
   }
 
   if (error) {
-    return <h2 className='error'>Sorry, there was an error</h2>
+    return <h2 className='error'>{convertKeyToSelectedLanguage('error', i18nData)}</h2>
   }
 
-  return (
+  return ( opinion_threads &&
     <>
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
       {opinion_threads?.data.length > 0 ?

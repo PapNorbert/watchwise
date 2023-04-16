@@ -17,46 +17,47 @@ export default function Movie({ movie }) {
           {convertKeyToSelectedLanguage('details', i18nData)}
         </Button>
       </Card.Header>
+      <Card.Body>
+        <Stack direction='horizontal'>
+          <img className='cover_img' src={`${process.env.PUBLIC_URL}/covers/${movie.img_name}`} alt={`${movie.title}_cover`} />
+          <Stack direction='vertical' className='mt-5'>
 
-      <Stack direction='horizontal'>
-        <img className='cover_img' src={`${process.env.PUBLIC_URL}/covers/${movie.img_name}`} alt={`${movie.title}_cover`} />
-        <Stack direction='vertical' className='mt-5'>
-
-          {Object.keys(movie).map((key, index) => {
-            if (key === '_key' || key === 'title' || key === 'img_name') {
-              return null;
-            }
-            if (key === 'release_date') {
+            {Object.keys(movie).map((key, index) => {
+              if (key === '_key' || key === 'title' || key === 'img_name') {
+                return null;
+              }
+              if (key === 'release_date') {
+                return (
+                  movie[key].map((value, indexNr) => {
+                    // value is an array
+                    return (
+                      <Row key={`${movie._key}_${index}_${indexNr}`} className='justify-content-md-center mb-1'>
+                        <Col xs lg={4} className='object-label' key={`${movie._key}_label${index}_${indexNr}`} >
+                          {indexNr === 0 && convertKeyToSelectedLanguage(key, i18nData)}
+                        </Col>
+                        <Col xs lg={7} key={`${movie._key}_value${index}_${indexNr}`} >
+                          {value}
+                        </Col>
+                      </Row>
+                    )
+                  })
+                );
+              }
               return (
-                movie[key].map((value, indexNr) => {
-                  // value is an array
-                  return (
-                    <Row key={`${movie._key}_${index}_${indexNr}`} className='justify-content-md-center mb-1'>
-                      <Col xs lg={4} className='object-label' key={`${movie._key}_label${index}_${indexNr}`} >
-                        {indexNr === 0 && convertKeyToSelectedLanguage(key, i18nData)}
-                      </Col>
-                      <Col xs lg={7} key={`${movie._key}_value${index}_${indexNr}`} >
-                        {value}
-                      </Col>
-                    </Row>
-                  )
-                })
-              );
-            }
-            return (
-              <Row key={`${movie._key}_${index}`} className='justify-content-md-center mb-1'>
-                <Col xs lg={4} className='object-label' key={`${movie._key}_label${index}`} >
-                  {convertKeyToSelectedLanguage(key, i18nData)}
-                </Col>
-                <Col xs lg={7} key={`${movie._key}_value${index}`} >
-                  {movie[key]}
-                </Col>
+                <Row key={`${movie._key}_${index}`} className='justify-content-md-center mb-1'>
+                  <Col xs lg={4} className='object-label' key={`${movie._key}_label${index}`} >
+                    {convertKeyToSelectedLanguage(key, i18nData)}
+                  </Col>
+                  <Col xs lg={7} key={`${movie._key}_value${index}`} >
+                    {movie[key]}
+                  </Col>
 
-              </Row>
-            );
-          })}
+                </Row>
+              );
+            })}
+          </Stack>
         </Stack>
-      </Stack>
+      </Card.Body>
     </Card>
   )
 }

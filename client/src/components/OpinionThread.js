@@ -15,7 +15,7 @@ export default function OpinionThread({ opinion_thread, buttonType, removeOnLeav
   const { auth } = useAuth();
   const { i18nData } = useLanguage();
 
-  async function handleButtonClicked(e) {
+  async function handleFollowesButtonClicked(e) {
     if (e.target.textContent === convertKeyToSelectedLanguage('follow', i18nData)
       || e.target.textContent === convertKeyToSelectedLanguage('leave', i18nData)) {
       const { errorMessage, statusCode } = await postRequest(`/api/opinion_threads/${opinion_thread._key}/followes`);
@@ -43,44 +43,51 @@ export default function OpinionThread({ opinion_thread, buttonType, removeOnLeav
       <Card.Header as='h5' key={`header${opinion_thread._key}`} >
         {opinion_thread.title}
         {auth.logged_in &&
-          <Button className='btn btn-orange float-end' onClick={handleButtonClicked} key={`${opinion_thread._key}button`} >
+          <Button className='btn btn-orange float-end mx-2' onClick={handleFollowesButtonClicked}
+            key={`${opinion_thread._key}_follows_button`} >
             {convertKeyToSelectedLanguage(buttonType, i18nData)}
           </Button>
         }
+        <Button className='btn btn-orange float-end mx-2' onClick={() => navigate(`/opinion_threads/${opinion_thread._key}`)}
+          key={`${opinion_thread._key}_details_button`} >
+          {convertKeyToSelectedLanguage('details', i18nData)}
+        </Button>
       </Card.Header>
 
-      {Object.keys(opinion_thread).map((key, index) => {
-        if (key === 'show_type' || key === 'show_id' || key === 'title' || key === '_key') {
-          return null;
-        }
-        if (key === 'show') {
+      <Card.Body>
+        {Object.keys(opinion_thread).map((key, index) => {
+          if (key === 'show_type' || key === 'show_id' || key === 'title' || key === '_key') {
+            return null;
+          }
+          if (key === 'show') {
+            return (
+              <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center'>
+                <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label${index}`} >
+                  {convertKeyToSelectedLanguage(key, i18nData)}
+                </Col>
+                <Col xs lg={7} key={`${opinion_thread._key}_value${index}`} >
+                  <span className='btn btn-link p-0 link-dark' key={`${opinion_thread._key}_show_link_${index}`}
+                    onClick={() => navigate(`/${opinion_thread['show_type']}s/${opinion_thread['show_id']}`)}>
+                    {opinion_thread[key]}
+                  </span>
+                </Col>
+
+              </Row>
+            )
+          }
           return (
             <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center'>
               <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label${index}`} >
                 {convertKeyToSelectedLanguage(key, i18nData)}
               </Col>
               <Col xs lg={7} key={`${opinion_thread._key}_value${index}`} >
-                <span className='btn btn-link p-0 link-dark' key={`${opinion_thread._key}_show_link_${index}`}
-                  onClick={() => navigate(`/${opinion_thread['show_type']}s/${opinion_thread['show_id']}`)}>
-                  {opinion_thread[key]}
-                </span>
+                {opinion_thread[key]}
               </Col>
 
             </Row>
-          )
-        }
-        return (
-          <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center'>
-            <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label${index}`} >
-              {convertKeyToSelectedLanguage(key, i18nData)}
-            </Col>
-            <Col xs lg={7} key={`${opinion_thread._key}_value${index}`} >
-              {opinion_thread[key]}
-            </Col>
-
-          </Row>
-        );
-      })}
+          );
+        })}
+      </Card.Body>
     </Card>
   )
 }

@@ -19,29 +19,30 @@ export default function Serie({ serie }) {
         </Button>
       </Card.Header>
 
+      <Card.Body>
+        <Stack direction='horizontal'>
+          <img className='cover_img' src={`${process.env.PUBLIC_URL}/covers/${serie.img_name}`} alt={`${serie.title}_cover`} />
+          <Stack direction='vertical' className='mt-5'>
 
-      <Stack direction='horizontal'>
-        <img className='cover_img' src={`${process.env.PUBLIC_URL}/covers/${serie.img_name}`} alt={`${serie.title}_cover`} />
-        <Stack direction='vertical' className='mt-5'>
+            {Object.keys(serie).map((key, index) => {
+              if (key === '_key' || key === 'title' || key === 'img_name') {
+                return null;
+              }
+              return (
+                <Row key={`${serie._key}_${index}`} className='justify-content-md-center'>
+                  <Col xs lg={4} className='object-label' key={`${serie._key}_label${index}`} >
+                    {convertKeyToSelectedLanguage(key, i18nData)}
+                  </Col>
+                  <Col xs lg={7} key={`${serie._key}_value${index}`} >
+                    {serie[key]}
+                  </Col>
 
-          {Object.keys(serie).map((key, index) => {
-            if (key === '_key' || key === 'title' || key === 'img_name') {
-              return null;
-            }
-            return (
-              <Row key={`${serie._key}_${index}`} className='justify-content-md-center'>
-                <Col xs lg={4} className='object-label' key={`${serie._key}_label${index}`} >
-                  {convertKeyToSelectedLanguage(key, i18nData)}
-                </Col>
-                <Col xs lg={7} key={`${serie._key}_value${index}`} >
-                  {serie[key]}
-                </Col>
-
-              </Row>
-            );
-          })}
+                </Row>
+              );
+            })}
+          </Stack>
         </Stack>
-      </Stack>
+      </Card.Body>
     </Card>
   )
 }

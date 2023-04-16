@@ -37,7 +37,7 @@ export default function MoviesAll() {
 
 
   if (error) {
-    return <h2 className='error'>Sorry, there was an error</h2>
+    return <h2 className='error'>{convertKeyToSelectedLanguage('error', i18nData)}</h2>
   }
 
 
