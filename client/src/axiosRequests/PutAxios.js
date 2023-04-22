@@ -1,29 +1,27 @@
 import axios from './configuredAxios'
 
 
-export async function postRequest(url, body) {
+export async function putRequest(url, body) {
   let error = true;
-  let data = null;
   let statusCode = null;
   let errorMessage = null;
-  if (body !== null && body !=='' && url !== null && url !=='') {
+  if (body !== null && body !== '' && url !== null && url !== '') {
     try {
-      const response = await axios.post(url, body);
+      const response = await axios.put(url, body);
       statusCode = response.status;
-      data = response.data;
       error = false;
-    } catch(err) {
+    } catch (err) {
       statusCode = err.response.status;
       if (statusCode === 400 || statusCode === 401 || statusCode === 404) {
         errorMessage = err.response.data.error;
       } else {
         console.log('Error during post request', err.message);
-      }   
+      }
     }
   } else {
     console.log('Error: Empty body or url');
   }
-  return { data, error, errorMessage, statusCode }
+  return { error, errorMessage, statusCode }
 }
 
-  
+

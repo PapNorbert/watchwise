@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Form, FloatingLabel, Alert, Button } from 'react-bootstrap'
+import { Form, FloatingLabel, Alert, Button, Container, Row, Nav } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 
 import FormContainer from '../../components/FormContainer'
@@ -18,6 +18,7 @@ export default function WatchGroupsCreate() {
     'watch_date': '',
     'location': ''
   }
+  const [createdId, setCreatedId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
@@ -63,6 +64,7 @@ export default function WatchGroupsCreate() {
         .then((res) => {
           if (!res.error && res.statusCode === 201) {
             // 201 expected
+            setCreatedId(res.data.id);
             created = true;
             // Clear form inputs
             setForm(emptyForm);
@@ -143,7 +145,16 @@ export default function WatchGroupsCreate() {
           {convertKeyToSelectedLanguage(submitError, i18nData)}
         </Alert>
         <Alert key='success' variant='success' show={succesfullCreated} onClose={() => setSuccesfullCreated(false)} dismissible >
-          {convertKeyToSelectedLanguage('wg_succesfull_created', i18nData)}
+          <Container>
+            <Row>
+              {convertKeyToSelectedLanguage('ot_succesfull_created', i18nData)}
+            </Row>
+            <Row className='mx-3'>
+              <Nav.Link onClick={() => { navigate(`/watch_groups/${createdId}`) }}>
+                {convertKeyToSelectedLanguage('go_to_page', i18nData)}
+              </Nav.Link>
+            </Row>
+          </Container>
         </Alert>
 
         <Button type='submit' variant='secondary' className='col-md-6 offset-md-3 mb-5'>

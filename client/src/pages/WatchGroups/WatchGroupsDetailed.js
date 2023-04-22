@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useLocation, useParams, Navigate } from "react-router-dom"
 
-import OpinionThreadDetails from '../../components/OpinionThreadDetails'
+import WatchGroupDetails from '../../components/WatchGroupDetails'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
 import useGetAxios from '../../hooks/useGetAxios'
@@ -9,13 +9,13 @@ import useAuth from '../../hooks/useAuth'
 import { buttonTypes } from '../../util/buttonTypes'
 
 
-export default function OpinionThreadsDetailed() {
+export default function WatchGroupsDetailed() {
 
-  const { opinionThreadId } = useParams();
+  const { watchGroupId } = useParams();
   const { i18nData } = useLanguage();
   const { auth, setAuth, setLoginExpired } = useAuth();
-  const [url, setUrl] = useState(`/api/opinion_threads/${opinionThreadId}`);
-  const { data: opinion_thread, error, loading, statusCode, refetch } = useGetAxios(url);
+  const [url, setUrl] = useState(`/api/watch_groups/${watchGroupId}`);
+  const { data: watch_group, error, loading, statusCode, refetch } = useGetAxios(url);
   const location = useLocation();
 
 
@@ -31,7 +31,7 @@ export default function OpinionThreadsDetailed() {
   }
 
   if (statusCode === 404) {
-    return <h3 className='error text-center'>{convertKeyToSelectedLanguage('404_thread', i18nData)}</h3>
+    return <h3 className='error text-center'>{convertKeyToSelectedLanguage('404_group', i18nData)}</h3>
   }
 
   if (loading) {
@@ -43,14 +43,14 @@ export default function OpinionThreadsDetailed() {
   }
 
 
-  return (opinion_thread &&
-    <OpinionThreadDetails opinion_thread={
-      opinion_thread?.data?.doc ? opinion_thread?.data?.doc : opinion_thread?.data
+  return (watch_group &&
+    <WatchGroupDetails watch_group={
+      watch_group?.data?.doc ? watch_group?.data?.doc : watch_group?.data
     } buttonType={
-      opinion_thread?.data?.doc ? (opinion_thread?.data?.followed ? buttonTypes.leave : buttonTypes.follow) : null
+      watch_group?.data?.doc ? (watch_group?.data?.joined ? buttonTypes.leave : buttonTypes.join) : null
     } key={
-      opinion_thread?.data?.doc ? opinion_thread?.data?.doc._key : opinion_thread?.data._key
-    } setUrl={setUrl} totalPages={opinion_thread?.pagination.totalPages}
+      watch_group?.data?.doc ? watch_group?.data?.doc._key : watch_group?.data._key
+    } setUrl={setUrl} totalPages={watch_group?.pagination.totalPages}
       refetch={refetch}
     />
   );

@@ -8,6 +8,7 @@ import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
 import useLanguage from '../../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
+import { buttonTypes } from '../../util/buttonTypes'
 
 
 export default function WatchGroupsAll() {
@@ -42,12 +43,21 @@ export default function WatchGroupsAll() {
   return (watch_groups &&
     <>
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
+      <PaginationElements currentPage={page}
+        totalPages={watch_groups?.pagination.totalPages}
+        onPageChange={setPage} key='pagination-top' />
       {watch_groups?.data.map(currentElement => {
         return (
           <WatchGroup watch_group={
             currentElement?.doc ? currentElement?.doc : currentElement
           } buttonType={
-            currentElement?.doc ? (currentElement?.joined ? 'leave' : 'join') : null
+            currentElement?.doc ?
+              // logged in
+              currentElement.doc.creator === auth.username ?
+                // own thread
+                buttonTypes.manage :
+                // not own thread
+                (currentElement?.joined ? buttonTypes.leave : buttonTypes.join) : null
           } key={
             currentElement?.doc ? currentElement?.doc._key : currentElement._key
           } />
@@ -55,7 +65,7 @@ export default function WatchGroupsAll() {
       })}
       <PaginationElements currentPage={page}
         totalPages={watch_groups?.pagination.totalPages}
-        onPageChange={setPage} key='pagination' />
+        onPageChange={setPage} key='pagination-bottom' />
     </>
   )
 }

@@ -37,7 +37,7 @@ router.get('', async (request, response) => {
         });
       }
     } else {
-      response.status(400).json({ error: "Bad paging information!" })
+      response.status(400).json({ error: "bad_paging" })
     }
   } catch (err) {
     console.log(err);
@@ -71,7 +71,7 @@ router.get('/:id', async (request, response) => {
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({ error: "Bad request parameter, not a number!" });
+    response.json({ error: "bad_req_par_number" });
   }
 
 });
@@ -117,7 +117,7 @@ router.put('/:id', async (request, response) => {
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({ error: "Bad request parameter, not a number!" });
+    response.json({ error: "bad_req_par_number" });
   }
 
 });
@@ -143,7 +143,7 @@ router.delete('/:id', async (request, response) => {
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({ error: "Bad request parameter, not a number!" });
+    response.json({ error: "bad_req_par_number" });
   }
 
 });

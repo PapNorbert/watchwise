@@ -187,6 +187,7 @@ export async function getOpinionThreadCountByUserFollowed(userId) {
   }
 }
 
+
 export async function insertOpinionThread(opinionThreadDocument) {
   try {
     const cursor = await opinionThreadCollection.save(opinionThreadDocument);
@@ -213,19 +214,18 @@ export async function updateOpinionThread(key, newOpinionThreadAttributes) {
   }
 }
 
-export async function deleteOpinionThread(key) {
+export async function deleteOpinionThreadAndEdges(key) {
   try {
-    const cursor = await opinionThreadCollection.remove({ _key: key });
+    const aqlQuery = `REMOVE {_key: @key } IN opinion_threads
+    FOR edge in follows_thread
+        FILTER edge._to == @to
+        REMOVE edge IN follows_thread 
+    RETURN true`;
+    const cursor = await pool.query(aqlQuery, { key: key, to: ('opinion_threads/' + key) });
     return true;
   } catch (err) {
-    if (err.message == "document not found") {
-      console.log(`Warning for opinionThread document with _key ${key} during delete request: `, err.message);
-      return false;
-    } else {
-      console.log(err);
-      throw err;
-    }
-
+    console.log(err.message);
+    throw err.message;
   }
 }
 

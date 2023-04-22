@@ -6,16 +6,19 @@ import OpinionThreadsCreate from './OpinionThreadsCreate'
 import OpinionThreadsMy from './OpinionThreadsMy'
 import OpinionThreadsFollowed from './OpinionThreadsFollowed'
 import OpinionThreadsDetailed from './OpinionThreadsDetailed'
-
+import useLanguage from '../../hooks/useLanguage'
+import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 
 export default function OpinionThreadsPage() {
+  const { i18nData } = useLanguage();
+
   return (
     <>
-      <h2>Opinion Threads</h2>
+      <h2>{convertKeyToSelectedLanguage('opinion_threads', i18nData)}</h2>
       <OpinionThreadsTab />
       <Routes>
         <Route path='' element={<OpinionThreadsAll />} />
-        <Route path='/:serieId' element={<OpinionThreadsDetailed />} />
+        <Route path='/:opinionThreadId' element={<OpinionThreadsDetailed />} />
         <Route path='/followed/:userId' element={<OpinionThreadsFollowed />} />
         <Route path='/my_threads/:userId' element={<OpinionThreadsMy />} />
         <Route path='/create' element={<OpinionThreadsCreate />} />

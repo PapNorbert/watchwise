@@ -29,27 +29,29 @@ function Navigationbar() {
   }
 
   return (
-    <Navbar bg='customColor' sticky='top'>
-      <Container>
-        <Navbar.Collapse>
-          <Navbar.Brand>
-            WatchWise
-          </Navbar.Brand>
+    <Navbar collapseOnSelect expand='md' bg='customColor' sticky='top' >
+      <Container fluid className='mx-5'>
+        <Navbar.Brand>
+          WatchWise
+        </Navbar.Brand>
+
+        <Navbar.Toggle aria-controls='navbar-nav' />
+        <Navbar.Collapse id='navbar-nav'>
           <Nav className='me-auto'>
-            <Nav.Link onClick={() => { navigate('/'); }}>
-              Home
+            <Nav.Link eventKey='home' onClick={() => { navigate('/'); }}>
+              {convertKeyToSelectedLanguage('home', i18nData)}
             </Nav.Link>
-            <Nav.Link onClick={() => { navigate('/watch_groups') }}>
-              Watch Groups
+            <Nav.Link eventKey='watch_groups' onClick={() => { navigate('/watch_groups') }}>
+              {convertKeyToSelectedLanguage('watch_groups', i18nData)}
             </Nav.Link>
-            <Nav.Link onClick={() => { navigate('/opinion_threads') }}>
-              Opinion Threads
+            <Nav.Link eventKey='opinion_threads' onClick={() => { navigate('/opinion_threads') }}>
+              {convertKeyToSelectedLanguage('opinion_threads', i18nData)}
             </Nav.Link>
-            <Nav.Link onClick={() => { navigate('/movies') }}>
-              Movies
+            <Nav.Link eventKey='movies' onClick={() => { navigate('/movies') }}>
+              {convertKeyToSelectedLanguage('movies', i18nData)}
             </Nav.Link>
-            <Nav.Link onClick={() => { navigate('/series') }}>
-              TV Series
+            <Nav.Link eventKey='series' onClick={() => { navigate('/series') }}>
+              {convertKeyToSelectedLanguage('series', i18nData)}
             </Nav.Link>
           </Nav>
         </Navbar.Collapse>
@@ -57,7 +59,7 @@ function Navigationbar() {
         {!auth.logged_in &&
           <>
             <Nav.Link className='me-4' onClick={() => { navigate('/login') }}>
-              Login
+            {convertKeyToSelectedLanguage('login', i18nData)}
             </Nav.Link>
             {/* <Nav.Link className='me-4' onClick={() => { navigate('/register') }}>
               Register
@@ -72,14 +74,14 @@ function Navigationbar() {
             </Navbar.Text>
             <NavDropdown title={auth.username} className='me-4'>
               <NavDropdown.Item onClick={logout}>
-              {convertKeyToSelectedLanguage('log_out', i18nData)}
+                {convertKeyToSelectedLanguage('log_out', i18nData)}
               </NavDropdown.Item>
             </NavDropdown>
           </>
         }
 
-        <Form className="d-flex m">
-          <Form.Select aria-label='Default select example' className='lang-input'
+        <Form className='d-flex'>
+          <Form.Select aria-label='Default select example' className='lang-select'
             onChange={(e) => { setLanguage(e.target.value) }}
             defaultValue={language}>
             <option value='eng'>English</option>

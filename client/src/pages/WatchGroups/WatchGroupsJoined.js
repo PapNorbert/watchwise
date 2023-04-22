@@ -9,7 +9,7 @@ import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
-
+import { buttonTypes } from '../../util/buttonTypes'
 
 
 export default function WatchGroupsJoined() {
@@ -48,31 +48,33 @@ export default function WatchGroupsJoined() {
   }
 
   if (loading) {
-    return <h3 className='error'>{convertKeyToSelectedLanguage('loading',i18nData)}</h3>
+    return <h3 className='loading'>{convertKeyToSelectedLanguage('loading', i18nData)}</h3>
   }
 
   if (error) {
     return <h2 className='error'>{convertKeyToSelectedLanguage('error', i18nData)}</h2>
   }
 
-
-  return ( watch_groups &&
+  return (watch_groups &&
     <>
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
+      <PaginationElements currentPage={page}
+        totalPages={watch_groups?.pagination.totalPages}
+        onPageChange={setPage} key='pagination-top' />
       {watch_groups?.data.length > 0 ?
         // there are elements returned
         watch_groups?.data.map(currentElement => {
           return (
-            <WatchGroup watch_group={currentElement} buttonType='leave'
+            <WatchGroup watch_group={currentElement} buttonType={buttonTypes.leave}
               removeOnLeave={true} refetch={refetch} key={currentElement._key} />
           );
         }) :
         // no elements returned
-        <h2>{convertKeyToSelectedLanguage('no_joined_groups',i18nData)}</h2>
+        <h2>{convertKeyToSelectedLanguage('no_joined_groups', i18nData)}</h2>
       }
       <PaginationElements currentPage={page}
         totalPages={watch_groups?.pagination.totalPages}
-        onPageChange={setPage} key='pagination' />
+        onPageChange={setPage} key='pagination-bottom' />
     </>
   )
 }

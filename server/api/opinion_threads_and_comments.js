@@ -2,28 +2,25 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import {
   insertOpinionThread, findOpinionThreadByKey, findOpinionThreads, updateOpinionThread,
-  deleteOpinionThread, getOpinionThreadCount, findOpinionThreadsWithFollowedInformation,
+  deleteOpinionThreadAndEdges, getOpinionThreadCount, findOpinionThreadsWithFollowedInformation,
   findOpinionThreadsByCreator, findOpinionThreadsByUserFollowed,
   getOpinionThreadCountByCreator, getOpinionThreadCountByUserFollowed,
   findOpinionThreadByKeyWithFollowedInformation, findOpinionThreadByKeyWithoutComments
 } from '../db/opinion_threads_db.js'
-import { checkMovieExistsWithName, getMovieKeyByName } from '../db/movies_db.js'
-import { checkSeriesExistsWithName, getSerieKeyByName } from '../db/series_db.js'
+import { getMovieKeyByName } from '../db/movies_db.js'
+import { getSerieKeyByName } from '../db/series_db.js'
 import {
   findComments, findCommentByKey, insertComment, deleteComment,
-  getCommentCountForThreadByKey
+  getCommentCountForThreadByKey, updateComment
 } from '../db/comments_db.js'
 import {
   checkEdgeExists, insertFollowedEdge, deleteFollowedEdge
 } from '../db/followed_thread_db.js'
 import { findUserByUsername } from '../db/users_db.js'
 import { createPaginationInfo } from '../util/util.js'
-import { validateCommentCreation } from '../util/commentValidation.js'
+import { createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_dto.js'
 import { validateOpinionTreadCreation } from '../util/opinionThreadValidation.js'
-import {
-  createResponseDto, createResponseDtos,
-  createResponseDtosLoggedIn, createResponseDtoLoggedIn
-} from '../dto/outgoing_dto.js'
+import { validateCommentCreation } from '../util/commentValidation.js'
 
 
 const router = express.Router();
@@ -38,7 +35,7 @@ router.get('/:thread_id/comments', async (request, response) => {
   if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
     const thread_id = request.params.thread_id;
     try {
-      const comments = await findComments(thread_id);
+      const comments = await findComments(thread_id, 'opinion_threads');
       response.json(comments);
     } catch (err) {
       console.log(err);
@@ -50,7 +47,7 @@ router.get('/:thread_id/comments', async (request, response) => {
 
   } else { // incorrect parameter
     response.status(400);
-    response.json({ error: 'Bad request parameter, not a number!' });
+    response.json({ error: 'bad_req_par_number' });
   }
 
 });
@@ -63,7 +60,7 @@ router.get('/:thread_id/comments/:id', async (request, response) => {
     const thread_id = request.params.thread_id;
     const id = request.params.id;
     try {
-      const comments = await findCommentByKey(thread_id, id);
+      const comments = await findCommentByKey(thread_id, id, 'opinion_threads');
       if (comments[0]) {
         response.json(comments[0]);
       } else { // no entity found with id
@@ -79,7 +76,7 @@ router.get('/:thread_id/comments/:id', async (request, response) => {
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({ error: 'Bad request parameter, not a number!' });
+    response.json({ error: 'bad_req_par_number' });
   }
 
 });
@@ -94,7 +91,7 @@ router.post('/:thread_id/comments', async (request, response) => {
       if (correct) {
         commentJson.creation_date = new Date(Date.now());
         commentJson.key = uuidv4();
-        const id = await insertComment(thread_id, commentJson);
+        const id = await insertComment(thread_id, commentJson, 'opinion_threads');
         response.status(201).json({ id: id });
       } else { // invalid comment
         response.status(400).json({
@@ -106,7 +103,40 @@ router.post('/:thread_id/comments', async (request, response) => {
       response.status(400).json({ error: 'error' });
     }
   } else { // incorrect parameter
-    response.status(400).json({ error: 'Bad request parameter, not a number!' });
+    response.status(400).json({ error: 'bad_req_par_number' });
+  }
+
+});
+
+router.put('/:thread_id/comments/:id', async (request, response) => {
+  response.set('Content-Type', 'application/json');
+  response.status(204);
+  if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
+    const thread_id = request.params.thread_id;
+    const id = request.params.id;
+    let commentJson = request.body;
+    if (commentJson.text === undefined || commentJson.text === '') {
+      response.status(400);
+      response.json({ error: 'empty_comment' });
+    } else {
+      try {
+        const succesfull = await updateComment(thread_id, id, commentJson.text, 'opinion_threads');
+        // can only update the text
+        if (!succesfull) {
+          response.status(404);
+        }
+        response.end();
+      } catch (err) {
+        console.log(err);
+        response.status(400);
+        response.json({
+          error: err.message
+        });
+      }
+    }
+  } else { // incorrect parameter
+    response.status(400);
+    response.json({ error: 'bad_req_par_number' });
   }
 
 });
@@ -119,7 +149,7 @@ router.delete('/:thread_id/comments/:id', async (request, response) => {
     const thread_id = request.params.thread_id;
     const id = request.params.id;
     try {
-      const succesfull = await deleteComment(thread_id, id);
+      const succesfull = await deleteComment(thread_id, id, 'opinion_threads');
       if (!succesfull) {
         response.status(404);
       }
@@ -134,7 +164,7 @@ router.delete('/:thread_id/comments/:id', async (request, response) => {
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({ error: 'Bad request parameter, not a number!' });
+    response.json({ error: 'bad_req_par_number' });
   }
 
 });
@@ -207,7 +237,7 @@ router.get('', async (request, response) => {
 
       }
     } else {
-      response.status(400).json({ error: 'Bad paging information!' });
+      response.status(400).json({ error: 'bad_paging' });
     }
   } catch (err) {
     console.log(err);
@@ -262,18 +292,17 @@ router.get('/:thread_id', async (request, response) => {
         }
       } else {
         // page and limit not numbers
-        response.status(400).json({ error: 'Bad paging information!' })
+        response.status(400).json({ error: 'bad_paging' })
       }
     } catch (err) {
       console.log(err.message);
-      response.status(400);
-      response.json({
+      response.status(400).json({
         error: err.message
       });
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({ error: 'Bad request parameter, not a number!' });
+    response.json({ error: 'bad_req_par_number' });
   }
 
 });
@@ -356,7 +385,7 @@ router.post('/:thread_id/followes', async (request, response) => {
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({ error: 'Bad request parameter, not a number!' });
+    response.json({ error: 'bad_req_par_number' });
   }
 
 });
@@ -369,21 +398,34 @@ router.put('/:id', async (request, response) => {
     try {
       let newSeriesAttributes = request.body;
 
-      if (newSeriesAttributes.show !== '' && newSeriesAttributes.show !== null) {
+      if (newSeriesAttributes.show !== undefined && newSeriesAttributes.show !== '') {
         // new attributes change the show
-        const movieExists = await checkMovieExistsWithName(newSeriesAttributes.show);
-        const seriesExists = await checkSeriesExistsWithName(newSeriesAttributes.show);
-
-        if (movieExists || seriesExists) {
+        const movieKey = await getMovieKeyByName(opinionThreadJson.show);
+        if (movieKey) {
+          newSeriesAttributes['show_id'] = movieKey;
+          newSeriesAttributes['show_type'] = 'movie';
           const succesfull = await updateOpinionThread(id, newSeriesAttributes);
           if (!succesfull) {
             response.status(404);
           }
           response.end();
         } else {
-          response.status(400).json({
-            error: 'The specified show does not exists in the current database.'
-          });
+          // movie not found, check series
+          const seriesKey = await getSerieKeyByName(newSeriesAttributes.show);
+          if (seriesKey) {
+            newSeriesAttributes['show_id'] = seriesKey;
+            newSeriesAttributes['show_type'] = 'serie';
+            const succesfull = await updateOpinionThread(id, newSeriesAttributes);
+            if (!succesfull) {
+              response.status(404);
+            }
+            response.end();
+          } else {
+            // show not found
+            response.status(400).json({
+              error: 'show_not_exists'
+            });
+          }
         }
       } else { // does not change the show
         const succesfull = await updateOpinionThread(id, newSeriesAttributes);
@@ -402,7 +444,7 @@ router.put('/:id', async (request, response) => {
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({ error: 'Bad request parameter, not a number!' });
+    response.json({ error: 'bad_req_par_number' });
   }
 
 });
@@ -413,7 +455,7 @@ router.delete('/:id', async (request, response) => {
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
     const id = request.params.id;
     try {
-      const succesfull = await deleteOpinionThread(id);
+      const succesfull = await deleteOpinionThreadAndEdges(id);
       if (!succesfull) {
         response.status(404);
       }
@@ -428,7 +470,7 @@ router.delete('/:id', async (request, response) => {
     }
   } else { // incorrect parameter
     response.status(400);
-    response.json({ error: 'Bad request parameter, not a number!' });
+    response.json({ error: 'bad_req_par_number' });
   }
 
 });

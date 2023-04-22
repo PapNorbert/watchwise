@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useLocation, Navigate, useParams } from "react-router-dom"
+import { useLocation, Navigate } from "react-router-dom"
 
 import WatchGroup from '../../components/WatchGroup'
 import Limit from '../../components/Limit'
@@ -8,6 +8,7 @@ import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
+import { buttonTypes } from '../../util/buttonTypes'
 
 
 export default function WatchGroupsMy() {
@@ -25,7 +26,6 @@ export default function WatchGroupsMy() {
   }, [limit, page, auth?.username])
 
 
-
   if (statusCode === 401) {
     if (auth.logged_in) {
       setAuth({ logged_in: false });
@@ -41,27 +41,29 @@ export default function WatchGroupsMy() {
     return <h3 className='error'>{convertKeyToSelectedLanguage('loading', i18nData)}</h3>
   }
 
-
   if (error) {
     return <h2 className='error'>{convertKeyToSelectedLanguage('error', i18nData)}</h2>
   }
 
-  return ( watch_groups &&
+  return (watch_groups &&
     <>
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
+      <PaginationElements currentPage={page}
+        totalPages={watch_groups?.pagination.totalPages}
+        onPageChange={setPage} key='pagination-top' />
       {watch_groups?.data.length > 0 ?
         // there are elements returned
         watch_groups?.data.map(currentElement => {
           return (
-            <WatchGroup watch_group={currentElement} buttonType='manage' key={currentElement._key} />
+            <WatchGroup watch_group={currentElement} buttonType={buttonTypes.manage} key={currentElement._key} />
           );
         }) :
         // no elements returned
-        <h2>{convertKeyToSelectedLanguage('no_own_groups',i18nData)}</h2>
+        <h2>{convertKeyToSelectedLanguage('no_own_groups', i18nData)}</h2>
       }
       <PaginationElements currentPage={page}
         totalPages={watch_groups?.pagination.totalPages}
-        onPageChange={setPage} key='pagination' />
+        onPageChange={setPage} key='pagination-bottom' />
     </>
   )
 

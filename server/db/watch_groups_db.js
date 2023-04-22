@@ -47,10 +47,27 @@ export async function findWatchGroupsByCreator(creator, page, limit) {
   }
 }
 
-export async function findWatchGroupByKey(key) {
+export async function findWatchGroupsByUserJoined(userId, page, limit) {
   try {
-    const cursor = await watchGroupCollection.firstExample({ _key: key });
-    return cursor;
+    const aqlQuery = `FOR vertex IN OUTBOUND
+    @userId joined_group
+    LIMIT @offset, @count
+    RETURN UNSET(vertex, "comments")`;
+    const cursor = await pool.query(aqlQuery, { userId: userId, offset: (page - 1) * limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findWatchGroupByKeyWithoutComments(key) {
+  try {
+    const aqlQuery = `FOR doc IN watch_groups
+    FILTER doc._key == @key
+    RETURN UNSET(doc, "comments")`;
+    const cursor = await pool.query(aqlQuery, { key: key });
+    return (await cursor.all())[0];
   } catch (err) {
     if (err.message == "no match") {
       console.log(`WatchGroup document with _key ${key} not found: `, err.message);
@@ -63,19 +80,78 @@ export async function findWatchGroupByKey(key) {
   }
 }
 
-export async function findWatchGroupsByUserJoined(userId, page, limit) {
+export async function findWatchGroupByKeyWithJoinedInformation(userId, key, page, limit) {
   try {
-    const aqlQuery = `FOR vertex IN OUTBOUND
-    @userId joined_group
-    LIMIT @offset, @count
-    RETURN vertex`;
-    const cursor = await pool.query(aqlQuery, { userId: userId, offset: (page - 1) * limit, count: limit });
-    return await cursor.all();
+    const aqlQuery = `FOR doc IN watch_groups
+    FILTER doc._key == @key
+    LET join = LENGTH(FOR edge IN joined_group
+      FILTER edge._from == @from
+      FILTER edge._to == doc._id
+      LIMIT 1 RETURN true) > 0
+    RETURN { 
+    doc: {
+      _key: doc._key,
+      title: doc.title,
+      creator: doc.creator,
+      show: doc.show,
+      description: doc.description,
+      watch_date: doc.watch_date,
+      location: doc.location,
+      creation_date: doc.creation_date,
+      show_id: doc.show_id,
+      show_type: doc.show_type,
+      comments: (
+        FOR comment in doc.comments
+        SORT comment.creation_date DESC
+        LIMIT @offset, @count
+        RETURN comment
+      )
+    }, 
+    joined: join }`;
+    const cursor = await pool.query(aqlQuery, { from: userId, key: key, offset: (page - 1) * limit, count: limit });
+    return (await cursor.all())[0];
   } catch (err) {
     console.log(err);
     throw err;
   }
 }
+
+export async function findWatchGroupByKey(key, page, limit) {
+  try {
+    const aqlQuery = `FOR doc IN watch_groups
+    FILTER doc._key == @key
+    RETURN { 
+      _key: doc._key,
+      title: doc.title,
+      creator: doc.creator,
+      show: doc.show,
+      description: doc.description,
+      watch_date: doc.watch_date,
+      location: doc.location,
+      creation_date: doc.creation_date,
+      show_id: doc.show_id,
+      show_type: doc.show_type,
+      comments: (
+        FOR comment in doc.comments
+        SORT comment.creation_date DESC
+        LIMIT @offset, @count
+        RETURN comment
+      )
+    }`;
+    const cursor = await pool.query(aqlQuery, { key: key, offset: (page - 1) * limit, count: limit });
+    return (await cursor.all())[0];
+  } catch (err) {
+    if (err.message == "no match") {
+      console.log(`OpinionThread document with _key ${key} not found: `, err.message);
+      return null;
+    } else {
+      console.log(err);
+      throw err;
+    }
+
+  }
+}
+
 
 export async function getWatchGroupCount() {
   try {
@@ -115,6 +191,7 @@ export async function getWatchGroupCountByUserJoined(userId) {
     throw err;
   }
 }
+
 
 
 export async function insertWatchGroup(watchGroupDocument) {

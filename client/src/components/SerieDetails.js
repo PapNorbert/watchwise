@@ -34,7 +34,7 @@ export default function SerieDetails({ serie }) {
 
       {Object.keys(serie).map((key, index) => {
         if (key === '_key' || key === 'img_name' || key === 'trailer_link'
-          || key === 'name' || key === 'storyline' ) {
+          || key === 'name' || key === 'storyline') {
           return null;
         }
         if (Array.isArray(serie[key])) {
@@ -42,19 +42,19 @@ export default function SerieDetails({ serie }) {
           return (
             serie[key].map((value, indexNr) => {
               return (
-                  <Container key={`container_${serie._key}_${index}_${indexNr}`} >
-                    <Row key={`row_${serie._key}_${index}_${indexNr}`} className='mb-1'>
-                      {indexNr === 0 &&
-                        <>
-                          <h4 className='mt-3'>{convertKeyToSelectedLanguage(key, i18nData)}</h4>
-                          <hr className='short-hr'></hr>
-                        </>
-                      }
-                    </Row>
-                    <Row className='big-margin-left'>
-                      {value}
-                    </Row>
-                  </Container>
+                <Container key={`container_${serie._key}_${index}_${indexNr}`} >
+                  <Row key={`row_${serie._key}_${index}_${indexNr}`} className='mb-1'>
+                    {indexNr === 0 &&
+                      <>
+                        <h4 className='mt-3'>{convertKeyToSelectedLanguage(key, i18nData)}</h4>
+                        <hr className='short-hr'></hr>
+                      </>
+                    }
+                  </Row>
+                  <Row className='big-margin-left'>
+                    {value}
+                  </Row>
+                </Container>
               )
             })
           );

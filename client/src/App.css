@@ -51,6 +51,10 @@ h1 {
   margin-bottom: 1em;
 }
 
+.lang-select {
+  width: fit-content !important;
+}
+
 h2 {
   margin-top: 0.7em;
   margin-bottom: 0.7em;
@@ -161,7 +165,7 @@ fieldset[disabled] .btn-orange.active {
     /* conic-gradient(from -90deg at bottom var(--b) right var(--b),var(--_g)) 100% 100% / var(--_p); */
 }
 
-.comment-insert-button:disabled {
+.insert-button:disabled {
   cursor: not-allowed;
   pointer-events: all !important;
 }
@@ -174,4 +178,26 @@ svg {
 
 .bold {
   font-weight: bold;
+}
+
+.delete-popover-header {
+  background-color: #e99000fa;
+}
+
+.popover-arrow, .delete-popover-header::before  {
+ /* display: none !important;  */
+ border-color: #e99000fa !important;
+}
+
+.is_creator {
+  margin-right: 5%;
+  color: #e54800;
+}
+
+.w-50 {
+  width: 50% !important;
+}
+
+.error {
+  color: #e13d02;
 }

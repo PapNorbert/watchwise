@@ -8,6 +8,7 @@ import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
 import useLanguage from '../../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
+import { buttonTypes } from '../../util/buttonTypes'
 
 
 export default function OpinionThreadsAll() {
@@ -39,15 +40,24 @@ export default function OpinionThreadsAll() {
     return <h2 className='error'>{convertKeyToSelectedLanguage('error', i18nData)}</h2>
   }
 
-  return ( opinion_threads &&
+  return (opinion_threads &&
     <>
       <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
+      <PaginationElements currentPage={page}
+        totalPages={opinion_threads?.pagination.totalPages}
+        onPageChange={setPage} key='pagination-top' />
       {opinion_threads?.data.map(currentElement => {
         return (
           <OpinionThread opinion_thread={
             currentElement?.doc ? currentElement?.doc : currentElement
           } buttonType={
-            currentElement?.doc ? (currentElement?.followed ? 'leave' : 'follow') : null
+            currentElement?.doc ?
+              // logged in
+              currentElement.doc.creator === auth.username ?
+                // own thread
+                buttonTypes.manage :
+                // not own thread
+                (currentElement?.followed ? buttonTypes.leave : buttonTypes.follow) : null
           } key={
             currentElement?.doc ? currentElement?.doc._key : currentElement._key
           } />
@@ -55,7 +65,7 @@ export default function OpinionThreadsAll() {
       })}
       <PaginationElements currentPage={page}
         totalPages={opinion_threads?.pagination.totalPages}
-        onPageChange={setPage} key='pagination' />
+        onPageChange={setPage} key='pagination-bottom' />
     </>
   )
 }

@@ -22,3 +22,19 @@ export function convertKeyToSelectedLanguage(key, i18nData) {
     }
   }
 }
+
+export function convertDateAndTimeToLocale(date, language) {
+  if (language === 'hu') {
+    return new Date(date).toLocaleDateString('hu-HU').concat(' ',
+      new Date(date).toLocaleTimeString('hu-HU'));
+  }
+  return new Date(date).toLocaleDateString().concat(' ',
+    new Date(date).toLocaleTimeString())
+}
+
+export function convertDateToLocale(date, language) {
+  if (language === 'hu') {
+    return new Date(date).toLocaleDateString('hu-HU');
+  }
+  return new Date(date).toLocaleDateString();
+}

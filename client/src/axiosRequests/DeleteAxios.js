@@ -1,16 +1,13 @@
 import axios from './configuredAxios'
 
-
-export async function postRequest(url, body) {
+export async function deleteRequest(url) {
   let error = true;
-  let data = null;
   let statusCode = null;
   let errorMessage = null;
-  if (body !== null && body !=='' && url !== null && url !=='') {
+  if (url !== null && url !=='') {
     try {
-      const response = await axios.post(url, body);
+      const response = await axios.delete(url);
       statusCode = response.status;
-      data = response.data;
       error = false;
     } catch(err) {
       statusCode = err.response.status;
@@ -23,7 +20,5 @@ export async function postRequest(url, body) {
   } else {
     console.log('Error: Empty body or url');
   }
-  return { data, error, errorMessage, statusCode }
+  return { error, errorMessage, statusCode }
 }
-
-  
