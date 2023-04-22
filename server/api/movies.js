@@ -5,6 +5,8 @@ import {
 } from '../db/movies_db.js'
 import { createPaginationInfo } from '../util/util.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
+import { adminRoleCode } from '../config/UserRoleCodes.js'
+import { authorize} from '../middlewares/auth.js'
 
 const router = express.Router();
 
@@ -76,7 +78,7 @@ router.get('/:id', async (request, response) => {
 
 });
 
-router.post('', async (request, response) => {
+router.post('', authorize([adminRoleCode]), async (request, response) => {
   response.set('Content-Type', 'application/json');
   try {
     let movieJson = request.body;
@@ -95,7 +97,7 @@ router.post('', async (request, response) => {
 
 });
 
-router.put('/:id', async (request, response) => {
+router.put('/:id', authorize([adminRoleCode]), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
@@ -122,7 +124,7 @@ router.put('/:id', async (request, response) => {
 
 });
 
-router.delete('/:id', async (request, response) => {
+router.delete('/:id', authorize([adminRoleCode]), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.id) == request.params.id) { // correct parameter

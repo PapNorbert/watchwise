@@ -20,7 +20,22 @@ export function addJwtCookie(req, response, next) {
             });
             response.sendStatus(403);
           } else {
-            next();
+            const correct = true;
+            if (req.body.creator !== undefined && req.body.creator !== user.username) {
+              correct = false;
+            }
+            if (req.body.user !== undefined && req.body.user !== user.username) {
+              correct = false;
+            }
+            if (correct) {
+              next();
+            } else {
+              response.clearCookie('Auth', {
+                httpOnly: true, sameSite: 'None',
+                secure: true
+              });
+              response.sendStatus(403);
+            }
           }
         })
     } catch (err) {

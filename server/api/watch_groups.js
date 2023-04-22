@@ -18,6 +18,7 @@ import { createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_
 import { validateWatchGroupCreation } from '../util/watchGroupValidation.js'
 import { validateCommentCreation } from '../util/commentValidation.js'
 import { checkEdgeExists, deleteJoinedEdge, insertJoinedEdge } from '../db/joined_group_db.js';
+import { authorize } from '../middlewares/auth.js'
 
 const router = express.Router();
 
@@ -53,9 +54,9 @@ router.get('/:group_id/comments/:id', async (request, response) => {
     const group_id = request.params.group_id;
     const id = request.params.id;
     try {
-      const comments = await findCommentByKey(group_id, id, 'watch_groups');
-      if (comments[0]) {
-        response.json(comments[0]);
+      const comment = await findCommentByKey(group_id, id, 'watch_groups');
+      if (comment) {
+        response.json(comment);
       } else { // no entity found with id
         response.status(404).end();
       }
@@ -73,7 +74,7 @@ router.get('/:group_id/comments/:id', async (request, response) => {
 
 });
 
-router.post('/:group_id/comments', async (request, response) => {
+router.post('/:group_id/comments', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   if (parseInt(request.params.group_id) == request.params.group_id) { // correct parameter
     const group_id = request.params.group_id;
@@ -100,12 +101,17 @@ router.post('/:group_id/comments', async (request, response) => {
 
 });
 
-router.put('/:group_id/comments/:id', async (request, response) => {
+router.put('/:group_id/comments/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.group_id) == request.params.group_id) { // correct parameter
     const group_id = request.params.group_id;
     const id = request.params.id;
+    const comment = await findCommentByKey(group_id, id, 'watch_groups');
+    if (comment.user !== response.locals.payload.username) {
+      response.sendStatus(403);
+      return
+    }
     let commentJson = request.body;
     if (commentJson.text === undefined || commentJson.text === '') {
       response.status(400);
@@ -132,13 +138,17 @@ router.put('/:group_id/comments/:id', async (request, response) => {
   }
 });
 
-router.delete('/:group_id/comments/:id', async (request, response) => {
+router.delete('/:group_id/comments/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.group_id) == request.params.group_id) { // correct parameter
-
     const group_id = request.params.group_id;
     const id = request.params.id;
+    const comment = await findCommentByKey(group_id, id, 'watch_groups');
+    if (comment.user !== response.locals.payload.username) {
+      response.sendStatus(403);
+      return
+    }
     try {
       const succesfull = await deleteComment(group_id, id, 'watch_groups');
       if (!succesfull) {
@@ -300,7 +310,7 @@ router.get('/:id', async (request, response) => {
 
 });
 
-router.post('', async (request, response) => {
+router.post('', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   try {
     let watchGroupJson = request.body;
@@ -345,7 +355,7 @@ router.post('', async (request, response) => {
 
 });
 
-router.post('/:id/joines', async (request, response) => {
+router.post('/:id/joines', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
@@ -383,12 +393,17 @@ router.post('/:id/joines', async (request, response) => {
 
 });
 
-router.put('/:id', async (request, response) => {
+router.put('/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
     const id = request.params.id;
     try {
+      const watchGroup = await findWatchGroupByKeyWithoutComments(id);
+      if (watchGroup.creator !== response.locals.payload.username) {
+        response.sendStatus(403);
+        return
+      }
       let newSeriesAttributes = request.body;
 
       if (newSeriesAttributes.show !== undefined && newSeriesAttributes.show !== '') {
@@ -442,12 +457,17 @@ router.put('/:id', async (request, response) => {
 
 });
 
-router.delete('/:id', async (request, response) => {
+router.delete('/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
     const id = request.params.id;
     try {
+      const watchGroup = await findWatchGroupByKeyWithoutComments(id);
+      if (watchGroup.creator !== response.locals.payload.username) {
+        response.sendStatus(403);
+        return
+      }
       const succesfull = await deleteWatchGroup(id);
       if (!succesfull) {
         response.status(404);

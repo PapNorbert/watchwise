@@ -23,7 +23,7 @@ export async function findCommentByKey(id, comment_id, collectionName) {
       FILTER comment.key == @comment_id
       RETURN comment`;
     const cursor = await pool.query(aqlQuery, { key: id, comment_id: comment_id, '@collection': collectionName });
-    return await cursor.all();
+    return (await cursor.all())[0];
   } catch (err) {
     console.log(err);
     throw err;

@@ -2,11 +2,13 @@ import express from 'express';
 
 import { deleteUser, findUserByKey, updateUser } from '../db/users_db.js'
 import { createResponseDto } from '../dto/outgoing_dto.js'
+import { adminRoleCode } from '../config/UserRoleCodes.js'
+import { authorize} from '../middlewares/auth.js'
 
 const router = express.Router();
 
 
-router.get('/:id', async (request, response) => {
+router.get('/:id', authorize([adminRoleCode]), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
@@ -33,7 +35,7 @@ router.get('/:id', async (request, response) => {
 
 });
 
-router.put('/:id', async (request, response) => {
+router.put('/:id', authorize([adminRoleCode]), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
@@ -60,7 +62,7 @@ router.put('/:id', async (request, response) => {
 
 });
 
-router.delete('/:id', async (request, response) => {
+router.delete('/:id', authorize([adminRoleCode]), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.id) == request.params.id) { // correct parameter

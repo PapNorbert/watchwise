@@ -6,6 +6,7 @@ import WatchGroupsTab from './WatchGroupsTab'
 import WatchGroupsMy from './WatchGroupsMy'
 import WatchGroupsCreate from './WatchGroupsCreate'
 import WatchGroupsDetailed from './WatchGroupsDetailed'
+import RequireAuth from '../../components/RequireAuth'
 import useLanguage from '../../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 
@@ -19,9 +20,11 @@ export default function WatchGroups() {
       <Routes>
         <Route path='' element={<WatchGroupsAll />} />
         <Route path='/:watchGroupId' element={<WatchGroupsDetailed />} />
-        <Route path='/joined/:userId' element={<WatchGroupsJoined />} />
-        <Route path='/my_groups/:userId' element={<WatchGroupsMy />} />
-        <Route path='/create' element={<WatchGroupsCreate />} />
+        <Route element={<RequireAuth />}>
+          <Route path='/joined/:userId' element={<WatchGroupsJoined />} />
+          <Route path='/my_groups/:userId' element={<WatchGroupsMy />} />
+          <Route path='/create' element={<WatchGroupsCreate />} />
+        </Route>
         <Route path='*' element={<Navigate to="/error-page" />} />
       </Routes>
     </>

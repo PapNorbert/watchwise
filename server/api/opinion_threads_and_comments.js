@@ -21,6 +21,7 @@ import { createPaginationInfo } from '../util/util.js'
 import { createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_dto.js'
 import { validateOpinionTreadCreation } from '../util/opinionThreadValidation.js'
 import { validateCommentCreation } from '../util/commentValidation.js'
+import { authorize } from '../middlewares/auth.js'
 
 
 const router = express.Router();
@@ -60,9 +61,9 @@ router.get('/:thread_id/comments/:id', async (request, response) => {
     const thread_id = request.params.thread_id;
     const id = request.params.id;
     try {
-      const comments = await findCommentByKey(thread_id, id, 'opinion_threads');
-      if (comments[0]) {
-        response.json(comments[0]);
+      const comment = await findCommentByKey(thread_id, id, 'opinion_threads');
+      if (comment) {
+        response.json(comment);
       } else { // no entity found with id
         response.status(404).end();
       }
@@ -81,7 +82,7 @@ router.get('/:thread_id/comments/:id', async (request, response) => {
 
 });
 
-router.post('/:thread_id/comments', async (request, response) => {
+router.post('/:thread_id/comments', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
     const thread_id = request.params.thread_id;
@@ -108,12 +109,17 @@ router.post('/:thread_id/comments', async (request, response) => {
 
 });
 
-router.put('/:thread_id/comments/:id', async (request, response) => {
+router.put('/:thread_id/comments/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
     const thread_id = request.params.thread_id;
     const id = request.params.id;
+    const comment = await findCommentByKey(thread_id, id, 'opinion_threads');
+    if (comment.user !== response.locals.payload.username) {
+      response.sendStatus(403);
+      return
+    }
     let commentJson = request.body;
     if (commentJson.text === undefined || commentJson.text === '') {
       response.status(400);
@@ -141,13 +147,17 @@ router.put('/:thread_id/comments/:id', async (request, response) => {
 
 });
 
-router.delete('/:thread_id/comments/:id', async (request, response) => {
+router.delete('/:thread_id/comments/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
-
     const thread_id = request.params.thread_id;
     const id = request.params.id;
+    const comment = await findCommentByKey(thread_id, id, 'opinion_threads');
+    if (comment.user !== response.locals.payload.username) {
+      response.sendStatus(403);
+      return
+    }
     try {
       const succesfull = await deleteComment(thread_id, id, 'opinion_threads');
       if (!succesfull) {
@@ -307,7 +317,7 @@ router.get('/:thread_id', async (request, response) => {
 
 });
 
-router.post('', async (request, response) => {
+router.post('', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   try {
     let opinionThreadJson = request.body;
@@ -352,7 +362,7 @@ router.post('', async (request, response) => {
 
 });
 
-router.post('/:thread_id/followes', async (request, response) => {
+router.post('/:thread_id/followes', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
@@ -390,12 +400,17 @@ router.post('/:thread_id/followes', async (request, response) => {
 
 });
 
-router.put('/:id', async (request, response) => {
+router.put('/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
     const id = request.params.id;
     try {
+      const opinionThread = await findOpinionThreadByKeyWithoutComments(id);
+      if (opinionThread.creator !== response.locals.payload.username) {
+        response.sendStatus(403);
+        return
+      }
       let newSeriesAttributes = request.body;
 
       if (newSeriesAttributes.show !== undefined && newSeriesAttributes.show !== '') {
@@ -449,12 +464,17 @@ router.put('/:id', async (request, response) => {
 
 });
 
-router.delete('/:id', async (request, response) => {
+router.delete('/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.id) == request.params.id) { // correct parameter
     const id = request.params.id;
     try {
+      const opinionThread = await findOpinionThreadByKeyWithoutComments(id);
+      if (opinionThread.creator !== response.locals.payload.username) {
+        response.sendStatus(403);
+        return
+      }
       const succesfull = await deleteOpinionThreadAndEdges(id);
       if (!succesfull) {
         response.status(404);
