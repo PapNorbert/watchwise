@@ -19,6 +19,7 @@ import watchGroupApiRoute from './api/watch_groups.js'
 import languageDataFilesRoute from './api/languageDataFiles.js'
 import usersRoute from './api/users.js'
 import authRoute from './api/authentication.js'
+import showsRoute from './api/shows.js'
 
 
 const app = express();
@@ -52,6 +53,7 @@ app.use('/api/watch_groups', watchGroupApiRoute);
 app.use('/api/language', languageDataFilesRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/auth', authRoute);
+app.use('/api/shows', showsRoute)
 
 // read .env file
 dotenv.config()
@@ -61,7 +63,7 @@ createCollections()
   .then(insertAdminUser)
   .then(() => {
     app.listen(3000, () => { console.log('Server listening on http://localhost:3000/ ...'); });
-    if( !readLanguageDataFiles("eng") ) {
+    if (!readLanguageDataFiles("eng")) {
       console.log('Error reading i18n data files');
     }
   })

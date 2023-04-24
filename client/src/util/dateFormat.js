@@ -1,14 +1,9 @@
 
-export function convertDateToFromInput(dateString) {
-  const date = new Date(dateString);
-  return (
-    [date.getFullYear(),
-    padTo2Digits(date.getMonth() + 1),
-    padTo2Digits(date.getDate()),
-    ].join('-')
-  )
-}
-
-function padTo2Digits(num) {
-  return num.toString().padStart(2, '0');
+export function convertDateToFormInput(dateString) {
+  if (dateString) {
+    const date = new Date(dateString);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return date.toISOString().slice(0, 16);
+  }
+  return null;
 }

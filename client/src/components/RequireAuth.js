@@ -11,7 +11,7 @@ export default function RequireAuth({ allowedRoles = [adminRoleCode, userRoleCod
   return (
     allowedRoles?.includes(auth?.role)
       ? <Outlet />
-      : auth?.accesToken
+      : auth?.logged_in
         ? <Navigate to='/unauthorized' state={{ from: location }} replace />
         : <Navigate to='/login' state={{ from: location }} replace />
   )

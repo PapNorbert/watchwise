@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Container, Form, Alert, OverlayTrigger, Popover } from 'react-bootstrap'
 
 import useLanguage from '../hooks/useLanguage'
-import { convertKeyToSelectedLanguage, convertDateAndTimeToLocale, convertDateToLocale } from '../i18n/conversion'
-import { convertDateToFromInput } from '../util/dateFormat'
+import { convertKeyToSelectedLanguage, convertDateAndTimeToLocale } from '../i18n/conversion'
+import { convertDateToFormInput } from '../util/dateFormat'
 import useAuth from '../hooks/useAuth'
 import { postRequest } from '../axiosRequests/PostAxios'
 import Limit from '../components/Limit'
@@ -20,7 +20,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
-  const { auth } = useAuth();
+  const { auth, setAuth } = useAuth();
   const { language, i18nData } = useLanguage();
   const [insertCommentError, setInsertCommentError] = useState(null);
   const [insertCommentText, setInsertCommentText] = useState('');
@@ -69,11 +69,14 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
       } else if (statusCode === 201) {
         // expected when edge was created
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.leave, i18nData);
+      } else if (statusCode === 401) {
+        setAuth({ logged_in: false });
+      } else if (statusCode === 403) {
+        navigate('/unauthorized');
       } else if (statusCode === 404) {
-        console.log('not found');
+        setSubmitError('404_group');
       } else {
-        // error
-        console.log(errorMessage);
+        setSubmitError(errorMessage);
       }
     }
   }
@@ -83,16 +86,21 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
       navigate('/login');
       return;
     }
-    const { error, errorMessage, statusCode } =
+    const { errorMessage, statusCode } =
       await deleteRequest(`/api/watch_groups/${watch_group._key}`);
     if (statusCode === 204) {
       setSubmitError(null);
       setDeleted(true);
+    } else if (statusCode === 401) {
+      setAuth({ logged_in: false });
+    } else if (statusCode === 403) {
+      navigate('/unauthorized');
+    } else if (statusCode === 404) {
+      setSubmitError('404_group');
+    } else {
+      setSubmitError(errorMessage);
     }
-    if (error) {
-      setSubmitError('del_group_error');
-      console.log(errorMessage);
-    }
+
   }
 
   function handleEditButtonClicked() {
@@ -136,17 +144,21 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
         setDescriptionError(null);
         setWatchDateError(null);
         setEditing(false);
-      }
-      if (error) {
+      } else if (statusCode === 401) {
+        setAuth({ logged_in: false });
+      } else if (statusCode === 403) {
+        navigate('/unauthorized');
+      } else if (statusCode === 404) {
+        setSubmitError('404_thread');
+      } else {
         if (descriptionText !== oldDescriptionText) {
           setDescriptionError('update_desc_error');
         } else if (watchDateText !== oldWatchDateText) {
-          setWatchDateError('update_desc_error');
+          setWatchDateError(errorMessage);
         } else {
           setSubmitError(errorMessage);
         }
       }
-
     }
   }
 
@@ -178,8 +190,15 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
             } else {
               setPage(1);
             }
+          } else if (res.statusCode === 401) {
+            setAuth({ logged_in: false });
+          } else if (res.statusCode === 403) {
+            navigate('/unauthorized');
+          } else if (res.statusCode === 404) {
+            setInsertCommentError('404_group');
+          } else {
+            setInsertCommentError(res.errorMessage);
           }
-          setInsertCommentError(res.errorMessage);
         })
         .catch((err) => {
           setInsertCommentError('error');
@@ -240,7 +259,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
             </Col>
           </Row>
 
-          {editing ?
+          { (editing && auth.logged_in) ?
             // editing watch date
             <Row key={`${watch_group._key}_watch_date`} className='justify-content-md-center mb-3'>
               <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_watch_date`} >
@@ -248,8 +267,9 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
               </Col>
               <Col xs lg={7} key={`${watch_group._key}_value_watch_date`} >
                 <Form onSubmit={(e) => e.preventDefault()}>
-                  <Form.Control type='date' className='mb-2 mt-3'
-                    value={convertDateToFromInput(watchDateText)} isInvalid={!!watchDateError} autoComplete='off'
+                  <Form.Control type='datetime-local' className='mb-2 mt-3'
+                    value={convertDateToFormInput(watchDateText)} isInvalid={!!watchDateError}
+                    min={new Date().toISOString().split('.')[0].slice(0, -3).toString()}
                     onChange={e => { setWatchDateText(e.target.value) }}
                   />
                   <Alert key='danger' variant='danger' show={watchDateError !== null}
@@ -266,7 +286,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
                 {convertKeyToSelectedLanguage('watch_date', i18nData)}
               </Col>
               <Col xs lg={7} key={`${watch_group._key}_value_watch_date`} >
-                {convertDateToLocale(watchDateText, language)}
+                {convertDateAndTimeToLocale(watchDateText, language)}
               </Col>
             </Row>
           }
@@ -280,7 +300,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
             </Col>
           </Row>
 
-          {editing ?
+          { (editing && auth.logged_in) ?
             // editing description
             <Row key={`${watch_group._key}_description`} className='justify-content-md-center mb-3'>
               <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_description`} >

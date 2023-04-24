@@ -19,7 +19,7 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
-  const { auth } = useAuth();
+  const { auth, setAuth } = useAuth();
   const { language, i18nData } = useLanguage();
   const [insertCommentError, setInsertCommentError] = useState(null);
   const [insertCommentText, setInsertCommentText] = useState('');
@@ -65,11 +65,15 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
       } else if (statusCode === 201) {
         // expected when edge was created
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.leave, i18nData);
+      } else if (statusCode === 401) {
+        setAuth({ logged_in: false });
+      } else if (statusCode === 403) {
+        navigate('/unauthorized');
       } else if (statusCode === 404) {
-        console.log('not found');
+        setSubmitError('404_thread');
       } else {
         // error
-        console.log(errorMessage);
+        setSubmitError(errorMessage);
       }
     }
   }
@@ -79,16 +83,21 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
       navigate('/login');
       return;
     }
-    const { error, errorMessage, statusCode } =
+    const { errorMessage, statusCode } =
       await deleteRequest(`/api/opinion_threads/${opinion_thread._key}`);
     if (statusCode === 204) {
       setSubmitError(null);
       setDeleted(true);
+    } else if (statusCode === 401) {
+      setAuth({ logged_in: false });
+    } else if (statusCode === 403) {
+      navigate('/unauthorized');
+    } else if (statusCode === 404) {
+      setSubmitError('404_thread');
+    } else {
+      setSubmitError(errorMessage);
     }
-    if (error) {
-      setSubmitError('del_thread_error');
-      console.log(errorMessage);
-    }
+
   }
 
   function handleEditButtonClicked() {
@@ -120,15 +129,19 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
         setOldDescriptionText(descriptionText);
         setDescriptionError(null);
         setEditing(false);
-      }
-      if (error) {
+      } else if (statusCode === 401) {
+        setAuth({ logged_in: false });
+      } else if (statusCode === 403) {
+        navigate('/unauthorized');
+      } else if (statusCode === 404) {
+        setSubmitError('404_thread');
+      } else {
         if (descriptionText !== oldDescriptionText) {
           setDescriptionError('update_desc_error');
         } else {
           setSubmitError(errorMessage);
         }
       }
-
     }
   }
 
@@ -154,8 +167,15 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
             } else {
               setPage(1);
             }
+          } else if (res.statusCode === 401) {
+            setAuth({ logged_in: false });
+          } else if (res.statusCode === 403) {
+            navigate('/unauthorized');
+          } else if (res.statusCode === 404) {
+            setInsertCommentError('404_thread');
+          } else {
+            setInsertCommentError(res.errorMessage);
           }
-          setInsertCommentError(res.errorMessage);
         })
         .catch((err) => {
           setInsertCommentError('error');
@@ -215,7 +235,7 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
             </Col>
           </Row>
 
-          {editing ?
+          { (editing && auth.logged_in) ?
             // editing
             <Row key={`${opinion_thread._key}_description`} className='justify-content-md-center mb-3'>
               <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label_description`} >

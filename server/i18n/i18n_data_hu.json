@@ -128,6 +128,9 @@
   "del_thread_error": "A thread törlése nem sikerült",
   "del_group_error": "A csoport törlése nem sikerült",
   "update_desc_error": "A leírás frissítése nem sikerült",
-  "404_thread": "Kiválasztott Vélemény Thread oldal nem található",
-  "404_group": "Kiválasztott Megtekintési Csoport oldal nem található"
+  "404_thread": "Kiválasztott Vélemény Thread nem található",
+  "404_group": "Kiválasztott Megtekintési Csoport nem található",
+  "bad_limit": "Limit egy pozitív szám kell legyen",
+  "no_shows_found": "Nem találhatóak ilyen nevű műsorok",
+  "watch_date_in_past": "A Megtekintés dátuma nem lehet a múltban"
 }

@@ -1,11 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Form, FloatingLabel, Alert, Button, Container, Row, Nav } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
+import AsyncSelect from 'react-select/async'
 
 import FormContainer from '../../components/FormContainer'
 import useLanguage from '../../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import { postRequest } from '../../axiosRequests/PostAxios'
+import { getAxios } from '../../axiosRequests/GetAxios'
 import useAuth from '../../hooks/useAuth'
 
 
@@ -16,15 +18,32 @@ export default function OpinionThreadsCreate() {
     'show': '',
     'description': '',
   }
+  const showSelectRef = useRef();
   const [createdId, setCreatedId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [succesfullCreated, setSuccesfullCreated] = useState(false);
-  const url = '/api/opinion_threads';
   const { auth } = useAuth();
   const navigate = useNavigate();
 
+
+  async function loadShowOptions(inputValue) {
+    let url = '/api/shows';
+    if (inputValue !== '') {
+      url = `/api/shows?nameFilter=${inputValue}`
+    }
+    const { data, errorMessage, statusCode } = await getAxios(url);
+    if (statusCode === 200) {
+      const values = []
+      data?.shows.forEach(currentShow => {
+        values.push({ value: currentShow, label: currentShow })
+      });
+      return values;
+    } else {
+      setSubmitError(errorMessage);
+    }
+  }
 
   function setField(field, value) {
     const newForm = { ...form, [field]: value }
@@ -58,15 +77,16 @@ export default function OpinionThreadsCreate() {
       formDataWithCreator['creator'] = auth.username;
 
       let created = false;
-      postRequest(url, formDataWithCreator)
+      postRequest('/api/opinion_threads', formDataWithCreator)
         .then((res) => {
           if (!res.error && res.statusCode === 201) {
             // 201 expected
             setCreatedId(res.data.id);
             created = true;
             // Clear form inputs
+            showSelectRef.current.clearValue();
             setForm(emptyForm);
-
+            setErrors({});
           }
           setSubmitError(res.errorMessage);
         })
@@ -97,31 +117,38 @@ export default function OpinionThreadsCreate() {
           </Form.Control.Feedback>
         </FloatingLabel>
 
-        <FloatingLabel
-          label={convertKeyToSelectedLanguage('show', i18nData)} className='mb-3' >
-          <Form.Control type='text' placeholder={convertKeyToSelectedLanguage('show', i18nData)}
-            value={form.show} isInvalid={!!errors.show} autoComplete='off'
-            onChange={e => { setField('show', e.target.value) }} />
-          <Form.Control.Feedback type='invalid'>
-            {convertKeyToSelectedLanguage(errors['show'], i18nData)}
-          </Form.Control.Feedback>
-        </FloatingLabel>
-
         <Form.Label>
-          <b>{convertKeyToSelectedLanguage('description', i18nData)}</b>
+          {convertKeyToSelectedLanguage('show', i18nData)}
         </Form.Label>
-        <Form.Control as='textarea' rows={3} className='mb-3'
+        <AsyncSelect cacheOptions loadOptions={loadShowOptions} defaultOptions
+          isSearchable={true} isClearable={true} ref={showSelectRef}
+          onChange={(newValue) => { setField('show', newValue?.value || '') }}
+          noOptionsMessage={() => convertKeyToSelectedLanguage('no_shows_found', i18nData)}
+          placeholder={convertKeyToSelectedLanguage('show', i18nData)}
+        />
+        {!!errors['show'] &&
+          <div className='invalid-field' >
+            {convertKeyToSelectedLanguage(errors['show'], i18nData)}
+          </div>
+        }
+
+        <Form.Label className='mt-3'>
+          {convertKeyToSelectedLanguage('description', i18nData)}
+        </Form.Label>
+        <Form.Control as='textarea' rows={3}
           placeholder={convertKeyToSelectedLanguage('description', i18nData)}
           value={form.description} isInvalid={!!errors.description} autoComplete='off'
           onChange={e => { setField('description', e.target.value) }} />
-        <Form.Control.Feedback type='invalid' className='mb-3'>
+        <Form.Control.Feedback type='invalid' >
           {convertKeyToSelectedLanguage(errors['description'], i18nData)}
         </Form.Control.Feedback>
 
-        <Alert key='danger' variant='danger' show={submitError !== null}>
+        <Alert key='danger' variant='danger' show={submitError !== null} className='mt-3'
+          onClose={() => setSubmitError(null)} dismissible >
           {convertKeyToSelectedLanguage(submitError, i18nData)}
         </Alert>
-        <Alert key='success' variant='success' show={succesfullCreated} onClose={() => setSuccesfullCreated(false)} dismissible >
+        <Alert key='success' variant='success' show={succesfullCreated} className='mt-3'
+          onClose={() => setSuccesfullCreated(false)} dismissible >
           <Container>
             <Row>
               {convertKeyToSelectedLanguage('ot_succesfull_created', i18nData)}
@@ -134,7 +161,7 @@ export default function OpinionThreadsCreate() {
           </Container>
         </Alert>
 
-        <Button type='submit' variant='secondary' className='col-md-6 offset-md-3 mb-5'>
+        <Button type='submit' variant='secondary' className='col-md-6 offset-md-3 mb-5 mt-3'>
           {convertKeyToSelectedLanguage('create', i18nData)}
         </Button>
 

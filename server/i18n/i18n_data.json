@@ -127,6 +127,9 @@
   "del_thread_error": "Could not delete thread",
   "del_group_error": "Could not delete group",
   "update_desc_error": "Could not update description",
-  "404_thread": "Selected Opinion Thread page not found",
-  "404_group": "Selected Watch Group page not found"
+  "404_thread": "Selected Opinion Thread not found",
+  "404_group": "Selected Watch Group not found",
+  "bad_limit": "Limit must be a positive number",
+  "no_shows_found": "No shows found with this name",
+  "watch_date_in_past": "The Watch date cannot be in the past"
 }

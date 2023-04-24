@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Row, Col, Button } from 'react-bootstrap'
+import { Card, Row, Col, Button, Alert } from 'react-bootstrap'
 
 import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage, convertDateAndTimeToLocale } from '../i18n/conversion'
@@ -13,8 +13,9 @@ export default function OpinionThread({ opinion_thread, buttonType, removeOnLeav
   // removeOnLeave - remove element on leave event, refetch the threads
 
   const navigate = useNavigate();
-  const { auth } = useAuth();
+  const { auth, setAuth } = useAuth();
   const { language, i18nData } = useLanguage();
+  const [requestError, setRequestError] = useState(null);
 
   async function handleButtonClicked(e) {
     if (buttonType === buttonTypes.manage) {
@@ -33,71 +34,80 @@ export default function OpinionThread({ opinion_thread, buttonType, removeOnLeav
       } else if (statusCode === 201) {
         // expected when edge was created
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.leave, i18nData);
+      } else if (statusCode === 401) {
+        setAuth({ logged_in: false });
+      } else if (statusCode === 403) {
+        navigate('/unauthorized');
       } else if (statusCode === 404) {
-        console.log('not found');
+        setRequestError('404_thread');
       } else {
-        // error
-        console.log(errorMessage);
+        setRequestError(errorMessage);
       }
     }
   }
 
   return (
-    <Card key={`container_${opinion_thread._key}`} className='mt-4 mb-3'>
-      <Card.Header as='h5' key={`header${opinion_thread._key}`} >
-        {opinion_thread.title}
-        {auth.logged_in &&
-          <Button className='btn btn-orange float-end mx-2' onClick={handleButtonClicked}
-            key={`${opinion_thread._key}_button`} >
-            {convertKeyToSelectedLanguage(buttonType, i18nData)}
-          </Button>
-        }
-        {buttonType !== buttonTypes.manage &&
-          <Button className='btn btn-orange float-end mx-2' onClick={() => navigate(`/opinion_threads/${opinion_thread._key}`)}
-            key={`${opinion_thread._key}_details_button`} >
-            {convertKeyToSelectedLanguage('details', i18nData)}
-          </Button>
-        }
-      </Card.Header>
-
-      <Card.Body>
-        {Object.keys(opinion_thread).map((key, index) => {
-          if (key === 'show_type' || key === 'show_id' || key === 'title' || key === '_key') {
-            return null;
+    <>
+      <Card key={`container_${opinion_thread._key}`} className='mt-4 mb-3'>
+        <Card.Header as='h5' key={`header${opinion_thread._key}`} >
+          {opinion_thread.title}
+          {auth.logged_in &&
+            <Button className='btn btn-orange float-end mx-2' onClick={handleButtonClicked}
+              key={`${opinion_thread._key}_button`} >
+              {convertKeyToSelectedLanguage(buttonType, i18nData)}
+            </Button>
           }
-          if (key === 'show') {
+          {buttonType !== buttonTypes.manage &&
+            <Button className='btn btn-orange float-end mx-2' onClick={() => navigate(`/opinion_threads/${opinion_thread._key}`)}
+              key={`${opinion_thread._key}_details_button`} >
+              {convertKeyToSelectedLanguage('details', i18nData)}
+            </Button>
+          }
+        </Card.Header>
+
+        <Card.Body>
+          {Object.keys(opinion_thread).map((key, index) => {
+            if (key === 'show_type' || key === 'show_id' || key === 'title' || key === '_key') {
+              return null;
+            }
+            if (key === 'show') {
+              return (
+                <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center'>
+                  <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label${index}`} >
+                    {convertKeyToSelectedLanguage(key, i18nData)}
+                  </Col>
+                  <Col xs lg={7} key={`${opinion_thread._key}_value${index}`} >
+                    <span className='btn btn-link p-0 link-dark' key={`${opinion_thread._key}_show_link_${index}`}
+                      onClick={() => navigate(`/${opinion_thread['show_type']}s/${opinion_thread['show_id']}`)}>
+                      {opinion_thread[key]}
+                    </span>
+                  </Col>
+
+                </Row>
+              )
+            }
             return (
               <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center'>
                 <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label${index}`} >
                   {convertKeyToSelectedLanguage(key, i18nData)}
                 </Col>
                 <Col xs lg={7} key={`${opinion_thread._key}_value${index}`} >
-                  <span className='btn btn-link p-0 link-dark' key={`${opinion_thread._key}_show_link_${index}`}
-                    onClick={() => navigate(`/${opinion_thread['show_type']}s/${opinion_thread['show_id']}`)}>
-                    {opinion_thread[key]}
-                  </span>
+                  {key === 'creation_date' ?
+                    convertDateAndTimeToLocale(opinion_thread[key], language)
+                    :
+                    opinion_thread[key]
+                  }
                 </Col>
 
               </Row>
-            )
-          }
-          return (
-            <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center'>
-              <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label${index}`} >
-                {convertKeyToSelectedLanguage(key, i18nData)}
-              </Col>
-              <Col xs lg={7} key={`${opinion_thread._key}_value${index}`} >
-                {key === 'creation_date' ?
-                  convertDateAndTimeToLocale(opinion_thread[key], language)
-                  :
-                  opinion_thread[key]
-                }
-              </Col>
-
-            </Row>
-          );
-        })}
-      </Card.Body>
-    </Card>
+            );
+          })}
+        </Card.Body>
+      </Card>
+      <Alert key='danger' variant='danger' show={requestError !== null}
+        onClose={() => setRequestError(null)} dismissible >
+        {convertKeyToSelectedLanguage(requestError, i18nData)}
+      </Alert>
+    </>
   )
 }

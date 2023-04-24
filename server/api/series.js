@@ -6,7 +6,7 @@ import {
 import { createPaginationInfo } from '../util/util.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
 import { adminRoleCode } from '../config/UserRoleCodes.js'
-import { authorize} from '../middlewares/auth.js'
+import { authorize } from '../middlewares/auth.js'
 
 const router = express.Router();
 
@@ -16,7 +16,8 @@ router.get('', async (request, response) => {
   response.status(200);
   try {
     let { page = 1, limit = 10, short = false } = request.query;
-    if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
+    if (parseInt(page) == page && parseInt(limit) == limit
+      && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);
       limit = parseInt(limit);
       if (short) {
@@ -54,7 +55,8 @@ router.get('', async (request, response) => {
 router.get('/:id', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
-  if (parseInt(request.params.id) == request.params.id) { // correct parameter
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
     const id = request.params.id;
     try {
       const series = await findSeriesByKey(id);
@@ -100,7 +102,8 @@ router.post('', authorize([adminRoleCode]), async (request, response) => {
 router.put('/:id', authorize([adminRoleCode]), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.id) == request.params.id) { // correct parameter
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
     const id = request.params.id;
     try {
       let newSeriesAttributes = request.body;
@@ -127,7 +130,8 @@ router.put('/:id', authorize([adminRoleCode]), async (request, response) => {
 router.delete('/:id', authorize([adminRoleCode]), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.id) == request.params.id) { // correct parameter
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
     const id = request.params.id;
     try {
       const succesfull = await deleteSeriesAndEdges(id);

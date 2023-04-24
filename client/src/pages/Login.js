@@ -60,12 +60,7 @@ export default function Login() {
             setAuth(decodeJwtAccesToken(res.data.accesToken));
             navigate(from, { replace: true });
           } else {
-            let errorMessage = res.errorMessage;
-            if (res.errorMessage === 'login_empty_field_error'
-              || res.errorMessage === 'login_incorrect') {
-              errorMessage = res.errorMessage;
-            }
-            setSubmitError(errorMessage);
+            setSubmitError(res.errorMessage);
           }
 
         })

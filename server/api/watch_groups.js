@@ -15,7 +15,7 @@ import {
 import { findUserByUsername } from '../db/users_db.js';
 import { createPaginationInfo } from '../util/util.js'
 import { createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_dto.js'
-import { validateWatchGroupCreation } from '../util/watchGroupValidation.js'
+import { validateWatchGroupCreation, validateWatchDate } from '../util/watchGroupValidation.js'
 import { validateCommentCreation } from '../util/commentValidation.js'
 import { checkEdgeExists, deleteJoinedEdge, insertJoinedEdge } from '../db/joined_group_db.js';
 import { authorize } from '../middlewares/auth.js'
@@ -29,7 +29,8 @@ const router = express.Router();
 router.get('/:group_id/comments', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
-  if (parseInt(request.params.group_id) == request.params.group_id) { // correct parameter
+  if (parseInt(request.params.group_id) == request.params.group_id
+    && parseInt(request.params.group_id) > 0) { // correct parameter
     try {
       const comments = await findComments(request.params.group_id, 'watch_groups');
       response.json(comments);
@@ -50,7 +51,8 @@ router.get('/:group_id/comments', async (request, response) => {
 router.get('/:group_id/comments/:id', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
-  if (parseInt(request.params.group_id) == request.params.group_id) { // correct parameter
+  if (parseInt(request.params.group_id) == request.params.group_id
+    && parseInt(request.params.group_id) > 0) { // correct parameter
     const group_id = request.params.group_id;
     const id = request.params.id;
     try {
@@ -76,7 +78,8 @@ router.get('/:group_id/comments/:id', async (request, response) => {
 
 router.post('/:group_id/comments', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
-  if (parseInt(request.params.group_id) == request.params.group_id) { // correct parameter
+  if (parseInt(request.params.group_id) == request.params.group_id
+    && parseInt(request.params.group_id) > 0) { // correct parameter
     const group_id = request.params.group_id;
     try {
       let commentJson = request.body;
@@ -104,7 +107,8 @@ router.post('/:group_id/comments', authorize(), async (request, response) => {
 router.put('/:group_id/comments/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.group_id) == request.params.group_id) { // correct parameter
+  if (parseInt(request.params.group_id) == request.params.group_id
+    && parseInt(request.params.group_id) > 0) { // correct parameter
     const group_id = request.params.group_id;
     const id = request.params.id;
     const comment = await findCommentByKey(group_id, id, 'watch_groups');
@@ -141,7 +145,8 @@ router.put('/:group_id/comments/:id', authorize(), async (request, response) => 
 router.delete('/:group_id/comments/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.group_id) == request.params.group_id) { // correct parameter
+  if (parseInt(request.params.group_id) == request.params.group_id
+    && parseInt(request.params.group_id) > 0) { // correct parameter
     const group_id = request.params.group_id;
     const id = request.params.id;
     const comment = await findCommentByKey(group_id, id, 'watch_groups');
@@ -179,7 +184,8 @@ router.get('', async (request, response) => {
   response.status(200);
   try {
     let { page = 1, limit = 10, creator, joined = false, userId } = request.query;
-    if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
+    if (parseInt(page) == page && parseInt(limit) == limit
+      && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);
       limit = parseInt(limit);
       if (creator) {
@@ -253,10 +259,12 @@ router.get('', async (request, response) => {
 router.get('/:id', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
-  if (parseInt(request.params.id) == request.params.id) { // correct parameter
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
     try {
       let { page = 1, limit = 10 } = request.query;
-      if (parseInt(page) == page && parseInt(limit) == limit) {  // correct paging information
+      if (parseInt(page) == page && parseInt(limit) == limit
+        && parseInt(page) > 0 && parseInt(limit) > 0) {  // correct paging information
         page = parseInt(page);
         limit = parseInt(limit);
         if (response.locals?.payload?.userID) {
@@ -358,7 +366,8 @@ router.post('', authorize(), async (request, response) => {
 router.post('/:id/joines', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.id) == request.params.id) { // correct parameter
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
     const id = request.params.id;
     try {
       const watchGroup = await findWatchGroupByKeyWithoutComments(id);
@@ -396,34 +405,45 @@ router.post('/:id/joines', authorize(), async (request, response) => {
 router.put('/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.id) == request.params.id) { // correct parameter
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
     const id = request.params.id;
+    const newWatchGroupAttributes = request.body;
+    if (newWatchGroupAttributes.watch_date !== undefined) {
+      // changes the watch date
+      const { correct, error } = validateWatchDate(newWatchGroupAttributes.watch_date);
+      if (!correct) {
+        response.status(400).json({
+          error: error
+        });
+        return
+      }
+    }
     try {
       const watchGroup = await findWatchGroupByKeyWithoutComments(id);
       if (watchGroup.creator !== response.locals.payload.username) {
         response.sendStatus(403);
         return
       }
-      let newSeriesAttributes = request.body;
 
-      if (newSeriesAttributes.show !== undefined && newSeriesAttributes.show !== '') {
+      if (newWatchGroupAttributes.show !== undefined && newWatchGroupAttributes.show !== '') {
         // new attributes change the show
         const movieKey = await getMovieKeyByName(opinionThreadJson.show);
         if (movieKey) {
-          newSeriesAttributes['show_id'] = movieKey;
-          newSeriesAttributes['show_type'] = 'movie';
-          const succesfull = await updateWatchGroup(id, newSeriesAttributes);
+          newWatchGroupAttributes['show_id'] = movieKey;
+          newWatchGroupAttributes['show_type'] = 'movie';
+          const succesfull = await updateWatchGroup(id, newWatchGroupAttributes);
           if (!succesfull) {
             response.status(404);
           }
           response.end();
         } else {
           // movie not found, check series
-          const seriesKey = await getSerieKeyByName(newSeriesAttributes.show);
+          const seriesKey = await getSerieKeyByName(newWatchGroupAttributes.show);
           if (seriesKey) {
-            newSeriesAttributes['show_id'] = seriesKey;
-            newSeriesAttributes['show_type'] = 'serie';
-            const succesfull = await updateWatchGroup(id, newSeriesAttributes);
+            newWatchGroupAttributes['show_id'] = seriesKey;
+            newWatchGroupAttributes['show_type'] = 'serie';
+            const succesfull = await updateWatchGroup(id, newWatchGroupAttributes);
             if (!succesfull) {
               response.status(404);
             }
@@ -436,7 +456,7 @@ router.put('/:id', authorize(), async (request, response) => {
           }
         }
       } else { // does not change the show
-        const succesfull = await updateWatchGroup(id, newSeriesAttributes);
+        const succesfull = await updateWatchGroup(id, newWatchGroupAttributes);
         if (!succesfull) {
           response.status(404);
         }
@@ -460,7 +480,8 @@ router.put('/:id', authorize(), async (request, response) => {
 router.delete('/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.id) == request.params.id) { // correct parameter
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
     const id = request.params.id;
     try {
       const watchGroup = await findWatchGroupByKeyWithoutComments(id);

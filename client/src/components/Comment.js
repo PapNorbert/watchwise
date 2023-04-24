@@ -10,8 +10,8 @@ import { putRequest } from '../axiosRequests/PutAxios'
 import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage, convertDateAndTimeToLocale } from '../i18n/conversion'
 
-export default function Comment({ comment, commentLocationType , commentLocationId, commentLocationCreator }) {
-  const { auth } = useAuth();
+export default function Comment({ comment, commentLocationType, commentLocationId, commentLocationCreator }) {
+  const { auth, setAuth } = useAuth();
   const { language, i18nData } = useLanguage();
   const [visible, setVisible] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -51,6 +51,10 @@ export default function Comment({ comment, commentLocationType , commentLocation
     if (statusCode === 204) {
       setSubmitError(null);
       setVisible(false);
+    } else if (statusCode === 401) {
+      setAuth({ logged_in: false });
+    } else if (statusCode === 403) {
+      navigate('/unauthorized');
     }
     if (error) {
       setSubmitError('del_comment_error');
@@ -85,6 +89,10 @@ export default function Comment({ comment, commentLocationType , commentLocation
         setOldCommentText(commentText);
         setCommentError(null);
         setEditing(false);
+      } else if (statusCode === 401) {
+        setAuth({ logged_in: false });
+      } else if (statusCode === 403) {
+        navigate('/unauthorized');
       }
       if (error) {
         setCommentError('update_comment_error');
@@ -139,7 +147,7 @@ export default function Comment({ comment, commentLocationType , commentLocation
         <Col xs lg={3} >
           {convertDateAndTimeToLocale(comment.creation_date, language)}
         </Col>
-        {editing ?
+        { (editing && auth.logged_in) ?
           <Col xs lg={8} className='mb-4'>
             <Form onSubmit={handleCommentEditSubmit}>
               <Form.Control as='textarea' rows={5} className='mb-2 mt-3'

@@ -58,7 +58,7 @@ function Navigationbar() {
 
         {!auth.logged_in &&
           <>
-            <Nav.Link className='me-4' onClick={() => { navigate('/login') }}>
+            <Nav.Link className='me-4' onClick={() => { navigate('/login', ) }}>
             {convertKeyToSelectedLanguage('login', i18nData)}
             </Nav.Link>
             {/* <Nav.Link className='me-4' onClick={() => { navigate('/register') }}>

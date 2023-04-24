@@ -33,7 +33,8 @@ const router = express.Router();
 router.get('/:thread_id/comments', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
-  if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
+  if (parseInt(request.params.thread_id) == request.params.thread_id
+    && parseInt(request.params.thread_id) > 0) { // correct parameter
     const thread_id = request.params.thread_id;
     try {
       const comments = await findComments(thread_id, 'opinion_threads');
@@ -56,7 +57,8 @@ router.get('/:thread_id/comments', async (request, response) => {
 router.get('/:thread_id/comments/:id', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
-  if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
+  if (parseInt(request.params.thread_id) == request.params.thread_id
+    && parseInt(request.params.thread_id) > 0) { // correct parameter
 
     const thread_id = request.params.thread_id;
     const id = request.params.id;
@@ -84,7 +86,8 @@ router.get('/:thread_id/comments/:id', async (request, response) => {
 
 router.post('/:thread_id/comments', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
-  if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
+  if (parseInt(request.params.thread_id) == request.params.thread_id
+    && parseInt(request.params.thread_id) > 0) { // correct parameter
     const thread_id = request.params.thread_id;
     try {
       let commentJson = request.body;
@@ -112,7 +115,8 @@ router.post('/:thread_id/comments', authorize(), async (request, response) => {
 router.put('/:thread_id/comments/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
+  if (parseInt(request.params.thread_id) == request.params.thread_id
+    && parseInt(request.params.thread_id) > 0) { // correct parameter
     const thread_id = request.params.thread_id;
     const id = request.params.id;
     const comment = await findCommentByKey(thread_id, id, 'opinion_threads');
@@ -150,7 +154,8 @@ router.put('/:thread_id/comments/:id', authorize(), async (request, response) =>
 router.delete('/:thread_id/comments/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
+  if (parseInt(request.params.thread_id) == request.params.thread_id
+    && parseInt(request.params.thread_id) > 0) { // correct parameter
     const thread_id = request.params.thread_id;
     const id = request.params.id;
     const comment = await findCommentByKey(thread_id, id, 'opinion_threads');
@@ -190,7 +195,8 @@ router.get('', async (request, response) => {
   response.status(200);
   try {
     let { page = 1, limit = 10, creator, followed = false, userId } = request.query;
-    if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
+    if (parseInt(page) == page && parseInt(limit) == limit
+      && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);
       limit = parseInt(limit);
       if (creator) {
@@ -265,7 +271,8 @@ router.get('/:thread_id', async (request, response) => {
   if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
     try {
       let { page = 1, limit = 10 } = request.query;
-      if (parseInt(page) == page && parseInt(limit) == limit) { // correct paging information
+      if (parseInt(page) == page && parseInt(limit) == limit
+        && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
         page = parseInt(page);
         limit = parseInt(limit);
         if (response.locals?.payload?.userID) {
@@ -365,7 +372,8 @@ router.post('', authorize(), async (request, response) => {
 router.post('/:thread_id/followes', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
+  if (parseInt(request.params.thread_id) == request.params.thread_id
+    && parseInt(request.params.thread_id) > 0) { // correct parameter
     const id = request.params.thread_id;
     try {
       const opinionThread = await findOpinionThreadByKeyWithoutComments(id);
@@ -403,7 +411,8 @@ router.post('/:thread_id/followes', authorize(), async (request, response) => {
 router.put('/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.id) == request.params.id) { // correct parameter
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
     const id = request.params.id;
     try {
       const opinionThread = await findOpinionThreadByKeyWithoutComments(id);
@@ -467,7 +476,8 @@ router.put('/:id', authorize(), async (request, response) => {
 router.delete('/:id', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
-  if (parseInt(request.params.id) == request.params.id) { // correct parameter
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
     const id = request.params.id;
     try {
       const opinionThread = await findOpinionThreadByKeyWithoutComments(id);

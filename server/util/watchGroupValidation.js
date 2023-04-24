@@ -17,6 +17,11 @@ export async function validateWatchGroupCreation(watchGroupJson) {
     error = 'empty_watch_date';
     correct = false;
   }
+  const date = new Date(watchGroupJson.watch_date);
+  if (Date.now() > date.getTime()) {
+    error = 'watch_date_in_past';
+    correct = false;
+  }
   if (watchGroupJson.location === '' || watchGroupJson.location === null) {
     error = 'empty_location';
     correct = false;
@@ -39,4 +44,24 @@ export async function validateWatchGroupCreation(watchGroupJson) {
   }
 
   return { correct, error }
+}
+
+export function validateWatchDate(watchDate) {
+  if (watchDate === '' || watchDate === null) {
+    return {
+      error: 'empty_watch_date',
+      correct: false
+    }
+  }
+  const date = new Date(watchDate);
+  if (Date.now() > date.getTime()) {
+    return {
+      error: 'watch_date_in_past',
+      correct: false
+    }
+  }
+  return {
+    errur: null,
+    correct: true
+  }
 }
