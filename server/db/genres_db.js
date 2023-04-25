@@ -32,6 +32,20 @@ export async function findGenreByKey(key) {
   }
 }
 
+export async function findGenreByHisTypeEdgeFrom(from) {
+  try {
+    const aqlQuery = `FOR edge in his_type
+    FILTER edge._from == @from
+    FOR doc in genres
+      FILTER doc._id == edge._to
+      RETURN doc`;
+    const cursor = await pool.query(aqlQuery, { from: from });
+    return await cursor.all();
+  } catch (err) {
+    throw err.message;
+  }
+}
+
 export async function getGenreCount() {
   try {
     const cursor = await genresCollection.count();

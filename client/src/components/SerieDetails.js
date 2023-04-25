@@ -5,7 +5,7 @@ import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../i18n/conversion'
 
 
-export default function SerieDetails({ serie }) {
+export default function SerieDetails({ serie, genres }) {
   const { i18nData } = useLanguage();
 
   return (
@@ -31,6 +31,26 @@ export default function SerieDetails({ serie }) {
             allowFullScreen></iframe>
         </Row>
       </Container>
+
+      {genres &&
+        genres.map((value, indexNr) => {
+          return (
+            <Container key={`container_${serie._key}_genres_${indexNr}`} >
+              <Row key={`row_${serie._key}_genres_${indexNr}`} className='mb-1'>
+                {indexNr === 0 &&
+                  <>
+                    <h4 className='mt-3'>{convertKeyToSelectedLanguage('genres', i18nData)}</h4>
+                    <hr className='short-hr'></hr>
+                  </>
+                }
+              </Row>
+              <Row className='big-margin-left'>
+                {value.name}
+              </Row>
+            </Container>
+          )
+        })
+      }
 
       {Object.keys(serie).map((key, index) => {
         if (key === '_key' || key === 'img_name' || key === 'trailer_link'

@@ -5,7 +5,7 @@ import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../i18n/conversion'
 
 
-export default function MovieDetails({ movie }) {
+export default function MovieDetails({ movie, genres }) {
   const { i18nData } = useLanguage();
 
   return (
@@ -32,9 +32,29 @@ export default function MovieDetails({ movie }) {
         </Row>
       </Container>
 
+      { genres &&
+        genres.map((value, indexNr) => {
+          return (
+            <Container key={`container_${movie._key}_genre_${indexNr}`} >
+              <Row key={`row_${movie._key}_genre_${indexNr}`} className='mb-1'>
+                {indexNr === 0 &&
+                  <>
+                    <h4 className='mt-3'>{convertKeyToSelectedLanguage('genres', i18nData)}</h4>
+                    <hr className='short-hr'></hr>
+                  </>
+                }
+              </Row>
+              <Row className='big-margin-left'>
+                {value.name}
+              </Row>
+            </Container>
+          )
+        })
+      }
+
       {Object.keys(movie).map((key, index) => {
         if (key === '_key' || key === 'img_name' || key === 'trailer_link'
-          || key === 'name' || key === 'storyline' ) {
+          || key === 'name' || key === 'storyline') {
           return null;
         }
         if (Array.isArray(movie[key])) {
@@ -42,19 +62,19 @@ export default function MovieDetails({ movie }) {
           return (
             movie[key].map((value, indexNr) => {
               return (
-                  <Container key={`container_${movie._key}_${index}_${indexNr}`} >
-                    <Row key={`row_${movie._key}_${index}_${indexNr}`} className='mb-1'>
-                      {indexNr === 0 &&
-                        <>
-                          <h4 className='mt-3'>{convertKeyToSelectedLanguage(key, i18nData)}</h4>
-                          <hr className='short-hr'></hr>
-                        </>
-                      }
-                    </Row>
-                    <Row className='big-margin-left'>
-                      {value}
-                    </Row>
-                  </Container>
+                <Container key={`container_${movie._key}_${index}_${indexNr}`} >
+                  <Row key={`row_${movie._key}_${index}_${indexNr}`} className='mb-1'>
+                    {indexNr === 0 &&
+                      <>
+                        <h4 className='mt-3'>{convertKeyToSelectedLanguage(key, i18nData)}</h4>
+                        <hr className='short-hr'></hr>
+                      </>
+                    }
+                  </Row>
+                  <Row className='big-margin-left'>
+                    {value}
+                  </Row>
+                </Container>
               )
             })
           );

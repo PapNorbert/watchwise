@@ -3,6 +3,7 @@ import {
   insertSeriesAndGenreEdges, findSeries, findSeriesByKey, updateSeries, deleteSeriesAndEdges,
   getSeriesCount, findSeriesShort
 } from '../db/series_db.js'
+import { findGenreByHisTypeEdgeFrom } from '../db/genres_db.js'
 import { createPaginationInfo } from '../util/util.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
 import { adminRoleCode } from '../config/UserRoleCodes.js'
@@ -62,6 +63,35 @@ router.get('/:id', async (request, response) => {
       const series = await findSeriesByKey(id);
       if (series != null) {
         response.json(createResponseDto(series));
+      } else { // no entity found with id
+        response.status(404).end();
+      }
+
+    } catch (err) {
+      console.log(err);
+      response.status(400);
+      response.json({
+        error: err.message
+      });
+    }
+  } else { // incorrect parameter
+    response.status(400);
+    response.json({ error: "bad_req_par_number" });
+  }
+
+});
+
+router.get('/:id/genres', async (request, response) => {
+  response.set('Content-Type', 'application/json');
+  response.status(200);
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
+    const id = request.params.id;
+    try {
+      const series = await findSeriesByKey(id);
+      if (series != null) {
+        const genres = await findGenreByHisTypeEdgeFrom(series._id);
+        response.json(createResponseDto(genres));
       } else { // no entity found with id
         response.status(404).end();
       }
