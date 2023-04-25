@@ -9,11 +9,15 @@ import useAuth from '../../hooks/useAuth'
 import useLanguage from '../../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import { buttonTypes } from '../../util/buttonTypes'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../../util/querryParams'
+import { useSearchParamsState } from '../../hooks/useSearchParamsState'
+
 
 
 export default function OpinionThreadsAll() {
-  const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
+  const [limit, setLimit, setMultipleSearchParams] =
+    useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
+  const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const [url, setUrl] = useState(`/api/opinion_threads`);
   const { auth, setAuth, setLoginExpired } = useAuth();
   const { data: opinion_threads, error, statusCode } = useGetAxios(url);
@@ -21,8 +25,21 @@ export default function OpinionThreadsAll() {
   const { i18nData } = useLanguage();
 
   useEffect(() => {
-    setUrl(`/api/opinion_threads/?page=${page}&limit=${limit}`);
-  }, [limit, page])
+    // eslint-disable-next-line eqeqeq
+    if (parseInt(limit) != limit) {
+      setLimit(querryParamDefaultValues.limit);
+    // eslint-disable-next-line eqeqeq
+    } else if (parseInt(page) != page) {
+      setPage(querryParamDefaultValues.page);
+    } else if (!limitValues.includes(parseInt(limit))) {
+      setLimit(querryParamDefaultValues.limit);
+    } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
+      setPage(opinion_threads?.pagination.totalPages);
+    } else {
+      // limit and page have correct values
+      setUrl(`/api/opinion_threads/?page=${page}&limit=${limit}`);
+    }
+  }, [limit, opinion_threads?.pagination.totalPages, page, setLimit, setPage])
 
 
   if (statusCode === 401) {
@@ -42,8 +59,8 @@ export default function OpinionThreadsAll() {
 
   return (opinion_threads &&
     <>
-      <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
-      <PaginationElements currentPage={page}
+      <Limit limit={limit} setNewValuesOnLimitChange={setMultipleSearchParams} key='limit' />
+      <PaginationElements currentPage={parseInt(page)}
         totalPages={opinion_threads?.pagination.totalPages}
         onPageChange={setPage} key='pagination-top' />
       {opinion_threads?.data.map(currentElement => {
@@ -63,7 +80,7 @@ export default function OpinionThreadsAll() {
           } />
         );
       })}
-      <PaginationElements currentPage={page}
+      <PaginationElements currentPage={parseInt(page)}
         totalPages={opinion_threads?.pagination.totalPages}
         onPageChange={setPage} key='pagination-bottom' />
     </>

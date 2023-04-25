@@ -13,11 +13,14 @@ import { buttonTypes } from '../util/buttonTypes'
 import { deleteRequest } from '../axiosRequests/DeleteAxios'
 import { putRequest } from '../axiosRequests/PutAxios'
 import DeletedSuccesfully from './DeletedSuccesfully'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../util/querryParams'
+import { useSearchParamsState } from '../hooks/useSearchParamsState'
 
 
 export default function OpinionThreadDetails({ opinion_thread, buttonType, setUrl, totalPages, refetch }) {
-  const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
+  const [limit, setLimit, setMultipleSearchParams] =
+    useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
+  const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const navigate = useNavigate();
   const { auth, setAuth } = useAuth();
   const { language, i18nData } = useLanguage();
@@ -51,8 +54,21 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
   )
 
   useEffect(() => {
-    setUrl(`/api/opinion_threads/${opinion_thread._key}/?page=${page}&limit=${limit}`);
-  }, [limit, page, setUrl, opinion_thread._key])
+    // eslint-disable-next-line eqeqeq
+    if (parseInt(limit) != limit) {
+      setLimit(querryParamDefaultValues.limit);
+    // eslint-disable-next-line eqeqeq
+    } else if (parseInt(page) != page) {
+      setPage(querryParamDefaultValues.page);
+    } else if (!limitValues.includes(parseInt(limit))) {
+      setLimit(querryParamDefaultValues.limit);
+    } else if (page > totalPages && page > 1) {
+      setPage(totalPages);
+    } else {
+      // limit and page have correct values
+      setUrl(`/api/opinion_threads/${opinion_thread._key}/?page=${page}&limit=${limit}`);
+    }
+  }, [limit, page, setUrl, opinion_thread._key, totalPages, setLimit, setPage])
 
   async function handleFollowesButtonClicked(e) {
     if (e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.follow, i18nData)
@@ -123,7 +139,7 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
       if (descriptionText !== oldDescriptionText) {
         updateData.description = descriptionText;
       }
-      const { error, errorMessage, statusCode } =
+      const { errorMessage, statusCode } =
         await putRequest(`/api/opinion_threads/${opinion_thread._key}`, updateData);
       if (statusCode === 204) {
         setOldDescriptionText(descriptionText);
@@ -235,7 +251,7 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
             </Col>
           </Row>
 
-          { (editing && auth.logged_in) ?
+          {(editing && auth.logged_in) ?
             // editing
             <Row key={`${opinion_thread._key}_description`} className='justify-content-md-center mb-3'>
               <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label_description`} >
@@ -317,7 +333,7 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
         <h4>{convertKeyToSelectedLanguage('comments', i18nData)}</h4>
 
         {opinion_thread.comments.length > 0 &&
-          <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
+          <Limit limit={limit} setNewValuesOnLimitChange={setMultipleSearchParams} key='limit' />
         }
         {opinion_thread.comments.length > 0 ?
           opinion_thread.comments.map(currentComment => {
@@ -332,7 +348,7 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
           : null
         }
         {opinion_thread.comments.length > 0 &&
-          <PaginationElements currentPage={page}
+          <PaginationElements currentPage={parseInt(page)}
             totalPages={totalPages}
             onPageChange={setPage} key='pagination' />
         }

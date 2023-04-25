@@ -9,11 +9,14 @@ import useAuth from '../../hooks/useAuth'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
 import { buttonTypes } from '../../util/buttonTypes'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../../util/querryParams'
+import { useSearchParamsState } from '../../hooks/useSearchParamsState'
 
 
 export default function WatchGroupsMy() {
-  const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
+  const [limit, setLimit, setMultipleSearchParams] =
+    useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
+  const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const { auth, setAuth, setLoginExpired } = useAuth();
   const [url, setUrl] = useState(`/api/watch_groups/?creator=${auth?.username}`);
   const { data: watch_groups, error, statusCode, loading } = useGetAxios(url);
@@ -22,8 +25,21 @@ export default function WatchGroupsMy() {
   const location = useLocation();
 
   useEffect(() => {
-    setUrl(`/api/watch_groups/?creator=${auth?.username}&page=${page}&limit=${limit}`);
-  }, [limit, page, auth?.username])
+    // eslint-disable-next-line eqeqeq
+    if (parseInt(limit) != limit) {
+      setLimit(querryParamDefaultValues.limit);
+      // eslint-disable-next-line eqeqeq
+    } else if (parseInt(page) != page) {
+      setPage(querryParamDefaultValues.page);
+    } else if (!limitValues.includes(parseInt(limit))) {
+      setLimit(querryParamDefaultValues.limit);
+    } else if (page > watch_groups?.pagination.totalPages && page > 1) {
+      setPage(watch_groups?.pagination.totalPages);
+    } else {
+      // limit and page have correct values
+      setUrl(`/api/watch_groups/?creator=${auth?.username}&page=${page}&limit=${limit}`);
+    }
+  }, [limit, page, auth?.username, watch_groups?.pagination.totalPages, setLimit, setPage])
 
 
   if (statusCode === 401) {
@@ -47,8 +63,8 @@ export default function WatchGroupsMy() {
 
   return (watch_groups &&
     <>
-      <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
-      <PaginationElements currentPage={page}
+      <Limit limit={limit} setNewValuesOnLimitChange={setMultipleSearchParams} key='limit' />
+      <PaginationElements currentPage={parseInt(page)}
         totalPages={watch_groups?.pagination.totalPages}
         onPageChange={setPage} key='pagination-top' />
       {watch_groups?.data.length > 0 ?
@@ -61,7 +77,7 @@ export default function WatchGroupsMy() {
         // no elements returned
         <h2>{convertKeyToSelectedLanguage('no_own_groups', i18nData)}</h2>
       }
-      <PaginationElements currentPage={page}
+      <PaginationElements currentPage={parseInt(page)}
         totalPages={watch_groups?.pagination.totalPages}
         onPageChange={setPage} key='pagination-bottom' />
     </>

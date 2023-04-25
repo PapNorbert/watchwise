@@ -8,11 +8,14 @@ import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../../util/querryParams'
+import { useSearchParamsState } from '../../hooks/useSearchParamsState'
 
 
 export default function SeriesAll() {
-  const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
+  const [limit, setLimit, setMultipleSearchParams] =
+    useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
+  const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const [url, setUrl] = useState(`/api/series/?short=true`);
   const { data: series, error, statusCode } = useGetAxios(url);
 
@@ -22,8 +25,21 @@ export default function SeriesAll() {
 
 
   useEffect(() => {
-    setUrl(`/api/series/?short=true&page=${page}&limit=${limit}`);
-  }, [limit, page])
+    // eslint-disable-next-line eqeqeq
+    if (parseInt(limit) != limit) {
+      setLimit(querryParamDefaultValues.limit);
+      // eslint-disable-next-line eqeqeq
+    } else if (parseInt(page) != page) {
+      setPage(querryParamDefaultValues.page);
+    } else if (!limitValues.includes(parseInt(limit))) {
+      setLimit(querryParamDefaultValues.limit);
+    } else if (page > series?.pagination.totalPages && page > 1) {
+      setPage(series?.pagination.totalPages);
+    } else {
+      // limit and page have correct values
+      setUrl(`/api/series/?short=true&page=${page}&limit=${limit}`);
+    }
+  }, [limit, page, series?.pagination.totalPages, setLimit, setPage])
 
 
   if (statusCode === 401) {
@@ -46,13 +62,13 @@ export default function SeriesAll() {
   return (
     <>
       <h1>{convertKeyToSelectedLanguage('series', i18nData)}</h1>
-      <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
+      <Limit limit={limit} setNewValuesOnLimitChange={setMultipleSearchParams} key='limit' />
       {series?.data.map(currentElement => {
         return (
           <Serie serie={currentElement} key={currentElement._key} />
         );
       })}
-      <PaginationElements currentPage={page}
+      <PaginationElements currentPage={parseInt(page)}
         totalPages={series?.pagination.totalPages}
         onPageChange={setPage} key='pagination' />
     </>

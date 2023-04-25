@@ -10,13 +10,15 @@ import useAuth from '../../hooks/useAuth'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
 import { buttonTypes } from '../../util/buttonTypes'
-
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../../util/querryParams'
+import { useSearchParamsState } from '../../hooks/useSearchParamsState'
 
 export default function WatchGroupsJoined() {
   // querry parameters
   const { userId: userID } = useParams();
-  const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
+  const [limit, setLimit, setMultipleSearchParams] =
+    useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
+  const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const [url, setUrl] = useState(`/api/watch_groups?userId=${userID}&joined=true`);
   const { data: watch_groups, error, statusCode, loading, refetch } = useGetAxios(url);
   const { auth, setAuth, setLoginExpired } = useAuth()
@@ -25,15 +27,28 @@ export default function WatchGroupsJoined() {
 
 
   useEffect(() => {
-    setUrl(`/api/watch_groups/?userId=${userID}&joined=true&page=${page}&limit=${limit}`);
-  }, [limit, page, userID])
+    // eslint-disable-next-line eqeqeq
+    if (parseInt(limit) != limit) {
+      setLimit(querryParamDefaultValues.limit);
+      // eslint-disable-next-line eqeqeq
+    } else if (parseInt(page) != page) {
+      setPage(querryParamDefaultValues.page);
+    } else if (!limitValues.includes(parseInt(limit))) {
+      setLimit(querryParamDefaultValues.limit);
+    } else if (page > watch_groups?.pagination.totalPages && page > 1) {
+      setPage(watch_groups?.pagination.totalPages);
+    } else {
+      // limit and page have correct values
+      setUrl(`/api/watch_groups/?userId=${userID}&joined=true&page=${page}&limit=${limit}`);
+    }
+  }, [limit, page, setLimit, setPage, userID, watch_groups?.pagination.totalPages])
 
   useEffect(() => {
     if (watch_groups?.data.length === 0) {
       // if we get an empty page load the previous
       setPage(prev => prev > 1 ? prev - 1 : 1);
     }
-  }, [watch_groups?.data])
+  }, [setPage, watch_groups?.data])
 
 
   if (statusCode === 401) {
@@ -57,8 +72,8 @@ export default function WatchGroupsJoined() {
 
   return (watch_groups &&
     <>
-      <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
-      <PaginationElements currentPage={page}
+      <Limit limit={limit} setNewValuesOnLimitChange={setMultipleSearchParams} key='limit' />
+      <PaginationElements currentPage={parseInt(page)}
         totalPages={watch_groups?.pagination.totalPages}
         onPageChange={setPage} key='pagination-top' />
       {watch_groups?.data.length > 0 ?
@@ -72,7 +87,7 @@ export default function WatchGroupsJoined() {
         // no elements returned
         <h2>{convertKeyToSelectedLanguage('no_joined_groups', i18nData)}</h2>
       }
-      <PaginationElements currentPage={page}
+      <PaginationElements currentPage={parseInt(page)}
         totalPages={watch_groups?.pagination.totalPages}
         onPageChange={setPage} key='pagination-bottom' />
     </>

@@ -14,11 +14,14 @@ import { buttonTypes } from '../util/buttonTypes'
 import { deleteRequest } from '../axiosRequests/DeleteAxios'
 import { putRequest } from '../axiosRequests/PutAxios'
 import DeletedSuccesfully from './DeletedSuccesfully'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../util/querryParams'
+import { useSearchParamsState } from '../hooks/useSearchParamsState'
 
 
 export default function WatchGroupDetails({ watch_group, buttonType, setUrl, totalPages, refetch }) {
-  const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
+  const [limit, setLimit, setMultipleSearchParams] =
+    useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
+  const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const navigate = useNavigate();
   const { auth, setAuth } = useAuth();
   const { language, i18nData } = useLanguage();
@@ -55,8 +58,21 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
   )
 
   useEffect(() => {
-    setUrl(`/api/watch_groups/${watch_group._key}/?page=${page}&limit=${limit}`);
-  }, [limit, page, setUrl, watch_group._key])
+    // eslint-disable-next-line eqeqeq
+    if (parseInt(limit) != limit) {
+      setLimit(querryParamDefaultValues.limit);
+    // eslint-disable-next-line eqeqeq
+    } else if (parseInt(page) != page) {
+      setPage(querryParamDefaultValues.page);
+    } else if (!limitValues.includes(parseInt(limit))) {
+      setLimit(querryParamDefaultValues.limit);
+    } else if (page > totalPages && page > 1) {
+      setPage(totalPages);
+    } else {
+      // limit and page have correct values
+      setUrl(`/api/watch_groups/${watch_group._key}/?page=${page}&limit=${limit}`);
+    }
+  }, [limit, page, setLimit, setPage, setUrl, totalPages, watch_group._key])
 
   async function handleJoinButtonClicked(e) {
     if (e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.join, i18nData)
@@ -132,7 +148,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
       if (watchDateText !== oldWatchDateText) {
         updateData.watch_date = watchDateText;
       }
-      const { error, errorMessage, statusCode } =
+      const { errorMessage, statusCode } =
         await putRequest(`/api/watch_groups/${watch_group._key}`, updateData);
       if (statusCode === 204) {
         if (descriptionText !== oldDescriptionText) {
@@ -259,7 +275,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
             </Col>
           </Row>
 
-          { (editing && auth.logged_in) ?
+          {(editing && auth.logged_in) ?
             // editing watch date
             <Row key={`${watch_group._key}_watch_date`} className='justify-content-md-center mb-3'>
               <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_watch_date`} >
@@ -300,7 +316,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
             </Col>
           </Row>
 
-          { (editing && auth.logged_in) ?
+          {(editing && auth.logged_in) ?
             // editing description
             <Row key={`${watch_group._key}_description`} className='justify-content-md-center mb-3'>
               <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_description`} >
@@ -381,7 +397,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
         <h4>{convertKeyToSelectedLanguage('comments', i18nData)}</h4>
 
         {watch_group.comments.length > 0 &&
-          <Limit limit={limit} setLimit={setLimit} setPage={setPage} key='limit' />
+          <Limit limit={limit} setNewValuesOnLimitChange={setMultipleSearchParams} key='limit' />
         }
         {watch_group.comments.length > 0 &&
           watch_group.comments.map(currentComment => {
@@ -395,7 +411,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
           })
         }
         {watch_group.comments.length > 0 &&
-          <PaginationElements currentPage={page}
+          <PaginationElements currentPage={parseInt(page)}
             totalPages={totalPages}
             onPageChange={setPage} key='pagination' />
         }
