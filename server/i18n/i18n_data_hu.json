@@ -153,5 +153,8 @@
   "search_name": "Keresés név szerint",
   "server_no_resp": "Error: Nem érkezett válasz a szervertől",
   "no_series": "Nem találhatóak kiválasztott sorozatok",
-  "no_movies": "Nem találhatóak kiválasztott filmek"
+  "no_movies": "Nem találhatóak kiválasztott filmek",
+  "unauth_page_acces": "Nincs hozzáférése ehhez az oldalhoz!",
+  "users": "Felhasználók",
+  "no_users": "Nem találhatóak felhasználók"
 }

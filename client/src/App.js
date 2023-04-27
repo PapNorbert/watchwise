@@ -7,6 +7,7 @@ import './Buttons.css'
 import WatchGroupsPage from './pages/WatchGroups/WatchGroupsPage'
 import Home from './pages/Home'
 import ErrorPage from './pages/ErrorPage'
+import UnauthorizedPage from './pages/UnauthorizedPage'
 import Navigationbar from './layouts/Navbar'
 import LanguageContextProvider from './context/LanguageContextProvider'
 import Register from './pages/Register'
@@ -15,8 +16,10 @@ import AuthContextProvider from './context/AuthContextProvider'
 import LoginExpired from './layouts/LoginExpired'
 import MoviesPage from './pages/Movies/MoviesPage'
 import SeriesPage from './pages/Series/SeriesPage'
+import UsersPage from './pages/Users/UsersPage'
 import OpinionThreadsPage from './pages/OpinionThreads/OpinionThreadsPage'
-
+import RequireAuth from './components/RequireAuth'
+import { adminRoleCode } from './config/UserRoleCodes'
 
 function App() {
   const client = new QueryClient();
@@ -24,28 +27,32 @@ function App() {
   return (
     <div className='App'>
       <AuthContextProvider>
-      <QueryClientProvider client={client}>
-      <LanguageContextProvider>
-        <Router>
-          <Navigationbar />
-          <LoginExpired />
-          <div className='container container-fluid'>
-            <Routes>
-              <Route path='/' element={<Home />} />
-              <Route path='/register' element={<Register />} />
-              <Route path='/login' element={<Login />} />
-              <Route path='/watch_groups/*' element={<WatchGroupsPage />} />
-              <Route path='/opinion_threads/*' element={<OpinionThreadsPage />} />
-              <Route path='/movies/*' element={<MoviesPage />} />
-              <Route path='/series/*' element={<SeriesPage />} />
-              <Route path='/error-page' element={<ErrorPage />} />
-              <Route path='*' element={ <Navigate to="/error-page" /> } />
-              
-            </Routes>
-          </div>
-        </Router>
-      </LanguageContextProvider>
-      </QueryClientProvider>
+        <QueryClientProvider client={client}>
+          <LanguageContextProvider>
+            <Router>
+              <Navigationbar />
+              <LoginExpired />
+              <div className='container container-fluid'>
+                <Routes>
+                  <Route path='/' element={<Home />} />
+                  <Route path='/register' element={<Register />} />
+                  <Route path='/login' element={<Login />} />
+                  <Route path='/watch_groups/*' element={<WatchGroupsPage />} />
+                  <Route path='/opinion_threads/*' element={<OpinionThreadsPage />} />
+                  <Route path='/movies/*' element={<MoviesPage />} />
+                  <Route path='/series/*' element={<SeriesPage />} />
+                  <Route element={<RequireAuth allowedRoles={[adminRoleCode]} />}>
+                    <Route path='/users/*' element={<UsersPage />} />
+                  </Route>
+                  <Route path='/unauthorized' element={<UnauthorizedPage />} />
+                  <Route path='/error-page' element={<ErrorPage />} />
+                  <Route path='*' element={<Navigate to="/error-page" />} />
+
+                </Routes>
+              </div>
+            </Router>
+          </LanguageContextProvider>
+        </QueryClientProvider>
       </AuthContextProvider>
     </div>
   );

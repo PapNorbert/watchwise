@@ -153,5 +153,8 @@
   "search_name": "Search by name",
   "server_no_resp": "Error: No response from the server",
   "no_series": "No selected series found",
-  "no_movies": "No selected movies found"
+  "no_movies": "No selected movies found",
+  "unauth_page_acces": "You do not have acces to this page!",
+  "users": "Users",
+  "no_users": "No users found"
 }

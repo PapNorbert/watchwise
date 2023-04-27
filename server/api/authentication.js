@@ -62,7 +62,7 @@ router.post('/login', async (req, response) => {
             {
               userID: user._key,
               username: user.username,
-              role: userRoleCode,
+              role: user.role,
             },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
@@ -71,7 +71,7 @@ router.post('/login', async (req, response) => {
             {
               userID: user._key,
               username: user.username,
-              role: userRoleCode,
+              role: user.role,
             },
             process.env.JWT_SECRET,
             { expiresIn: '1d' }
@@ -117,7 +117,7 @@ router.get('/refresh', async (req, response) => {
           {
             userID: user._key,
             username: user.username,
-            role: userRoleCode,
+            role: user.role,
           },
           process.env.JWT_SECRET,
           { expiresIn: '1h' }

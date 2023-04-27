@@ -30,7 +30,7 @@ export default function SeriesAll() {
   const { data: series, error, statusCode } = useGetAxios(url);
   const { data: genres, error: genresError, statusCode: genreStatusCode } = useGetAxios('/api/genres');
 
-  const { auth, setAuth, setLoginExpired } = useAuth()
+  const { auth, setAuth, setLoginExpired } = useAuth();
   const location = useLocation();
   const { i18nData } = useLanguage();
 

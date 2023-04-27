@@ -1,11 +1,56 @@
 import pool from './connection_db.js'
+import { userRoleCode } from '../config/userRoleCodes.js'
 
 const usersCollection = pool.collection("users");
 
 
+
+export async function findUsers(page, limit) {
+  try {
+    const aqlQuery = `FOR doc IN users
+    FILTER doc.role == @userRole
+    LIMIT @offset, @count
+    RETURN { 
+      _key: doc._key,
+      first_name: doc.first_name, 
+      last_name: doc.last_name, 
+      username: doc.username, 
+      create_date: doc.create_date
+    }`;
+    const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, userRole: userRoleCode });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findUsersByUsernameContains(page, limit, name) {
+  try {
+    const aqlQuery = `FOR doc IN users
+    FILTER doc.role == @userRole
+    FILTER CONTAINS(UPPER(doc.username), @nameFilter)
+    LIMIT @offset, @count
+    RETURN { 
+      _key: doc._key,
+      first_name: doc.first_name, 
+      last_name: doc.last_name, 
+      username: doc.username, 
+      create_date: doc.create_date
+    }`;
+    const cursor = await pool.query(aqlQuery, { 
+      offset: (page - 1) * limit, count: limit, userRole: userRoleCode, nameFilter: name 
+    });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
 export async function findUserByKey(key) {
   try {
-    const cursor = await usersCollection.firstExample({_key: key});
+    const cursor = await usersCollection.firstExample({ _key: key });
     return cursor;
   } catch (err) {
     if (err.message == "no match") {
@@ -21,7 +66,7 @@ export async function findUserByKey(key) {
 
 export async function findUserByUsername(username) {
   try {
-    const cursor = await usersCollection.firstExample({username: username});
+    const cursor = await usersCollection.firstExample({ username: username });
     return cursor;
   } catch (err) {
     if (err.message == "no match") {
@@ -29,7 +74,7 @@ export async function findUserByUsername(username) {
       return null;
     } else {
       console.log(err);
-      throw err;  
+      throw err;
     }
 
   }
@@ -37,7 +82,7 @@ export async function findUserByUsername(username) {
 
 export async function findUserByRefreshToken(refreshToken) {
   try {
-    const cursor = await usersCollection.firstExample({refreshToken: refreshToken});
+    const cursor = await usersCollection.firstExample({ refreshToken: refreshToken });
     return cursor;
   } catch (err) {
     if (err.message == "no match") {
@@ -45,10 +90,39 @@ export async function findUserByRefreshToken(refreshToken) {
       return null;
     } else {
       console.log(err);
-      throw err;  
+      throw err;
     }
 
   }
+}
+
+export async function getUsersCount() {
+  try {
+    const aqlQuery = `RETURN LENGTH(FOR doc IN users
+      FILTER doc.role == @userRole
+      RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { userRole: userRoleCode });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+
+}
+
+export async function getUsersCountByUsernameContains(name) {
+  try {
+    const aqlQuery = `RETURN LENGTH(FOR doc IN users
+      FILTER doc.role == @userRole
+      FILTER CONTAINS(UPPER(doc.username), @nameFilter)
+      RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { userRole: userRoleCode, nameFilter: name });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+
 }
 
 export async function checkUserExistsWithUsername(username) {
@@ -62,6 +136,7 @@ export async function checkUserExistsWithUsername(username) {
     throw err;
   }
 }
+
 
 export async function insertUser(user) {
   try {
@@ -91,7 +166,7 @@ export async function updateUser(key, newUserAttributes) {
 
 export async function deleteUser(key) {
   try {
-    const cursor = await usersCollection.remove({_key: key});
+    const cursor = await usersCollection.remove({ _key: key });
     return true;
   } catch (err) {
     if (err.message == "document not found") {

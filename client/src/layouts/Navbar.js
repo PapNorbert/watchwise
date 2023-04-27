@@ -6,7 +6,7 @@ import useLanguage from '../hooks/useLanguage'
 import useAuth from '../hooks/useAuth'
 import { getAxios } from '../axiosRequests/GetAxios'
 import { convertKeyToSelectedLanguage } from '../i18n/conversion'
-
+import { adminRoleCode } from '../config/UserRoleCodes'
 
 
 function Navigationbar() {
@@ -53,17 +53,23 @@ function Navigationbar() {
             <Nav.Link eventKey='series' onClick={() => { navigate('/series') }}>
               {convertKeyToSelectedLanguage('series', i18nData)}
             </Nav.Link>
+            {
+              auth.logged_in && auth?.role === adminRoleCode &&
+              <Nav.Link className='me-4' onClick={() => { navigate('/users',) }}>
+                {convertKeyToSelectedLanguage('users', i18nData)}
+              </Nav.Link>
+            }
           </Nav>
         </Navbar.Collapse>
 
         {!auth.logged_in &&
           <>
-            <Nav.Link className='me-4' onClick={() => { navigate('/login', ) }}>
-            {convertKeyToSelectedLanguage('login', i18nData)}
+            <Nav.Link className='me-4' onClick={() => { navigate('/login',) }}>
+              {convertKeyToSelectedLanguage('login', i18nData)}
             </Nav.Link>
-            {/* <Nav.Link className='me-4' onClick={() => { navigate('/register') }}>
-              Register
-            </Nav.Link> */}
+            <Nav.Link className='me-4' onClick={() => { navigate('/register') }}>
+              {convertKeyToSelectedLanguage('register', i18nData)}
+            </Nav.Link>
           </>
         }
         {

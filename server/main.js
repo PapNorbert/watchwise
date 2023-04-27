@@ -53,7 +53,7 @@ app.use('/api/watch_groups', watchGroupApiRoute);
 app.use('/api/language', languageDataFilesRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/auth', authRoute);
-app.use('/api/shows', showsRoute)
+app.use('/api/shows', showsRoute);
 
 // read .env file
 dotenv.config()

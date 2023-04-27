@@ -35,9 +35,6 @@ export async function createEdgeCollections() {
   if( ! await pool.collection('follows_thread').exists() ) {
     await pool.createEdgeCollection('follows_thread');
   }
-  if( ! await pool.collection('likes').exists() ) {
-    await pool.createEdgeCollection('likes');
-  }
   if( ! await pool.collection('his_type').exists() ) {
     await pool.createEdgeCollection('his_type');
   }
