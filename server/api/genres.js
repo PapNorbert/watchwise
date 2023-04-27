@@ -1,7 +1,7 @@
 import express from 'express';
 import {
   findGenres, findGenreByKey, insertGenre, updateGenre, deleteGenreAndEdges,
-  getGenreCount
+  getGenreCount, findAllGenres
 } from '../db/genres_db.js'
 import { createPaginationInfo } from '../util/util.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
@@ -11,30 +11,15 @@ import { authorize } from '../middlewares/auth.js'
 const router = express.Router();
 
 
-router.get('', async (request, response) => {
+router.get('', async (_request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10 } = request.query;
-    if (parseInt(page) == page && parseInt(limit) == limit
-      && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
-      page = parseInt(page);
-      limit = parseInt(limit);
-      const [genres, count] = await Promise.all([
-        findGenres(page, limit),
-        getGenreCount(),
-      ]);
-      response.json({
-        "data": createResponseDtos(genres),
-        "pagination": createPaginationInfo(page, limit, count)
-      });
-    } else {
-      response.status(400).json({ error: "bad_paging" })
-    }
+    const genres = await findAllGenres();
+    response.json(createResponseDtos(genres));
   } catch (err) {
     console.log(err);
-    response.status(400);
-    response.json({
+    response.status(400).json({
       error: "error"
     });
   }

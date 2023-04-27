@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import 'bootstrap/dist/css/bootstrap.css'
 
 import './App.css'
+import './Buttons.css'
 import WatchGroupsPage from './pages/WatchGroups/WatchGroupsPage'
 import Home from './pages/Home'
 import ErrorPage from './pages/ErrorPage'

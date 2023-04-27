@@ -33,7 +33,7 @@ export default function Movie({ movie }) {
                     return (
                       <Row key={`${movie._key}_${index}_${indexNr}`} className='justify-content-md-center mb-1'>
                         <Col xs lg={4} className='object-label' key={`${movie._key}_label${index}_${indexNr}`} >
-                          {indexNr === 0 && convertKeyToSelectedLanguage(key, i18nData)}
+                          {indexNr === 0 && convertKeyToSelectedLanguage(key, i18nData).concat(':')}
                         </Col>
                         <Col xs lg={7} key={`${movie._key}_value${index}_${indexNr}`} >
                           {value}
@@ -43,10 +43,24 @@ export default function Movie({ movie }) {
                   })
                 );
               }
+            
+              if (key === 'genres') {
+                return (
+                  <Row key={`${movie._key}_genres`} className='justify-content-md-center'>
+                    <Col xs lg={4} className='object-label' key={`${movie._key}_label_genres`} >
+                      {convertKeyToSelectedLanguage('genres', i18nData)}:
+                    </Col>
+                    <Col xs lg={7} key={`${movie._key}_value_genres`} >
+                      {movie.genres.map(genre => convertKeyToSelectedLanguage(genre, i18nData)).join(', ')}
+                    </Col>
+                  </Row>
+                );
+              }
+
               return (
                 <Row key={`${movie._key}_${index}`} className='justify-content-md-center mb-1'>
                   <Col xs lg={4} className='object-label' key={`${movie._key}_label${index}`} >
-                    {convertKeyToSelectedLanguage(key, i18nData)}
+                    {convertKeyToSelectedLanguage(key, i18nData)}:
                   </Col>
                   <Col xs lg={7} key={`${movie._key}_value${index}`} >
                     {movie[key]}
@@ -55,6 +69,7 @@ export default function Movie({ movie }) {
                 </Row>
               );
             })}
+
           </Stack>
         </Stack>
       </Card.Body>

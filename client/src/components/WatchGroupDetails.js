@@ -19,7 +19,7 @@ import { useSearchParamsState } from '../hooks/useSearchParamsState'
 
 
 export default function WatchGroupDetails({ watch_group, buttonType, setUrl, totalPages, refetch }) {
-  const [limit, setLimit, setMultipleSearchParams] =
+  const [limit, setLimit] =
     useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
   const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const navigate = useNavigate();
@@ -397,7 +397,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
         <h4>{convertKeyToSelectedLanguage('comments', i18nData)}</h4>
 
         {watch_group.comments.length > 0 &&
-          <Limit limit={limit} setNewValuesOnLimitChange={setMultipleSearchParams} key='limit' />
+          <Limit limit={limit} key='limit' />
         }
         {watch_group.comments.length > 0 &&
           watch_group.comments.map(currentComment => {

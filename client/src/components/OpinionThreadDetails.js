@@ -18,7 +18,7 @@ import { useSearchParamsState } from '../hooks/useSearchParamsState'
 
 
 export default function OpinionThreadDetails({ opinion_thread, buttonType, setUrl, totalPages, refetch }) {
-  const [limit, setLimit, setMultipleSearchParams] =
+  const [limit, setLimit] =
     useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
   const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const navigate = useNavigate();
@@ -333,7 +333,7 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
         <h4>{convertKeyToSelectedLanguage('comments', i18nData)}</h4>
 
         {opinion_thread.comments.length > 0 &&
-          <Limit limit={limit} setNewValuesOnLimitChange={setMultipleSearchParams} key='limit' />
+          <Limit limit={limit} key='limit' />
         }
         {opinion_thread.comments.length > 0 ?
           opinion_thread.comments.map(currentComment => {

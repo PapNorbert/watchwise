@@ -72,51 +72,6 @@ h2 {
   font-weight: bold;
 }
 
-.btn-orange { 
-  color: #ffffff; 
-  background-color: #F7B500; 
-  border-color: #F7B500; 
-} 
- 
-.btn-orange:hover, 
-.btn-orange:focus, 
-.btn-orange:active, 
-.btn-orange.active, 
-.open .dropdown-toggle.btn-orange { 
-  color: #ffffff; 
-  background-color: #e89221 !important; 
-  border-color: #e89221 !important; 
-} 
- 
-.btn-orange:active, 
-.btn-orange.active, 
-.open .dropdown-toggle.btn-orange { 
-  background-image: none; 
-} 
- 
-.btn-orange.disabled, 
-.btn-orange[disabled], 
-fieldset[disabled] .btn-orange, 
-.btn-orange.disabled:hover, 
-.btn-orange[disabled]:hover, 
-fieldset[disabled] .btn-orange:hover, 
-.btn-orange.disabled:focus, 
-.btn-orange[disabled]:focus, 
-fieldset[disabled] .btn-orange:focus, 
-.btn-orange.disabled:active, 
-.btn-orange[disabled]:active, 
-fieldset[disabled] .btn-orange:active, 
-.btn-orange.disabled.active, 
-.btn-orange[disabled].active, 
-fieldset[disabled] .btn-orange.active { 
-  background-color: #e89221 !important; 
-  border-color: #e89221 !important; 
-} 
- 
-.btn-orange .badge { 
-  color: #e89221; 
-  background-color: #ffffff; 
-}
 
 .cover_img {
   width: 15%;
@@ -200,6 +155,7 @@ svg {
 
 .error {
   color: #e13d02;
+  text-align: center;
 }
 
 .invalid-field {

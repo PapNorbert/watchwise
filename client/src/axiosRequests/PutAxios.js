@@ -11,11 +11,18 @@ export async function putRequest(url, body) {
       statusCode = response.status;
       error = false;
     } catch (err) {
-      statusCode = err.response.status;
-      if (statusCode === 400 || statusCode === 401 || statusCode === 404) {
-        errorMessage = err.response.data.error;
+      if (!err.response) {
+        // no response from server
+        statusCode = 503; // service unavailable
+        error = true;
+        errorMessage = 'server_no_resp';
       } else {
-        console.log('Error during post request', err.message);
+        statusCode = err.response.status;
+        if (statusCode === 400 || statusCode === 401 || statusCode === 404) {
+          errorMessage = err.response.data.error;
+        } else if (statusCode !== 404) {
+          console.log('Error during post request', err.message);
+        }
       }
     }
   } else {

@@ -16,7 +16,7 @@ import { useSearchParamsState } from '../../hooks/useSearchParamsState'
 export default function WatchGroupsJoined() {
   // querry parameters
   const { userId: userID } = useParams();
-  const [limit, setLimit, setMultipleSearchParams] =
+  const [limit, setLimit] =
     useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
   const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const [url, setUrl] = useState(`/api/watch_groups?userId=${userID}&joined=true`);
@@ -62,6 +62,10 @@ export default function WatchGroupsJoined() {
     return <Navigate to='/unauthorized' state={{ from: location }} replace />
   }
 
+  if (statusCode === 503 ) {
+    return <h2 className='error'>{convertKeyToSelectedLanguage('server_no_resp', i18nData)}</h2>
+  }
+
   if (loading) {
     return <h3 className='loading'>{convertKeyToSelectedLanguage('loading', i18nData)}</h3>
   }
@@ -72,7 +76,7 @@ export default function WatchGroupsJoined() {
 
   return (watch_groups &&
     <>
-      <Limit limit={limit} setNewValuesOnLimitChange={setMultipleSearchParams} key='limit' />
+      <Limit limit={limit} key='limit' />
       <PaginationElements currentPage={parseInt(page)}
         totalPages={watch_groups?.pagination.totalPages}
         onPageChange={setPage} key='pagination-top' />

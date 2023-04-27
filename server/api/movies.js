@@ -1,7 +1,9 @@
 import express from 'express';
 import {
   findMovies, findMovieByKey, getMovieCount, findMoviesShort,
-  insertMovieAndGenreEdges, updateMovie, deleteMovieAndEdges
+  insertMovieAndGenreEdges, updateMovie, deleteMovieAndEdges,
+  findMoviesShortByNameContains, findMoviesShortByGenreType,
+  getMoviesCountByNameContains, getMoviesCountByGenre
 } from '../db/movies_db.js'
 import { findGenreByHisTypeEdgeFrom } from '../db/genres_db.js'
 import { createPaginationInfo } from '../util/util.js'
@@ -16,20 +18,45 @@ router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10, short = false } = request.query;
+    let { page = 1, limit = 10, short = false, genre = 'all', name } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit
       && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);
       limit = parseInt(limit);
       if (short) {
-        const [movies, count] = await Promise.all([
-          findMoviesShort(page, limit),
-          getMovieCount(),
-        ]);
-        response.json({
-          "data": createResponseDtos(movies),
-          "pagination": createPaginationInfo(page, limit, count)
-        });
+        if (genre === 'all') {
+          if (name) {
+            // get movies filtered by name
+            const [series, count] = await Promise.all([
+              findMoviesShortByNameContains(page, limit, name.toUpperCase()),
+              getMoviesCountByNameContains(name.toUpperCase()),
+            ]);
+            response.json({
+              "data": createResponseDtos(series),
+              "pagination": createPaginationInfo(page, limit, count)
+            });
+          } else {
+            // get all movies
+            const [movies, count] = await Promise.all([
+              findMoviesShort(page, limit),
+              getMovieCount(),
+            ]);
+            response.json({
+              "data": createResponseDtos(movies),
+              "pagination": createPaginationInfo(page, limit, count)
+            });
+          }
+        } else {
+          // filtered by genre
+          const [series, count] = await Promise.all([
+            findMoviesShortByGenreType(page, limit, `genres/${genre}`),
+            getMoviesCountByGenre(`genres/${genre}`),
+          ]);
+          response.json({
+            "data": createResponseDtos(series),
+            "pagination": createPaginationInfo(page, limit, count)
+          });
+        }
       } else {
         const [movies, count] = await Promise.all([
           findMovies(page, limit),

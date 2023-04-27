@@ -20,15 +20,82 @@ export async function findMoviesShort(page, limit) {
   try {
     const aqlQuery = `FOR doc IN movies
     LIMIT @offset, @count
+    LET genres = (
+      FOR edge in his_type
+      FILTER edge._from == doc._id
+      FOR genre in genres
+        FILTER genre._id == edge._to
+        RETURN genre.name
+    )
     RETURN { 
       _key: doc._key,
       title: doc.name, 
       distributed_by: doc.distributed_by,
       runtime: doc.runtime, 
       release_date: doc.release_date,
-      img_name: doc.img_name
+      img_name: doc.img_name,
+      genres: genres
     }`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findMoviesShortByGenreType(page, limit, genreId) {
+  try {
+    const aqlQuery = `FOR doc IN INBOUND
+    @genreId his_type
+    FILTER CONTAINS(doc._id, "movies")
+    LIMIT @offset, @count
+    LET genres = (
+      FOR edge in his_type
+      FILTER edge._from == doc._id
+      FOR genre in genres
+        FILTER genre._id == edge._to
+        RETURN genre.name
+    )
+    RETURN { 
+      _key: doc._key,
+      title: doc.name, 
+      distributed_by: doc.distributed_by,
+      runtime: doc.runtime, 
+      release_date: doc.release_date,
+      img_name: doc.img_name,
+      genres: genres
+    }`;
+    const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, genreId: genreId });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findMoviesShortByNameContains(page, limit, name) {
+  try {
+    const aqlQuery = `FOR doc IN movies
+    FILTER CONTAINS(UPPER(doc.name), @nameFilter)
+    LIMIT @offset, @count
+    LET genres = (
+      FOR edge in his_type
+      FILTER edge._from == doc._id
+      FOR genre in genres
+        FILTER genre._id == edge._to
+        RETURN genre.name
+    )
+    RETURN { 
+      _key: doc._key,
+      title: doc.name, 
+      distributed_by: doc.distributed_by,
+      runtime: doc.runtime, 
+      release_date: doc.release_date,
+      img_name: doc.img_name,
+      genres: genres
+    }`;
+    const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, nameFilter: name });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -78,6 +145,36 @@ export async function getMovieCount() {
   }
 
 }
+
+export async function getMoviesCountByGenre(genreId) {
+  try {
+    const aqlQuery = `RETURN LENGTH(FOR vertex IN INBOUND
+      @genreId his_type
+      FILTER CONTAINS(vertex._id, "movies")
+      RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { genreId: genreId });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+
+}
+
+export async function getMoviesCountByNameContains(name) {
+  try {
+    const aqlQuery = `RETURN LENGTH(FOR doc IN movies
+      FILTER CONTAINS(UPPER(doc.name), @nameFilter)
+      RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { nameFilter: name });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+
+}
+
 
 export async function getMovieKeyByName(name) {
   try {

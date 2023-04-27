@@ -20,15 +20,82 @@ export async function findSeriesShort(page, limit) {
   try {
     const aqlQuery = `FOR doc IN series
     LIMIT @offset, @count
+    LET genres = (
+      FOR edge in his_type
+      FILTER edge._from == doc._id
+      FOR genre in genres
+        FILTER genre._id == edge._to
+        RETURN genre.name
+    )
     RETURN { 
       _key: doc._key,
       title: doc.name, 
       nr_seasons: doc.nr_seasons, 
       nr_episodes: doc.nr_episodes, 
       release_date: doc.original_release,
-      img_name: doc.img_name
+      img_name: doc.img_name,
+      genres: genres
     }`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findSeriesShortByGenreType(page, limit, genreId) {
+  try {
+    const aqlQuery = `FOR doc IN INBOUND
+    @genreId his_type
+    FILTER CONTAINS(doc._id, "series")
+    LIMIT @offset, @count
+    LET genres = (
+      FOR edge in his_type
+      FILTER edge._from == doc._id
+      FOR genre in genres
+        FILTER genre._id == edge._to
+        RETURN genre.name
+    )
+    RETURN { 
+      _key: doc._key,
+      title: doc.name, 
+      nr_seasons: doc.nr_seasons, 
+      nr_episodes: doc.nr_episodes, 
+      release_date: doc.original_release,
+      img_name: doc.img_name,
+      genres: genres
+    }`;
+    const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, genreId: genreId });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findSeriesShortByNameContains(page, limit, name) {
+  try {
+    const aqlQuery = `FOR doc IN series
+    FILTER CONTAINS(UPPER(doc.name), @nameFilter)
+    LIMIT @offset, @count
+    LET genres = (
+      FOR edge in his_type
+      FILTER edge._from == doc._id
+      FOR genre in genres
+        FILTER genre._id == edge._to
+        RETURN genre.name
+    )
+    RETURN { 
+      _key: doc._key,
+      title: doc.name, 
+      nr_seasons: doc.nr_seasons, 
+      nr_episodes: doc.nr_episodes, 
+      release_date: doc.original_release,
+      img_name: doc.img_name,
+      genres: genres
+    }`;
+    const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, nameFilter: name });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -72,6 +139,35 @@ export async function getSeriesCount() {
   try {
     const cursor = await seriesCollection.count();
     return cursor.count;
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+
+}
+
+export async function getSeriesCountByGenre(genreId) {
+  try {
+    const aqlQuery = `RETURN LENGTH(FOR vertex IN INBOUND
+      @genreId his_type
+      FILTER CONTAINS(vertex._id, "series")
+      RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { genreId: genreId });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+
+}
+
+export async function getSeriesCountByNameContains(name) {
+  try {
+    const aqlQuery = `RETURN LENGTH(FOR doc IN series
+      FILTER CONTAINS(UPPER(doc.name), @nameFilter)
+      RETURN true)`;
+    const cursor = await pool.query(aqlQuery, { nameFilter: name });
+    return (await cursor.all())[0];
   } catch (err) {
     console.log(err);
     throw err;

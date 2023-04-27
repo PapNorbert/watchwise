@@ -28,18 +28,31 @@ export default function Serie({ serie }) {
               if (key === '_key' || key === 'title' || key === 'img_name') {
                 return null;
               }
+              if (key === 'genres') {
+                return (
+                  <Row key={`${serie._key}_genres`} className='justify-content-md-center'>
+                    <Col xs lg={4} className='object-label' key={`${serie._key}_label_genres`} >
+                      {convertKeyToSelectedLanguage('genres', i18nData)}:
+                    </Col>
+                    <Col xs lg={7} key={`${serie._key}_value_genres`} >
+                      {serie.genres.map(genre => convertKeyToSelectedLanguage(genre, i18nData)).join(', ')}
+                    </Col>
+                  </Row>
+                );
+              }
+
               return (
                 <Row key={`${serie._key}_${index}`} className='justify-content-md-center'>
                   <Col xs lg={4} className='object-label' key={`${serie._key}_label${index}`} >
-                    {convertKeyToSelectedLanguage(key, i18nData)}
+                    {convertKeyToSelectedLanguage(key, i18nData)}:
                   </Col>
                   <Col xs lg={7} key={`${serie._key}_value${index}`} >
                     {serie[key]}
                   </Col>
-
                 </Row>
               );
             })}
+
           </Stack>
         </Stack>
       </Card.Body>

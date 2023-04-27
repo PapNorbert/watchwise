@@ -13,18 +13,5 @@ export function useSearchParamsState(searchParamName, defaultValue) {
     });
   };
 
-  function setMultipleSearchParams(paramNames, paramValues) {
-    if (paramNames.length !== paramValues.length) {
-      return false;
-    }
-    setSearchParams((searchParams) => {
-      for (let i = 0; i < paramNames.length; i++) {
-        searchParams.set(paramNames[i], paramValues[i]);
-      }
-      return searchParams;
-    });
-    return true;
-  };
-
-  return [searchParamsState, setSearchParamsState, setMultipleSearchParams];
+  return [searchParamsState, setSearchParamsState];
 }

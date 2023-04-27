@@ -3,15 +3,19 @@ import { Stack, Form } from 'react-bootstrap'
 
 import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../i18n/conversion'
-import { querryParamNames, limitValues } from '../util/querryParams'
+import { querryParamNames, limitValues, querryParamDefaultValues } from '../util/querryParams'
+import useSetMultipleSearchParams from '../hooks/useSetMultipleSearchParams'
 
-export default function Limit({ limit, setNewValuesOnLimitChange }) {
+export default function Limit({ limit }) {
   const { i18nData } = useLanguage();
+  const [setMultipleSearchParams] = useSetMultipleSearchParams();
 
   function limitChanged(e) {
     // set new page an limit values
-    if (!setNewValuesOnLimitChange([querryParamNames.page, querryParamNames.limit],
-      [1, parseInt(e.target.value)])) {
+    if (!setMultipleSearchParams(
+      [querryParamNames.page, querryParamNames.limit],
+      [querryParamDefaultValues.page, parseInt(e.target.value)])
+    ) {
       console.log('Error changing limit');
     }
   }

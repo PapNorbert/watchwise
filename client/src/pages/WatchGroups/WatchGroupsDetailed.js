@@ -34,6 +34,10 @@ export default function WatchGroupsDetailed() {
     return <h3 className='error text-center'>{convertKeyToSelectedLanguage('404_group', i18nData)}</h3>
   }
 
+  if (statusCode === 503 ) {
+    return <h2 className='error'>{convertKeyToSelectedLanguage('server_no_resp', i18nData)}</h2>
+  }
+
   if (loading) {
     return <h3 className='loading'>{convertKeyToSelectedLanguage('loading', i18nData)}</h3>
   }

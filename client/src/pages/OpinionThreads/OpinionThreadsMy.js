@@ -13,7 +13,7 @@ import { querryParamDefaultValues, querryParamNames, limitValues } from '../../u
 import { useSearchParamsState } from '../../hooks/useSearchParamsState'
 
 export default function OpinionsThreadsMy() {
-  const [limit, setLimit, setMultipleSearchParams] =
+  const [limit, setLimit] =
     useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
   const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const { auth, setAuth, setLoginExpired } = useAuth();
@@ -52,6 +52,10 @@ export default function OpinionsThreadsMy() {
     return <Navigate to='/unauthorized' state={{ from: location }} replace />
   }
 
+  if (statusCode === 503 ) {
+    return <h2 className='error'>{convertKeyToSelectedLanguage('server_no_resp', i18nData)}</h2>
+  }
+
   if (loading) {
     return <h3 className='error'>{convertKeyToSelectedLanguage('loading', i18nData)}</h3>
   }
@@ -62,7 +66,7 @@ export default function OpinionsThreadsMy() {
 
   return (opinion_threads &&
     <>
-      <Limit limit={limit} setNewValuesOnLimitChange={setMultipleSearchParams} key='limit' />
+      <Limit limit={limit} key='limit' />
       <PaginationElements currentPage={parseInt(page)}
         totalPages={opinion_threads?.pagination.totalPages}
         onPageChange={setPage} key='pagination-top' />

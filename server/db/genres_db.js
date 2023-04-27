@@ -3,6 +3,16 @@ import pool from './connection_db.js'
 const genresCollection = pool.collection("genres");
 
 
+export async function findAllGenres() {
+  try {
+    const cursor = await genresCollection.all();
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
 export async function findGenres(page, limit) {
   try {
     const aqlQuery = `FOR doc IN genres

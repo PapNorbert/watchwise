@@ -29,10 +29,16 @@ export default function useGetAxios(url) {
       })
       .catch((err) => {
         if (!Axios.isCancel(err)) {
-          newStatusCode = err.response?.status;
-          newErrorValue = true;
-          if (err.response.status !== 401 && err.response.status !== 403 && err.response.status !== 404) {
-            console.log('Error during connection', err.message);
+          if( !err.response) {
+            // no response from server
+            newStatusCode = 503; // service unavailable
+            newErrorValue = true;
+          } else {
+            newStatusCode = err.response?.status;
+            newErrorValue = true;
+            if (err.response.status !== 401 && err.response.status !== 403 && err.response.status !== 404) {
+              console.log('Error during connection', err.message);
+            }
           }
         }
       })
