@@ -58,6 +58,10 @@ router.post('/login', async (req, response) => {
       } else {  // user exists
         const correct = await bcrypt.compare(userInformation.passwd, user.password);
         if (correct) {
+          if (user.banned) {
+            response.status(400).json({ error: 'user_banned' });
+            return
+          }
           const accesToken = jwt.sign(
             {
               userID: user._key,

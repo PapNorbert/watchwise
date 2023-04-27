@@ -62,7 +62,8 @@ export default function Login() {
           } else {
             setSubmitError(res.errorMessage);
           }
-
+          setField('passwd', '');
+          setErrors({ ...errors, passwd: '' });
         })
         .catch((err) => {
           console.log('Error during post request', err.message);

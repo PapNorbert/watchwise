@@ -57,6 +57,46 @@ router.get('', authorize([adminRoleCode]), async (request, response) => {
 
 });
 
+router.post('/:user_id/ban', authorize([adminRoleCode]), async (request, response) => {
+  response.set('Content-Type', 'application/json');
+  response.status(204);
+  if (parseInt(request.params.user_id) == request.params.user_id
+    && parseInt(request.params.user_id) > 0) { // correct parameter
+    const id = request.params.user_id;
+    try {
+      const user = await findUserByKey(id);
+      if (user !== null ) {
+        if( user.role === adminRoleCode) {
+          console.log('Attempt to ban an admin user')
+          response.status(400).json({
+            error: 'error_admin_ban'
+          });
+        }
+        if (user.banned) {
+          response.status(202);
+        }
+        const updated = await updateUser(user._id, { banned: !user.banned });
+        if (!updated) {
+          response.status(404);
+        }
+        response.end();
+      } else { // user not found
+        response.status(404).end();
+      }
+
+    } catch (err) {
+      console.log(err);
+      response.status(400).json({
+        error: err.message
+      });
+    }
+  } else { // incorrect parameter
+    response.status(400);
+    response.json({ error: 'bad_req_par_number' });
+  }
+
+});
+
 // router.get('/:id', authorize([adminRoleCode]), async (request, response) => {
 //   response.set('Content-Type', 'application/json');
 //   response.status(200);

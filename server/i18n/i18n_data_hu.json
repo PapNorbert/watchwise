@@ -156,5 +156,11 @@
   "no_movies": "Nem találhatóak kiválasztott filmek",
   "unauth_page_acces": "Nincs hozzáférése ehhez az oldalhoz!",
   "users": "Felhasználók",
-  "no_users": "Nem találhatóak felhasználók"
+  "no_users": "Nem találhatóak felhasználók",
+  "ban": "Tiltás",
+  "unban": "Feloldás",
+  "404_user": "Kiválasztott Felhasználó nem található",
+  "error_admin_ban": "Error. Megkísérelt letiltani egy adminisztrátor felhasználót",
+  "user_banned": "Sajnáljuk, a felhasználó fiókját tiltották"
+
 }

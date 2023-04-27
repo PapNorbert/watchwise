@@ -15,7 +15,8 @@ export async function findUsers(page, limit) {
       first_name: doc.first_name, 
       last_name: doc.last_name, 
       username: doc.username, 
-      create_date: doc.create_date
+      create_date: doc.create_date,
+      banned: doc.banned
     }`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, userRole: userRoleCode });
     return await cursor.all();
@@ -36,7 +37,8 @@ export async function findUsersByUsernameContains(page, limit, name) {
       first_name: doc.first_name, 
       last_name: doc.last_name, 
       username: doc.username, 
-      create_date: doc.create_date
+      create_date: doc.create_date,
+      banned: doc.banned
     }`;
     const cursor = await pool.query(aqlQuery, { 
       offset: (page - 1) * limit, count: limit, userRole: userRoleCode, nameFilter: name 
