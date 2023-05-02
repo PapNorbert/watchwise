@@ -1,14 +1,16 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { Form, FloatingLabel, Alert, Button, Container, Row, Nav } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import AsyncSelect from 'react-select/async'
 
 import FormContainer from '../../components/FormContainer'
+import Map from '../../components/Map'
 import useLanguage from '../../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import { postRequest } from '../../axiosRequests/PostAxios'
 import { getAxios } from '../../axiosRequests/GetAxios'
 import useAuth from '../../hooks/useAuth'
+import { mapDefaultStartingPosition } from '../../config/mapStartingPos'
 
 
 export default function WatchGroupsCreate() {
@@ -20,6 +22,7 @@ export default function WatchGroupsCreate() {
     'watch_date': '',
     'location': ''
   }
+  const [selectedPosition, setSelectedPosition] = useState(mapDefaultStartingPosition);
   const showSelectRef = useRef();
   const [createdId, setCreatedId] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -28,6 +31,37 @@ export default function WatchGroupsCreate() {
   const [succesfullCreated, setSuccesfullCreated] = useState(false);
   const { auth, setAuth } = useAuth();
   const navigate = useNavigate();
+
+
+  function setField(field, value) {
+    const newForm = { ...form, [field]: value }
+    setForm(newForm); // only changes value of the selected field
+    let newErrors = { ...errors }
+    if (!value || value === '') {
+      newErrors = { ...errors, [field]: `empty_${field}` }
+    } else if (errors[field] !== null) {
+      newErrors = { ...errors, [field]: null }
+    }
+    setErrors(newErrors);
+  }
+
+  useEffect(() => {
+    // update middle position if location of user is available
+    navigator.geolocation.getCurrentPosition((position) => {
+      setSelectedPosition([
+        position.coords.latitude,
+        position.coords.longitude
+      ]);
+    },
+      (err) => {
+        if (err.code === 1) {
+          // user denied location
+        } else {
+          console.log(err.message);
+        }
+      }
+    );
+  }, [setSelectedPosition])
 
   async function loadShowOptions(inputValue) {
     let url = '/api/shows';
@@ -46,18 +80,6 @@ export default function WatchGroupsCreate() {
     }
   }
 
-  function setField(field, value) {
-    const newForm = { ...form, [field]: value }
-    setForm(newForm); // only changes value of the selected field
-    let newErrors = { ...errors }
-    if (!value || value === '') {
-      newErrors = { ...errors, [field]: `empty_${field}` }
-    } else if (errors[field] !== null) {
-      newErrors = { ...errors, [field]: null }
-    }
-    setErrors(newErrors);
-  }
-
   function handleSubmit(e) {
     e.preventDefault();
     if (!auth.logged_in) {
@@ -67,14 +89,30 @@ export default function WatchGroupsCreate() {
     let noErrors = true;
     const newErrors = {}
     for (const [key, value] of Object.entries(form)) {
-      if (!value || value === '') {
+      if (key !=='location' && (!value || value === '')) {
         newErrors[key] = `empty_${key}`;
         noErrors = false;
       }
     }
+    if (!Array.isArray(selectedPosition)) {
+      newErrors['location'] = `incorrect_location`;
+      noErrors = false;
+    } else
+      // location is an array
+      if (selectedPosition.length !== 2
+        // eslint-disable-next-line eqeqeq
+        || parseFloat(selectedPosition[0]) != selectedPosition[0]
+        // eslint-disable-next-line eqeqeq
+        || parseFloat(selectedPosition[1]) != selectedPosition[1]) {
+
+        newErrors['location'] = `incorrect_location`;
+        noErrors = false;
+      }
+
+
     setErrors(newErrors);
     if (noErrors) {
-      const formDataWithCreator = { ...form };
+      const formDataWithCreator = { ...form, location: selectedPosition };
       formDataWithCreator['creator'] = auth.username;
 
       let created = false;
@@ -91,6 +129,7 @@ export default function WatchGroupsCreate() {
           } else if (res.statusCode === 401) {
             setAuth({ logged_in: false });
           }
+          console.log(res)
           setSubmitError(res.errorMessage);
         })
         .catch((err) => {
@@ -159,15 +198,15 @@ export default function WatchGroupsCreate() {
           </Form.Control.Feedback>
         </FloatingLabel>
 
-        <FloatingLabel
-          label={convertKeyToSelectedLanguage('location', i18nData)} className='mb-3' >
-          <Form.Control type='text' placeholder={convertKeyToSelectedLanguage('location', i18nData)}
-            value={form.location} isInvalid={!!errors.location} autoComplete='off'
-            onChange={e => { setField('location', e.target.value) }} />
-          <Form.Control.Feedback type='invalid'>
+        <Form.Label >
+          {convertKeyToSelectedLanguage('location', i18nData)}
+        </Form.Label>
+        <Map editEnabled={true} middlePosition={selectedPosition} setLocation={setSelectedPosition} />
+        {!!errors['location'] &&
+          <div className='invalid-field' >
             {convertKeyToSelectedLanguage(errors['location'], i18nData)}
-          </Form.Control.Feedback>
-        </FloatingLabel>
+          </div>
+        }
 
         <Alert key='danger' variant='danger' show={submitError !== null}
           onClose={() => setSubmitError(null)} dismissible >

@@ -161,5 +161,7 @@
   "unban": "Unban",
   "404_user": "User not found",
   "error_admin_ban": "Error. Attempted to ban an admin user",
-  "user_banned": "We are sorry, your user has been banned"
+  "user_banned": "We are sorry, your user has been banned",
+  "current_loc": "Currently selected location.",
+  "incorrect_location": "Incorrect location information!"
 }

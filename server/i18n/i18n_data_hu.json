@@ -161,6 +161,7 @@
   "unban": "Feloldás",
   "404_user": "Kiválasztott Felhasználó nem található",
   "error_admin_ban": "Error. Megkísérelt letiltani egy adminisztrátor felhasználót",
-  "user_banned": "Sajnáljuk, a felhasználó fiókját tiltották"
-
+  "user_banned": "Sajnáljuk, a felhasználó fiókját tiltották",
+  "current_loc": "Aktuális kiválasztott helyszín.",
+  "incorrect_location": "Hibás helyszín adatok"
 }

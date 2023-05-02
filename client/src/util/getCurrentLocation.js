@@ -1,5 +1,5 @@
 
-export function getCurrentLocation() {
+export default function getCurrentLocation() {
   navigator.geolocation.getCurrentPosition((position) => {
     return {
       latitude: position.coords.latitude,
