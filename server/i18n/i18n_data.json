@@ -163,5 +163,7 @@
   "error_admin_ban": "Error. Attempted to ban an admin user",
   "user_banned": "We are sorry, your user has been banned",
   "current_loc": "Currently selected location.",
-  "incorrect_location": "Incorrect location information!"
+  "incorrect_location": "Incorrect location information!",
+  "event_loc": "Location of the event.",
+  "locationName": "Location name"
 }

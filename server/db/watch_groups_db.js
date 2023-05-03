@@ -16,6 +16,21 @@ export async function findWatchGroups(page, limit) {
   }
 }
 
+export async function findWatchGroupsAndDistance(page, limit, userLocLat, userLocLong) {
+  try {
+    const aqlQuery = `FOR doc IN watch_groups
+    SORT DISTANCE(doc.location[0], doc.location[1], @userLocLat, @userLocLong)
+    LIMIT @offset, @count
+    RETURN UNSET(doc, "comments")`;
+    const cursor = await pool.query(aqlQuery,
+      { offset: (page - 1) * limit, count: limit, userLocLat: userLocLat, userLocLong: userLocLong });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
 export async function findWatchGroupsWithJoinedInformation(userId, page, limit) {
   try {
     const aqlQuery = `FOR doc IN watch_groups
@@ -26,6 +41,25 @@ export async function findWatchGroupsWithJoinedInformation(userId, page, limit) 
       LIMIT 1 RETURN true) > 0
     RETURN { doc: UNSET(doc, "comments"), joined: join }`;
     const cursor = await pool.query(aqlQuery, { from: userId, offset: (page - 1) * limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findWatchGroupsWithJoinedInformationAndDistance(userId, page, limit, userLocLat, userLocLong) {
+  try {
+    const aqlQuery = `FOR doc IN watch_groups
+    SORT DISTANCE(doc.location[0], doc.location[1], @userLocLat, @userLocLong)
+    LIMIT @offset, @count
+    LET join = LENGTH(FOR edge IN joined_group
+      FILTER edge._from == @from
+      FILTER edge._to == doc._id
+      LIMIT 1 RETURN true) > 0
+    RETURN { doc: UNSET(doc, "comments"), joined: join }`;
+    const cursor = await pool.query(aqlQuery,
+      { from: userId, offset: (page - 1) * limit, count: limit, userLocLat: userLocLat, userLocLong: userLocLong });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -47,6 +81,22 @@ export async function findWatchGroupsByCreator(creator, page, limit) {
   }
 }
 
+export async function findWatchGroupsByCreatorAndDistance(creator, page, limit, userLocLat, userLocLong) {
+  try {
+    const aqlQuery = `FOR doc IN watch_groups
+    FILTER doc.creator == @creator
+    SORT DISTANCE(doc.location[0], doc.location[1], @userLocLat, @userLocLong)
+    LIMIT @offset, @count
+    RETURN UNSET(doc, "comments")`;
+    const cursor = await pool.query(aqlQuery,
+      { creator: creator, offset: (page - 1) * limit, count: limit, userLocLat: userLocLat, userLocLong: userLocLong });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
 export async function findWatchGroupsByUserJoined(userId, page, limit) {
   try {
     const aqlQuery = `FOR vertex IN OUTBOUND
@@ -54,6 +104,22 @@ export async function findWatchGroupsByUserJoined(userId, page, limit) {
     LIMIT @offset, @count
     RETURN UNSET(vertex, "comments")`;
     const cursor = await pool.query(aqlQuery, { userId: userId, offset: (page - 1) * limit, count: limit });
+    return await cursor.all();
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
+export async function findWatchGroupsByUserJoinedAndDistance(userId, page, limit, userLocLat, userLocLong) {
+  try {
+    const aqlQuery = `FOR vertex IN OUTBOUND
+    @userId joined_group
+    SORT DISTANCE(vertex.location[0], vertex.location[1], @userLocLat, @userLocLong)
+    LIMIT @offset, @count
+    RETURN UNSET(vertex, "comments")`;
+    const cursor = await pool.query(aqlQuery,
+      { userId: userId, offset: (page - 1) * limit, count: limit, userLocLat: userLocLat, userLocLong: userLocLong });
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -97,6 +163,7 @@ export async function findWatchGroupByKeyWithJoinedInformation(userId, key, page
       description: doc.description,
       watch_date: doc.watch_date,
       location: doc.location,
+      locationName: doc.locationName,
       creation_date: doc.creation_date,
       show_id: doc.show_id,
       show_type: doc.show_type,
@@ -128,6 +195,7 @@ export async function findWatchGroupByKey(key, page, limit) {
       description: doc.description,
       watch_date: doc.watch_date,
       location: doc.location,
+      locationName: doc.locationName,
       creation_date: doc.creation_date,
       show_id: doc.show_id,
       show_type: doc.show_type,

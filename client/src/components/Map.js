@@ -3,7 +3,7 @@ import { MapContainer, TileLayer } from 'react-leaflet'
 
 import MapMarker from './MapMarker'
 
-export default function Map({ editEnabled = false, middlePosition, setLocation }) {
+export default function Map({ editEnabled = false, middlePosition, setLocation = (_) => {} }) {
 
   return (
     <div className="map" id="map" >

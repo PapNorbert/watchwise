@@ -9,7 +9,7 @@ import useAuth from '../../hooks/useAuth'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
 import { buttonTypes } from '../../util/buttonTypes'
-import { querryParamDefaultValues, querryParamNames, limitValues } from '../../util/querryParams'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../../config/querryParams'
 import { useSearchParamsState } from '../../hooks/useSearchParamsState'
 
 
@@ -21,8 +21,26 @@ export default function WatchGroupsMy() {
   const [url, setUrl] = useState(`/api/watch_groups/?creator=${auth?.username}`);
   const { data: watch_groups, error, statusCode, loading } = useGetAxios(url);
   const { i18nData } = useLanguage();
-
   const location = useLocation();
+  const [userLocation, setUserLocation] = useState([null, null]);
+
+  useEffect(() => {
+    // update position if location of user is available
+    navigator.geolocation.getCurrentPosition((position) => {
+      setUserLocation([
+        position.coords.latitude,
+        position.coords.longitude
+      ]);
+    },
+      (err) => {
+        if (err.code === 1) {
+          // user denied location
+        } else {
+          console.log(err.message);
+        }
+      }
+    );
+  }, [])
 
   useEffect(() => {
     // eslint-disable-next-line eqeqeq
@@ -37,9 +55,13 @@ export default function WatchGroupsMy() {
       setPage(watch_groups?.pagination.totalPages);
     } else {
       // limit and page have correct values
-      setUrl(`/api/watch_groups/?creator=${auth?.username}&page=${page}&limit=${limit}`);
+      if (userLocation[0] && userLocation[1]) {
+        setUrl(`/api/watch_groups/?creator=${auth?.username}&page=${page}&limit=${limit}&userLocLat=${userLocation[0]}&userLocLong=${userLocation[1]}`);
+      } else {
+        setUrl(`/api/watch_groups/?creator=${auth?.username}&page=${page}&limit=${limit}`);
+      }
     }
-  }, [limit, page, auth?.username, watch_groups?.pagination.totalPages, setLimit, setPage])
+  }, [limit, page, auth?.username, watch_groups?.pagination.totalPages, setLimit, setPage, userLocation])
 
 
   if (statusCode === 401) {

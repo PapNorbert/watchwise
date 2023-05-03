@@ -17,6 +17,7 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
   const { language, i18nData } = useLanguage();
   const [requestError, setRequestError] = useState(null);
 
+
   async function handleButtonClicked(e) {
     if (buttonType === buttonTypes.manage) {
       navigate(`/watch_groups/${watch_group._key}`);
@@ -67,7 +68,8 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
 
         <Card.Body>
           {Object.keys(watch_group).map((key, index) => {
-            if (key === 'show_type' || key === 'show_id' || key === 'title' || key === '_key') {
+            if (key === 'show_type' || key === 'show_id' || key === 'title'
+              || key === '_key' || key === 'location') {
               return null;
             }
             if (key === 'show') {
@@ -82,7 +84,6 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
                       {watch_group[key]}
                     </span>
                   </Col>
-
                 </Row>
               )
             }

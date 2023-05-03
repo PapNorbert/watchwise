@@ -33,7 +33,11 @@ export default function MapMarker({ markerPosition, editEnabled, setLocation }) 
   return (markerPosition &&
     <Marker position={markerPosition}>
       <Popup>
-        {convertKeyToSelectedLanguage('current_loc', i18nData)}
+        {editEnabled?
+         convertKeyToSelectedLanguage('current_loc', i18nData)
+         :
+         convertKeyToSelectedLanguage('event_loc', i18nData)
+        }
       </Popup>
     </Marker>
   )

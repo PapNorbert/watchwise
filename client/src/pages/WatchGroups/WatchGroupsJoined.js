@@ -10,7 +10,7 @@ import useAuth from '../../hooks/useAuth'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
 import { buttonTypes } from '../../util/buttonTypes'
-import { querryParamDefaultValues, querryParamNames, limitValues } from '../../util/querryParams'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../../config/querryParams'
 import { useSearchParamsState } from '../../hooks/useSearchParamsState'
 
 export default function WatchGroupsJoined() {
@@ -24,7 +24,25 @@ export default function WatchGroupsJoined() {
   const { auth, setAuth, setLoginExpired } = useAuth()
   const location = useLocation();
   const { i18nData } = useLanguage();
+  const [userLocation, setUserLocation] = useState([null, null]);
 
+  useEffect(() => {
+    // update position if location of user is available
+    navigator.geolocation.getCurrentPosition((position) => {
+      setUserLocation([
+        position.coords.latitude,
+        position.coords.longitude
+      ]);
+    },
+      (err) => {
+        if (err.code === 1) {
+          // user denied location
+        } else {
+          console.log(err.message);
+        }
+      }
+    );
+  }, [])
 
   useEffect(() => {
     // eslint-disable-next-line eqeqeq
@@ -39,9 +57,13 @@ export default function WatchGroupsJoined() {
       setPage(watch_groups?.pagination.totalPages);
     } else {
       // limit and page have correct values
-      setUrl(`/api/watch_groups/?userId=${userID}&joined=true&page=${page}&limit=${limit}`);
+      if (userLocation[0] && userLocation[1]) {
+        setUrl(`/api/watch_groups/?userId=${userID}&joined=true&page=${page}&limit=${limit}&userLocLat=${userLocation[0]}&userLocLong=${userLocation[1]}`);
+      } else {
+        setUrl(`/api/watch_groups/?userId=${userID}&joined=true&page=${page}&limit=${limit}`);
+      }
     }
-  }, [limit, page, setLimit, setPage, userID, watch_groups?.pagination.totalPages])
+  }, [limit, page, setLimit, setPage, userID, userLocation, watch_groups?.pagination.totalPages])
 
   useEffect(() => {
     if (watch_groups?.data.length === 0) {
@@ -62,7 +84,7 @@ export default function WatchGroupsJoined() {
     return <Navigate to='/unauthorized' state={{ from: location }} replace />
   }
 
-  if (statusCode === 503 ) {
+  if (statusCode === 503) {
     return <h2 className='error'>{convertKeyToSelectedLanguage('server_no_resp', i18nData)}</h2>
   }
 

@@ -13,7 +13,7 @@ import { buttonTypes } from '../util/buttonTypes'
 import { deleteRequest } from '../axiosRequests/DeleteAxios'
 import { putRequest } from '../axiosRequests/PutAxios'
 import DeletedSuccesfully from './DeletedSuccesfully'
-import { querryParamDefaultValues, querryParamNames, limitValues } from '../util/querryParams'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../config/querryParams'
 import { useSearchParamsState } from '../hooks/useSearchParamsState'
 
 

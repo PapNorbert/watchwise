@@ -26,6 +26,21 @@ export async function validateWatchGroupCreation(watchGroupJson) {
     error = 'empty_location';
     correct = false;
   }
+  if (!Array.isArray(watchGroupJson.location)) {
+    error = `incorrect_location`;
+    correct = false;
+  } else
+    // location is an array
+    if (watchGroupJson.location.length !== 2
+      // eslint-disable-next-line eqeqeq
+      || parseFloat(watchGroupJson.location[0]) != watchGroupJson.location[0]
+      // eslint-disable-next-line eqeqeq
+      || parseFloat(watchGroupJson.location[1]) != watchGroupJson.location[1]) {
+
+      error = `incorrect_location`;
+      correct = false;
+    }
+    
   if (watchGroupJson.creator === '' || watchGroupJson.creator === null) {
     error = 'creator_missing';
     correct = false;

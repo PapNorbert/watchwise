@@ -3,7 +3,7 @@ import { Container, Form, Row, Col, Button } from 'react-bootstrap'
 
 import Limit from './Limit'
 import { convertKeyToSelectedLanguage } from '../i18n/conversion'
-import { querryParamNames } from '../util/querryParams'
+import { querryParamNames } from '../config/querryParams'
 import useLanguage from '../hooks/useLanguage'
 import useSetMultipleSearchParams from '../hooks/useSetMultipleSearchParams'
 

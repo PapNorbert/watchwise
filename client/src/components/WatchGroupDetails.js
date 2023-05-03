@@ -2,19 +2,20 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Container, Form, Alert, OverlayTrigger, Popover } from 'react-bootstrap'
 
+import Limit from '../components/Limit'
+import PaginationElements from '../components/PaginationElements'
+import Comment from '../components/Comment'
+import Map from '../components/Map'
 import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage, convertDateAndTimeToLocale } from '../i18n/conversion'
 import { convertDateToFormInput } from '../util/dateFormat'
 import useAuth from '../hooks/useAuth'
 import { postRequest } from '../axiosRequests/PostAxios'
-import Limit from '../components/Limit'
-import PaginationElements from '../components/PaginationElements'
-import Comment from '../components/Comment'
 import { buttonTypes } from '../util/buttonTypes'
 import { deleteRequest } from '../axiosRequests/DeleteAxios'
 import { putRequest } from '../axiosRequests/PutAxios'
 import DeletedSuccesfully from './DeletedSuccesfully'
-import { querryParamDefaultValues, querryParamNames, limitValues } from '../util/querryParams'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../config/querryParams'
 import { useSearchParamsState } from '../hooks/useSearchParamsState'
 
 
@@ -61,7 +62,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
     // eslint-disable-next-line eqeqeq
     if (parseInt(limit) != limit) {
       setLimit(querryParamDefaultValues.limit);
-    // eslint-disable-next-line eqeqeq
+      // eslint-disable-next-line eqeqeq
     } else if (parseInt(page) != page) {
       setPage(querryParamDefaultValues.page);
     } else if (!limitValues.includes(parseInt(limit))) {
@@ -307,15 +308,6 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
             </Row>
           }
 
-          <Row key={`${watch_group._key}_location`} className='justify-content-md-center'>
-            <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_location`} >
-              {convertKeyToSelectedLanguage('location', i18nData)}
-            </Col>
-            <Col xs lg={7} key={`${watch_group._key}_value_location`} >
-              {watch_group['location']}
-            </Col>
-          </Row>
-
           {(editing && auth.logged_in) ?
             // editing description
             <Row key={`${watch_group._key}_description`} className='justify-content-md-center mb-3'>
@@ -355,6 +347,29 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
               </Col>
             </Row>
           }
+
+          <Row key={`${watch_group._key}_locationName`} className='justify-content-md-center'>
+            <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_locationName`} >
+              {convertKeyToSelectedLanguage('locationName', i18nData)}
+            </Col>
+            <Col xs lg={7} key={`${watch_group._key}_value_locationName`} >
+              {watch_group['locationName']}
+            </Col>
+          </Row>
+
+          <div className='location'>
+            <Row key={`${watch_group._key}_location`} className='justify-content-md-center'>
+              <Col xs lg={11} className='object-label' key={`${watch_group._key}_label_location`} >
+                {convertKeyToSelectedLanguage('location', i18nData)}
+              </Col>
+            </Row>
+            <Row key={`${watch_group._key}_location_map`} className='justify-content-md-center'>
+              <Col xs lg={6} key={`${watch_group._key}_value_location`} >
+                <Map middlePosition={watch_group['location']} />
+              </Col>
+            </Row>
+          </div>
+
 
           {
             auth.logged_in && auth.username === watch_group.creator ?

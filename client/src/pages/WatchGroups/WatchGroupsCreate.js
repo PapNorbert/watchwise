@@ -129,7 +129,6 @@ export default function WatchGroupsCreate() {
           } else if (res.statusCode === 401) {
             setAuth({ logged_in: false });
           }
-          console.log(res)
           setSubmitError(res.errorMessage);
         })
         .catch((err) => {

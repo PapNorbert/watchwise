@@ -163,5 +163,7 @@
   "error_admin_ban": "Error. Megkísérelt letiltani egy adminisztrátor felhasználót",
   "user_banned": "Sajnáljuk, a felhasználó fiókját tiltották",
   "current_loc": "Aktuális kiválasztott helyszín.",
-  "incorrect_location": "Hibás helyszín adatok"
+  "incorrect_location": "Hibás helyszín adatok",
+  "event_loc": "A rendezvény helyszíne.",
+  "locationName": "Helyszín neve"
 }

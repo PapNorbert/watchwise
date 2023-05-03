@@ -9,7 +9,7 @@ import useAuth from '../../hooks/useAuth'
 import useLanguage from '../../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import { buttonTypes } from '../../util/buttonTypes'
-import { querryParamDefaultValues, querryParamNames, limitValues } from '../../util/querryParams'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../../config/querryParams'
 import { useSearchParamsState } from '../../hooks/useSearchParamsState'
 
 

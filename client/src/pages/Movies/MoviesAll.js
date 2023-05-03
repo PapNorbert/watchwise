@@ -9,7 +9,7 @@ import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
-import { querryParamDefaultValues, querryParamNames, limitValues } from '../../util/querryParams'
+import { querryParamDefaultValues, querryParamNames, limitValues } from '../../config/querryParams'
 import { useSearchParamsState } from '../../hooks/useSearchParamsState'
 import useSetMultipleSearchParams from '../../hooks/useSetMultipleSearchParams'
 

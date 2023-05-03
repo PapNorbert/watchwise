@@ -1,10 +1,13 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios'
 import {
   insertWatchGroup, findWatchGroupByKey, findWatchGroups, updateWatchGroup, deleteWatchGroup,
   getWatchGroupCount, findWatchGroupsByCreator, getWatchGroupCountByCreator,
   findWatchGroupsByUserJoined, getWatchGroupCountByUserJoined, findWatchGroupsWithJoinedInformation,
-  findWatchGroupByKeyWithoutComments, findWatchGroupByKeyWithJoinedInformation
+  findWatchGroupByKeyWithoutComments, findWatchGroupByKeyWithJoinedInformation,
+  findWatchGroupsAndDistance, findWatchGroupsByCreatorAndDistance, findWatchGroupsByUserJoinedAndDistance,
+  findWatchGroupsWithJoinedInformationAndDistance
 } from '../db/watch_groups_db.js'
 import { getMovieKeyByName } from '../db/movies_db.js'
 import { getSerieKeyByName } from '../db/series_db.js'
@@ -183,26 +186,46 @@ router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10, creator, joined = false, userId } = request.query;
+    let { page = 1, limit = 10, creator, joined = false, userId, userLocLat, userLocLong } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit
       && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);
       limit = parseInt(limit);
+      if (userLocLat == parseFloat(userLocLat) && userLocLong == parseFloat(userLocLong)) {
+        userLocLat = parseFloat(userLocLat);
+        userLocLong = parseFloat(userLocLong);
+      } else {
+        userLocLat = null;
+        userLocLong = null;
+      }
+
       if (creator) {
         // searching for watchgroups that the user created
         if (creator !== response.locals.payload.username) {
           response.sendStatus(403);
           return
         }
-
-        const [watchGroups, count] = await Promise.all([
-          findWatchGroupsByCreator(creator, page, limit),
-          getWatchGroupCountByCreator(creator),
-        ]);
-        response.json({
-          "data": createResponseDtos(watchGroups),
-          "pagination": createPaginationInfo(page, limit, count)
-        });
+        if (userLocLat && userLocLong) {
+          // user defined a location for groups to be close to
+          const [watchGroups, count] = await Promise.all([
+            findWatchGroupsByCreatorAndDistance(creator, page, limit, userLocLat, userLocLong),
+            getWatchGroupCountByCreator(creator),
+          ]);
+          response.json({
+            "data": createResponseDtos(watchGroups),
+            "pagination": createPaginationInfo(page, limit, count)
+          });
+        } else {
+          // no location for groups to be close to
+          const [watchGroups, count] = await Promise.all([
+            findWatchGroupsByCreator(creator, page, limit),
+            getWatchGroupCountByCreator(creator),
+          ]);
+          response.json({
+            "data": createResponseDtos(watchGroups),
+            "pagination": createPaginationInfo(page, limit, count)
+          });
+        }
       } else if (joined && userId) {
         // searching for watchgroups that the user joined
 
@@ -210,37 +233,76 @@ router.get('', async (request, response) => {
           response.sendStatus(403);
           return
         }
-
-        const [watchGroups, count] = await Promise.all([
-          findWatchGroupsByUserJoined(`users/${userId}`, page, limit),
-          getWatchGroupCountByUserJoined(`users/${userId}`),
-        ]);
-        response.json({
-          "data": createResponseDtos(watchGroups),
-          "pagination": createPaginationInfo(page, limit, count)
-        });
-      } else {
-        // searching for all watchgroups
-        if (response.locals?.payload?.userID) {
-          // logged in
+        if (userLocLat && userLocLong) {
+          // user defined a location for groups to be close to
           const [watchGroups, count] = await Promise.all([
-            findWatchGroupsWithJoinedInformation(`users/${response.locals.payload.userID}`, page, limit),
-            getWatchGroupCount(),
-          ]);
-          response.json({
-            "data": createResponseDtosLoggedIn(watchGroups),
-            "pagination": createPaginationInfo(page, limit, count)
-          });
-        } else {
-          // not logged in
-          const [watchGroups, count] = await Promise.all([
-            findWatchGroups(page, limit),
-            getWatchGroupCount(),
+            findWatchGroupsByUserJoinedAndDistance(`users/${userId}`, page, limit, userLocLat, userLocLong),
+            getWatchGroupCountByUserJoined(`users/${userId}`),
           ]);
           response.json({
             "data": createResponseDtos(watchGroups),
             "pagination": createPaginationInfo(page, limit, count)
           });
+        } else {
+          // no location for groups to be close to
+          const [watchGroups, count] = await Promise.all([
+            findWatchGroupsByUserJoined(`users/${userId}`, page, limit),
+            getWatchGroupCountByUserJoined(`users/${userId}`),
+          ]);
+          response.json({
+            "data": createResponseDtos(watchGroups),
+            "pagination": createPaginationInfo(page, limit, count)
+          });
+        }
+
+      } else {
+        // searching for all watchgroups
+        if (response.locals?.payload?.userID) {
+          // logged in
+          if (userLocLat && userLocLong) {
+            // user defined a location for groups to be close to
+            const [watchGroups, count] = await Promise.all([
+              findWatchGroupsWithJoinedInformationAndDistance(
+                `users/${response.locals.payload.userID}`, page, limit, userLocLat, userLocLong),
+              getWatchGroupCount(),
+            ]);
+            response.json({
+              "data": createResponseDtosLoggedIn(watchGroups),
+              "pagination": createPaginationInfo(page, limit, count)
+            });
+          } else {
+            // no distance calculation
+            const [watchGroups, count] = await Promise.all([
+              findWatchGroupsWithJoinedInformation(`users/${response.locals.payload.userID}`, page, limit),
+              getWatchGroupCount(),
+            ]);
+            response.json({
+              "data": createResponseDtosLoggedIn(watchGroups),
+              "pagination": createPaginationInfo(page, limit, count)
+            });
+          }
+        } else {
+          // not logged in
+          if (userLocLat && userLocLong) {
+            // user defined a location for groups to be close to
+            const [watchGroups, count] = await Promise.all([
+              findWatchGroupsAndDistance(page, limit, userLocLat, userLocLong),
+              getWatchGroupCount(),
+            ]);
+            response.json({
+              "data": createResponseDtos(watchGroups),
+              "pagination": createPaginationInfo(page, limit, count)
+            });
+          } else {
+            const [watchGroups, count] = await Promise.all([
+              findWatchGroups(page, limit),
+              getWatchGroupCount(),
+            ]);
+            response.json({
+              "data": createResponseDtos(watchGroups),
+              "pagination": createPaginationInfo(page, limit, count)
+            });
+          }
         }
       }
     } else {
@@ -326,6 +388,15 @@ router.post('', authorize(), async (request, response) => {
     if (correct) {
       watchGroupJson.creation_date = new Date(Date.now());
       watchGroupJson.comments = [];
+      
+      // get name of the location
+      const axiosRequest = axios.create({
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const axiosResponse = await axiosRequest.get(
+        `https://geocode.maps.co/reverse?lat=${watchGroupJson.location[0]}&lon=${watchGroupJson.location[1]}`);
+      watchGroupJson.locationName = axiosResponse.data.display_name;
+
       const movieKey = await getMovieKeyByName(watchGroupJson.show);
       if (movieKey) {
         watchGroupJson['show_id'] = movieKey;

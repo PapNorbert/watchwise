@@ -3,7 +3,7 @@ import { Stack, Form } from 'react-bootstrap'
 
 import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../i18n/conversion'
-import { querryParamNames, limitValues, querryParamDefaultValues } from '../util/querryParams'
+import { querryParamNames, limitValues, querryParamDefaultValues } from '../config/querryParams'
 import useSetMultipleSearchParams from '../hooks/useSetMultipleSearchParams'
 
 export default function Limit({ limit }) {
