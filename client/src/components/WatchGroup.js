@@ -69,7 +69,7 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
         <Card.Body>
           {Object.keys(watch_group).map((key, index) => {
             if (key === 'show_type' || key === 'show_id' || key === 'title'
-              || key === '_key' || key === 'location') {
+              || key === '_key' || key === 'location' || key === 'personLimit') {
               return null;
             }
             if (key === 'show') {
@@ -86,6 +86,19 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
                   </Col>
                 </Row>
               )
+            }
+            if (key === 'currentNrOfPersons') {
+              return (
+                <Row key={`${watch_group._key}_${index}`} className='justify-content-md-center'>
+                  <Col xs lg={4} className='object-label' key={`${watch_group._key}_label${index}`} >
+                    {convertKeyToSelectedLanguage(key, i18nData)}
+                  </Col>
+                  <Col xs lg={7} key={`${watch_group._key}_value${index}`} >
+                    {watch_group['currentNrOfPersons']}/{watch_group['personLimit']}
+                  </Col>
+  
+                </Row>
+              );
             }
             return (
               <Row key={`${watch_group._key}_${index}`} className='justify-content-md-center'>

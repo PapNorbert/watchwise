@@ -32,6 +32,9 @@ export async function createEdgeCollections() {
   if( ! await pool.collection('joined_group').exists() ) {
     await pool.createEdgeCollection('joined_group');
   }
+  if( ! await pool.collection('join_request').exists() ) {
+    await pool.createEdgeCollection('join_request');
+  }
   if( ! await pool.collection('follows_thread').exists() ) {
     await pool.createEdgeCollection('follows_thread');
   }

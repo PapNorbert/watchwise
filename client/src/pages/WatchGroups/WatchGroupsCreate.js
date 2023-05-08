@@ -19,6 +19,7 @@ export default function WatchGroupsCreate() {
     'title': '',
     'show': '',
     'description': '',
+    'personLimit': '',
     'watch_date': '',
     'location': ''
   }
@@ -41,6 +42,13 @@ export default function WatchGroupsCreate() {
       newErrors = { ...errors, [field]: `empty_${field}` }
     } else if (errors[field] !== null) {
       newErrors = { ...errors, [field]: null }
+    }
+    if (field === 'personLimit') {
+      // eslint-disable-next-line eqeqeq
+      if (parseInt(value) != value || parseInt(value) <= 1) {
+        // check if the limit is a number > 1
+        newErrors = { ...errors, [field]: `incorrect_${field}` }
+      }
     }
     setErrors(newErrors);
   }
@@ -89,7 +97,7 @@ export default function WatchGroupsCreate() {
     let noErrors = true;
     const newErrors = {}
     for (const [key, value] of Object.entries(form)) {
-      if (key !=='location' && (!value || value === '')) {
+      if (key !== 'location' && (!value || value === '')) {
         newErrors[key] = `empty_${key}`;
         noErrors = false;
       }
@@ -108,7 +116,12 @@ export default function WatchGroupsCreate() {
         newErrors['location'] = `incorrect_location`;
         noErrors = false;
       }
-
+    // eslint-disable-next-line eqeqeq
+    if (parseInt(form.personLimit) != form.personLimit || parseInt(form.personLimit) <= 1) {
+      // check if the limit is a number > 1
+      newErrors['personLimit'] =  `incorrect_personLimit`;
+      noErrors = true;
+    }
 
     setErrors(newErrors);
     if (noErrors) {
@@ -185,6 +198,15 @@ export default function WatchGroupsCreate() {
           {convertKeyToSelectedLanguage(errors['description'], i18nData)}
         </Form.Control.Feedback>
 
+        <FloatingLabel
+          label={convertKeyToSelectedLanguage('personLimit', i18nData)} className='mb-3 mt-2' >
+          <Form.Control type='number' min={2} placeholder={convertKeyToSelectedLanguage('personLimit', i18nData)}
+            value={form.personLimit} isInvalid={!!errors.personLimit} autoComplete='off'
+            onChange={e => { setField('personLimit', e.target.value) }} />
+          <Form.Control.Feedback type='invalid'>
+            {convertKeyToSelectedLanguage(errors['personLimit'], i18nData)}
+          </Form.Control.Feedback>
+        </FloatingLabel>
 
         <FloatingLabel
           label={convertKeyToSelectedLanguage('watch_date', i18nData)} className='mb-3 mt-3' >
@@ -215,7 +237,7 @@ export default function WatchGroupsCreate() {
           onClose={() => setSuccesfullCreated(false)} dismissible >
           <Container>
             <Row>
-              {convertKeyToSelectedLanguage('ot_succesfull_created', i18nData)}
+              {convertKeyToSelectedLanguage('wg_succesfull_created', i18nData)}
             </Row>
             <Row className='mx-3'>
               <Nav.Link onClick={() => { navigate(`/watch_groups/${createdId}`) }}>

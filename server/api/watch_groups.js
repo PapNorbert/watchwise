@@ -388,6 +388,7 @@ router.post('', authorize(), async (request, response) => {
     if (correct) {
       watchGroupJson.creation_date = new Date(Date.now());
       watchGroupJson.comments = [];
+      watchGroupJson.currentNrOfPersons = 1;
       
       // get name of the location
       const axiosRequest = axios.create({
@@ -395,7 +396,9 @@ router.post('', authorize(), async (request, response) => {
       });
       const axiosResponse = await axiosRequest.get(
         `https://geocode.maps.co/reverse?lat=${watchGroupJson.location[0]}&lon=${watchGroupJson.location[1]}`);
-      watchGroupJson.locationName = axiosResponse.data.display_name;
+      if( axiosResponse?.data?.display_name ) {
+        watchGroupJson.locationName = axiosResponse.data.display_name;
+      }
 
       const movieKey = await getMovieKeyByName(watchGroupJson.show);
       if (movieKey) {

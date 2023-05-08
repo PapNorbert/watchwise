@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import 'bootstrap/dist/css/bootstrap.css'
 
 import './App.css'
@@ -22,12 +21,10 @@ import RequireAuth from './components/RequireAuth'
 import { adminRoleCode } from './config/UserRoleCodes'
 
 function App() {
-  const client = new QueryClient();
 
   return (
     <div className='App'>
       <AuthContextProvider>
-        <QueryClientProvider client={client}>
           <LanguageContextProvider>
             <Router>
               <Navigationbar />
@@ -52,7 +49,6 @@ function App() {
               </div>
             </Router>
           </LanguageContextProvider>
-        </QueryClientProvider>
       </AuthContextProvider>
     </div>
   );

@@ -165,5 +165,9 @@
   "current_loc": "Aktuális kiválasztott helyszín.",
   "incorrect_location": "Hibás helyszín adatok",
   "event_loc": "A rendezvény helyszíne.",
-  "locationName": "Helyszín neve"
+  "locationName": "Helyszín neve",
+  "personLimit": "Személyek maximális száma",
+  "empty_personLimit": "Kérem, adja meg a személyek maximális számát",
+  "currentNrOfPersons": "Személyek száma a csoportban",
+  "incorrect_personLimit": "A mezőnek egy 1-nél nagyobb számnak kell lennie"
 }

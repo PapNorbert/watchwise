@@ -348,14 +348,26 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
             </Row>
           }
 
-          <Row key={`${watch_group._key}_locationName`} className='justify-content-md-center'>
-            <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_locationName`} >
-              {convertKeyToSelectedLanguage('locationName', i18nData)}
+          <Row key={`${watch_group._key}_limit`} className='justify-content-md-center'>
+            <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_limit`} >
+              {convertKeyToSelectedLanguage('currentNrOfPersons', i18nData)}
             </Col>
-            <Col xs lg={7} key={`${watch_group._key}_value_locationName`} >
-              {watch_group['locationName']}
+            <Col xs lg={7} key={`${watch_group._key}_value$_limit`} >
+              {watch_group['currentNrOfPersons']}/{watch_group['personLimit']}
             </Col>
+
           </Row>
+
+          {watch_group['locationName'] &&
+            <Row key={`${watch_group._key}_locationName`} className='justify-content-md-center'>
+              <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_locationName`} >
+                {convertKeyToSelectedLanguage('locationName', i18nData)}
+              </Col>
+              <Col xs lg={7} key={`${watch_group._key}_value_locationName`} >
+                {watch_group['locationName']}
+              </Col>
+            </Row>
+          }
 
           <div className='location'>
             <Row key={`${watch_group._key}_location`} className='justify-content-md-center'>

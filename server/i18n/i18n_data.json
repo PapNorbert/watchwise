@@ -165,5 +165,9 @@
   "current_loc": "Currently selected location.",
   "incorrect_location": "Incorrect location information!",
   "event_loc": "Location of the event.",
-  "locationName": "Location name"
+  "locationName": "Location name",
+  "personLimit": "Maximum number of people",
+  "empty_personLimit": "Please specifie the maximum number of people for this group",
+  "currentNrOfPersons": "Number of people in group",
+  "incorrect_personLimit": "Field must be a number greater than 1"
 }

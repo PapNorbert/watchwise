@@ -22,6 +22,16 @@ export async function validateWatchGroupCreation(watchGroupJson) {
     error = 'watch_date_in_past';
     correct = false;
   }
+  if (watchGroupJson.personLimit === '' || watchGroupJson.personLimit === null) {
+    error = 'empty_personLimit';
+    correct = false;
+  }
+  if (parseInt(watchGroupJson.personLimit) != watchGroupJson.personLimit
+    || parseInt(watchGroupJson.personLimit) <= 1) {
+    // check if the limit is a number > 1
+    error = `incorrect_personLimit`;
+    correct = false;
+  }
   if (watchGroupJson.location === '' || watchGroupJson.location === null) {
     error = 'empty_location';
     correct = false;
@@ -40,7 +50,7 @@ export async function validateWatchGroupCreation(watchGroupJson) {
       error = `incorrect_location`;
       correct = false;
     }
-    
+
   if (watchGroupJson.creator === '' || watchGroupJson.creator === null) {
     error = 'creator_missing';
     correct = false;
