@@ -169,3 +169,7 @@ svg {
   width: 100%;
   padding-top: 75%; /* 4:3 aspect ratio */
 }
+
+.text-large {
+  font-size: large;
+}

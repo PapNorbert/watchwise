@@ -86,7 +86,28 @@ export function validateWatchDate(watchDate) {
     }
   }
   return {
-    errur: null,
+    error: null,
+    correct: true
+  }
+}
+
+export function validatePersonLimit(personLimit) {
+  if (personLimit === '' || personLimit === null) {
+    return {
+      error: 'empty_personLimit',
+      correct: false
+    }
+  }
+  if (parseInt(personLimit) != personLimit
+    || parseInt(personLimit) <= 1) {
+    // check if the limit is a number > 1
+    return {
+      error: 'incorrect_personLimit',
+      correct: false
+    }
+  }
+  return {
+    error: null,
     correct: true
   }
 }

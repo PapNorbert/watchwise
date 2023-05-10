@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Row, Col, Button, Container, Form, Alert, OverlayTrigger, Popover } from 'react-bootstrap'
+import {
+  Card, Row, Col, Button, Container, Form, Alert,
+  OverlayTrigger, Popover, FloatingLabel
+} from 'react-bootstrap'
 
 import Limit from '../components/Limit'
 import PaginationElements from '../components/PaginationElements'
@@ -34,6 +37,9 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
   const [watchDateError, setWatchDateError] = useState(null);
   const [watchDateText, setWatchDateText] = useState(watch_group.watch_date);
   const [oldWatchDateText, setOldWatchDateText] = useState(watch_group.watch_date);
+  const [personLimitError, setPersonLimitError] = useState(null);
+  const [personLimitText, setPersonLimitText] = useState(watch_group.personLimit);
+  const [oldPersonLimitText, setOldPersonLimitText] = useState(watch_group.personLimit);
   const [editing, setEditing] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [deleted, setDeleted] = useState(false);
@@ -76,16 +82,36 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
   }, [limit, page, setLimit, setPage, setUrl, totalPages, watch_group._key])
 
   async function handleJoinButtonClicked(e) {
-    if (e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.join, i18nData)
+    if (buttonType === buttonTypes.cancel_req) {
+      // delete join request
+      const { errorMessage, statusCode } = await postRequest(`/api/watch_groups/${watch_group._key}/join_req/cancel`);
+      if (statusCode === 204) {
+        // expected when edge was deleted
+        e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.join, i18nData);
+      } else if (statusCode === 401) {
+        setAuth({ logged_in: false });
+      } else if (statusCode === 403) {
+        navigate('/unauthorized');
+      } else if (statusCode === 404) {
+        setSubmitError('404_join_req');
+      } else {
+        setSubmitError(errorMessage);
+      }
+    }
+    else if (e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.join, i18nData)
       || e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.leave, i18nData)) {
       const { errorMessage, statusCode } = await postRequest(`/api/watch_groups/${watch_group._key}/joines`);
 
       if (statusCode === 204) {
         // expected when edge was deleted
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.join, i18nData);
-      } else if (statusCode === 201) {
+      } else if (statusCode === 201 || statusCode === 200) {
         // expected when edge was created
-        e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.leave, i18nData);
+        e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.pendingJoin, i18nData);
+        setTimeout(() => {
+          // after some time change text to cancel
+          e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.cancel_req, i18nData);
+        }, 3000);
       } else if (statusCode === 401) {
         setAuth({ logged_in: false });
       } else if (statusCode === 403) {
@@ -134,14 +160,25 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
       navigate('/login');
       return;
     }
+    let noErrors = true;
+    if (personLimitText === '' || personLimitText === undefined) {
+      setPersonLimitError('empty_personLimit');
+      noErrors = false;
+    }
     if (descriptionText === '' || descriptionText === undefined) {
       setDescriptionError('empty_description');
+      noErrors = false;
     }
-    else if (watchDateText === '' || watchDateText === undefined) {
+    if (watchDateText === '' || watchDateText === undefined) {
       setWatchDateError('empty_watch_date');
-    } else {
+      noErrors = false;
+    }
+    if (noErrors) {
       const updateData = {
         creator: auth.username
+      }
+      if (personLimitText !== oldPersonLimitText) {
+        updateData.personLimit = personLimitText;
       }
       if (descriptionText !== oldDescriptionText) {
         updateData.description = descriptionText;
@@ -155,11 +192,15 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
         if (descriptionText !== oldDescriptionText) {
           setOldDescriptionText(descriptionText);
         }
+        if (personLimitText !== oldPersonLimitText) {
+          setOldPersonLimitText(personLimitText);
+        }
         if (watchDateText !== oldWatchDateText) {
           setOldWatchDateText(watchDateText);
         }
         setDescriptionError(null);
         setWatchDateError(null);
+        setPersonLimitError(null);
         setEditing(false);
       } else if (statusCode === 401) {
         setAuth({ logged_in: false });
@@ -172,6 +213,8 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
           setDescriptionError('update_desc_error');
         } else if (watchDateText !== oldWatchDateText) {
           setWatchDateError(errorMessage);
+        } else if (personLimitText !== oldPersonLimitText) {
+          setPersonLimitError(errorMessage);
         } else {
           setSubmitError(errorMessage);
         }
@@ -182,6 +225,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
   function handleEditCancel() {
     setDescriptionText(oldDescriptionText);
     setWatchDateText(oldWatchDateText);
+    setPersonLimitText(oldPersonLimitText);
     setEditing(false);
   }
 
@@ -309,6 +353,47 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
           }
 
           {(editing && auth.logged_in) ?
+            //editing person limit
+            <Row key={`${watch_group._key}_personLimit`} className='justify-content-md-center'>
+              <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_personLimit`} >
+                {convertKeyToSelectedLanguage('personLimit', i18nData)}
+              </Col>
+              <Col xs lg={7} key={`${watch_group._key}_value$_personLimit`} >
+                <Form onSubmit={(e) => e.preventDefault()}>
+                  <FloatingLabel
+                    label={convertKeyToSelectedLanguage('personLimit', i18nData)} className='mb-2 mt-3' >
+                    <Form.Control type='number' min={2} placeholder={convertKeyToSelectedLanguage('personLimit', i18nData)}
+                      value={personLimitText} isInvalid={!!personLimitError} autoComplete='off'
+                      onChange={e => { setPersonLimitText(e.target.value); setPersonLimitError(null) }} />
+                    <Form.Control.Feedback type='invalid'>
+                      {convertKeyToSelectedLanguage(personLimitError, i18nData)}
+                    </Form.Control.Feedback>
+                  </FloatingLabel>
+                </Form>
+              </Col>
+            </Row>
+            :
+            // not editing
+            <Row key={`${watch_group._key}_personLimit`} className='justify-content-md-center'>
+              <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_personLimit`} >
+                {convertKeyToSelectedLanguage('personLimit', i18nData)}
+              </Col>
+              <Col xs lg={7} key={`${watch_group._key}_value$_personLimit`} >
+                {oldPersonLimitText}
+              </Col>
+            </Row>
+          }
+
+          <Row key={`${watch_group._key}_limit`} className='justify-content-md-center'>
+            <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_limit`} >
+              {convertKeyToSelectedLanguage('currentNrOfPersons', i18nData)}
+            </Col>
+            <Col xs lg={7} key={`${watch_group._key}_value$_limit`} >
+              {watch_group['currentNrOfPersons']}/{oldPersonLimitText}
+            </Col>
+          </Row>
+
+          {(editing && auth.logged_in) ?
             // editing description
             <Row key={`${watch_group._key}_description`} className='justify-content-md-center mb-3'>
               <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_description`} >
@@ -347,16 +432,6 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
               </Col>
             </Row>
           }
-
-          <Row key={`${watch_group._key}_limit`} className='justify-content-md-center'>
-            <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_limit`} >
-              {convertKeyToSelectedLanguage('currentNrOfPersons', i18nData)}
-            </Col>
-            <Col xs lg={7} key={`${watch_group._key}_value$_limit`} >
-              {watch_group['currentNrOfPersons']}/{watch_group['personLimit']}
-            </Col>
-
-          </Row>
 
           {watch_group['locationName'] &&
             <Row key={`${watch_group._key}_locationName`} className='justify-content-md-center'>

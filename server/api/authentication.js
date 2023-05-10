@@ -26,6 +26,7 @@ router.post('/register', async (req, response) => {
         first_name: userInformation.first_name,
         last_name: userInformation.last_name,
         username: userInformation.username,
+        about_me: userInformation.about_me,
         create_date: new Date(Date.now()),
         role: userRoleCode,
       }

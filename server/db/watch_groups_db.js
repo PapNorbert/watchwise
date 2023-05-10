@@ -1,5 +1,7 @@
 import pool from './connection_db.js'
 
+import { findUserByUsername } from './users_db.js'
+
 const watchGroupCollection = pool.collection("watch_groups");
 
 
@@ -39,7 +41,11 @@ export async function findWatchGroupsWithJoinedInformation(userId, page, limit) 
       FILTER edge._from == @from
       FILTER edge._to == doc._id
       LIMIT 1 RETURN true) > 0
-    RETURN { doc: UNSET(doc, "comments"), joined: join }`;
+    LET has_request = LENGTH(FOR edge IN join_request
+      FILTER edge._from == @from
+      FILTER edge._to == doc._id
+      LIMIT 1 RETURN true) > 0
+    RETURN { doc: UNSET(doc, "comments"), joined: join, has_request: has_request }`;
     const cursor = await pool.query(aqlQuery, { from: userId, offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
@@ -57,7 +63,11 @@ export async function findWatchGroupsWithJoinedInformationAndDistance(userId, pa
       FILTER edge._from == @from
       FILTER edge._to == doc._id
       LIMIT 1 RETURN true) > 0
-    RETURN { doc: UNSET(doc, "comments"), joined: join }`;
+    LET has_request = LENGTH(FOR edge IN join_request
+      FILTER edge._from == @from
+      FILTER edge._to == doc._id
+      LIMIT 1 RETURN true) > 0
+    RETURN { doc: UNSET(doc, "comments"), joined: join, has_request: has_request }`;
     const cursor = await pool.query(aqlQuery,
       { from: userId, offset: (page - 1) * limit, count: limit, userLocLat: userLocLat, userLocLong: userLocLong });
     return await cursor.all();
@@ -154,6 +164,10 @@ export async function findWatchGroupByKeyWithJoinedInformation(userId, key, page
       FILTER edge._from == @from
       FILTER edge._to == doc._id
       LIMIT 1 RETURN true) > 0
+    LET has_request = LENGTH(FOR edge IN join_request
+      FILTER edge._from == @from
+      FILTER edge._to == doc._id
+      LIMIT 1 RETURN true) > 0
     RETURN { 
     doc: {
       _key: doc._key,
@@ -176,7 +190,8 @@ export async function findWatchGroupByKeyWithJoinedInformation(userId, key, page
         RETURN comment
       )
     }, 
-    joined: join }`;
+    joined: join,
+    has_request: has_request }`;
     const cursor = await pool.query(aqlQuery, { from: userId, key: key, offset: (page - 1) * limit, count: limit });
     return (await cursor.all())[0];
   } catch (err) {
@@ -308,3 +323,144 @@ export async function deleteWatchGroup(key) {
   }
 }
 
+export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
+  try {
+    const transaction = await pool.beginTransaction({
+      write: ["join_request", "joined_group"],
+      read: ["watch_groups", "users"],
+      allowImplicit: false
+    });
+    const watchGroup = await transaction.step(async () => {
+      const aqlQuery = `FOR doc IN watch_groups
+        FILTER doc._key == @key
+        RETURN UNSET(doc, "comments")`;
+      const cursor = await pool.query(aqlQuery, { key: watchGroupKey });
+      return (await cursor.all())[0];
+    });
+    const usersCollection = pool.collection("users");
+
+    const user = await transaction.step(async () => {
+      return await usersCollection.firstExample({ username: jwtUsername });
+    })
+
+    if (watchGroup !== null && user !== null) { // check watchGroup and user exist
+      const joinEdgeExists = await transaction.step(async () => {
+        // check user already joined
+        const aqlQuery = `RETURN LENGTH(FOR doc IN joined_group
+          FILTER doc._from == @from
+          FILTER doc._to == @to
+          LIMIT 1 RETURN true) > 0`;
+        const cursor = await pool.query(aqlQuery, { from: user._id, to: watchGroup._id });
+        return (await cursor.all())[0];
+      });
+
+      if (joinEdgeExists) {
+        // user is joined to the group -> leave request
+        const deleted = await transaction.step(async () => {
+          const aqlQuery = `FOR edge IN joined_group
+            FILTER edge._from == @from
+            FILTER edge._to == @to
+            REMOVE { _key: edge._key } IN joined_group`;
+          await pool.query(aqlQuery, { from: user._id, to: watchGroup._id });
+          return true;
+        });
+        if (!deleted) {
+          const transactionResult = await transaction.abort();
+          console.log('Transaction for creating join request: ', transactionResult.status, '. Error during join delete');
+          return {
+            error: true,
+            errorMessage: 'error_leave_try'
+          }
+        }
+        // update persons joined count
+        const updatedGroupPersonCount = await transaction.step(async () => {
+          await watchGroupCollection.update(watchGroup._key, { currentNrOfPersons: watchGroup.currentNrOfPersons - 1 });
+          return true;
+        });
+        if (!updatedGroupPersonCount) {
+          const transactionResult = await transaction.abort();
+          console.log('Transaction for creating join request: ', transactionResult.status, '. Error during join delete');
+          return {
+            error: true,
+            errorMessage: 'error_leave_try'
+          }
+        }
+        const transactionResult = await transaction.commit();
+        console.log('Transaction for creating join request: ', transactionResult.status, '. Left the group');
+        return {
+          error: false,
+          actionPerformed: 'deleted'
+        };
+
+      } else {
+        // user is not joined to the group -> join request
+        const joinRequestExists = await transaction.step(async () => {
+          // check user already has a request
+          const aqlQuery = `RETURN LENGTH(FOR doc IN join_request
+            FILTER doc._from == @from
+            FILTER doc._to == @to
+            LIMIT 1 RETURN true) > 0`;
+          const cursor = await pool.query(aqlQuery, { from: user._id, to: watchGroup._id });
+          return (await cursor.all())[0];
+        });
+
+        if (!joinRequestExists) {
+
+          if (watchGroup.currentNrOfPersons >= watchGroup.personLimit) {
+            // the group is full
+            const transactionResult = await transaction.abort();
+            console.log('Transaction for creating join request: ', transactionResult.status, '. Group already full');
+            return {
+              error: true,
+              errorMessage: 'error_group_full'
+            }
+          }
+          // create join request
+          const request_date = new Date(Date.now());
+          const joinRequestKey = await transaction.step(async () => {
+            const aqlQuery =
+              `INSERT { 
+                _from: @from, _to: @to, user: @user, about_user: @about_user, request_date: @request_date,
+                group_name: @group_name
+              } INTO join_request
+              RETURN NEW._key`;
+            const cursor = await pool.query(aqlQuery, {
+              from: user._id, to: watchGroup._id, user: user.username,
+              about_user: user.about_me, request_date: request_date,
+              group_name: watchGroup.title
+            });
+            return (await cursor.all())[0];
+          });
+          const transactionResult = await transaction.commit();
+          console.log('Transaction for creating join request: ', transactionResult.status,
+            '. Request created with id', joinRequestKey);
+          return {
+            error: false,
+            actionPerformed: 'created',
+            joinRequestKey: joinRequestKey
+          };
+        }
+        // request already exists
+        const transactionResult = await transaction.commit();
+        console.log('Transaction for creating join request: ', transactionResult.status,
+          '. Request already exists');
+        return {
+          error: false,
+          actionPerformed: 'request_exists'
+        };
+      }
+    } else {
+      // watchgroup or user not found
+      const transactionResult = await transaction.abort();
+      console.log('Transaction for creating join request: ', transactionResult.status, '. No group or user');
+      return {
+        error: true,
+        errorMessage: '404'
+      }
+    }
+
+  } catch (err) {
+    console.log(err.message);
+    throw err.message;
+  }
+}

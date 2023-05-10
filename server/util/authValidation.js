@@ -31,7 +31,7 @@ export function checkRegistrationInformationNotEmpty(userInformation) {
     && userInformation.username !== undefined && userInformation.username !== ''
     && userInformation.passwd !== undefined && userInformation.passwd !== ''
     && userInformation.passwd_confirm !== undefined && userInformation.passwd_confirm !== ''
-
+    && userInformation.about_me !== undefined && userInformation.about_me !== ''
 }
 
 export function correctRegistrationPasswords(userInformation) {

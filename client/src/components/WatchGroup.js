@@ -21,6 +21,21 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
   async function handleButtonClicked(e) {
     if (buttonType === buttonTypes.manage) {
       navigate(`/watch_groups/${watch_group._key}`);
+    } else if (buttonType === buttonTypes.cancel_req) {
+      // delete join request
+      const { errorMessage, statusCode } = await postRequest(`/api/watch_groups/${watch_group._key}/join_req/cancel`);
+      if (statusCode === 204) {
+        // expected when edge was deleted
+        e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.join, i18nData);
+      } else if (statusCode === 401) {
+        setAuth({ logged_in: false });
+      } else if (statusCode === 403) {
+        navigate('/unauthorized');
+      } else if (statusCode === 404) {
+        setRequestError('404_join_req');
+      } else {
+        setRequestError(errorMessage);
+      }
     }
     else if (e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.join, i18nData)
       || e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.leave, i18nData)) {
@@ -32,9 +47,13 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
         if (removeOnLeave) {
           refetch();
         }
-      } else if (statusCode === 201) {
-        // expected when edge was created
-        e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.leave, i18nData);
+      } else if (statusCode === 201 || statusCode === 200) {
+        // expected when join request was created or exists
+        e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.pendingJoin, i18nData);
+        setTimeout(() => {
+          // after some time change text to cancel
+          e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.cancel_req, i18nData);
+        }, 3000);
       } else if (statusCode === 401) {
         setAuth({ logged_in: false });
       } else if (statusCode === 403) {
@@ -52,7 +71,7 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
       <Card key={`container_${watch_group._key}`} className='mt-4 mb-3'>
         <Card.Header as='h5' key={`header${watch_group._key}`} >
           {watch_group.title}
-          {auth.logged_in &&
+          {auth.logged_in && buttonType !== buttonTypes.full &&
             <Button className='btn btn-orange float-end' onClick={handleButtonClicked}
               key={`${watch_group._key}button`}>
               {convertKeyToSelectedLanguage(buttonType, i18nData)}
@@ -96,7 +115,7 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
                   <Col xs lg={7} key={`${watch_group._key}_value${index}`} >
                     {watch_group['currentNrOfPersons']}/{watch_group['personLimit']}
                   </Col>
-  
+
                 </Row>
               );
             }

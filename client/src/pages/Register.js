@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Form, FloatingLabel, Button, Alert, Nav } from 'react-bootstrap'
+import { Form, FloatingLabel, Button, Alert, Nav, Row, Col } from 'react-bootstrap'
 import FormContainer from '../components/FormContainer'
 import { useNavigate } from 'react-router-dom'
 
@@ -14,6 +14,7 @@ export default function Register() {
     'first_name': '',
     'last_name': '',
     'username': '',
+    'about_me': '',
     'passwd': '',
     'passwd_confirm': ''
   }
@@ -32,7 +33,7 @@ export default function Register() {
     setForm(newForm); // only changes value of the selected field
     let newErrors = { ...errors }
     if (!value || value === '') {
-      newErrors = { ...errors, [field]: `empty_${field}`}
+      newErrors = { ...errors, [field]: `empty_${field}` }
     } else if (errors[field] !== null) {
       newErrors = { ...errors, [field]: null }
     }
@@ -89,25 +90,34 @@ export default function Register() {
     <FormContainer className='form-container'>
       <Form className='justify-content-md-center mt-5' onSubmit={handleSubmit} >
         <h2 className='text-center'>{convertKeyToSelectedLanguage('registration', i18nData)}</h2>
-        <FloatingLabel controlId='floatingFirstNameInput'
-          label={convertKeyToSelectedLanguage('first_name', i18nData)} className='mb-3' >
-          <Form.Control type='text' placeholder={convertKeyToSelectedLanguage('first_name', i18nData)}
-            value={form.first_name} isInvalid={errors.first_name} autoComplete='off'
-            onChange={e => { setField('first_name', e.target.value) }} />
-          <Form.Control.Feedback type='invalid'>
-            {convertKeyToSelectedLanguage(errors['first_name'], i18nData)}
-          </Form.Control.Feedback>
-        </FloatingLabel>
 
-        <FloatingLabel controlId='floatingLastNameInput'
-          label={convertKeyToSelectedLanguage('last_name', i18nData)} className='mb-3' >
-          <Form.Control type='text' placeholder={convertKeyToSelectedLanguage('last_name', i18nData)}
-            value={form.last_name} isInvalid={!!errors.last_name} autoComplete='off'
-            onChange={e => { setField('last_name', e.target.value) }} />
-          <Form.Control.Feedback type='invalid'>
-            {convertKeyToSelectedLanguage(errors['last_name'], i18nData)}
-          </Form.Control.Feedback>
-        </FloatingLabel>
+        <Row>
+          <Col>
+            <FloatingLabel controlId='floatingFirstNameInput'
+              label={convertKeyToSelectedLanguage('first_name', i18nData)} className='mb-3' >
+              <Form.Control type='text' placeholder={convertKeyToSelectedLanguage('first_name', i18nData)}
+                value={form.first_name} isInvalid={errors.first_name} autoComplete='off'
+                onChange={e => { setField('first_name', e.target.value) }} />
+              <Form.Control.Feedback type='invalid'>
+                {convertKeyToSelectedLanguage(errors['first_name'], i18nData)}
+              </Form.Control.Feedback>
+            </FloatingLabel>
+          </Col>
+
+          <Col>
+            <FloatingLabel controlId='floatingLastNameInput'
+              label={convertKeyToSelectedLanguage('last_name', i18nData)} className='mb-3' >
+              <Form.Control type='text' placeholder={convertKeyToSelectedLanguage('last_name', i18nData)}
+                value={form.last_name} isInvalid={!!errors.last_name} autoComplete='off'
+                onChange={e => { setField('last_name', e.target.value) }} />
+              <Form.Control.Feedback type='invalid'>
+                {convertKeyToSelectedLanguage(errors['last_name'], i18nData)}
+              </Form.Control.Feedback>
+            </FloatingLabel>
+          </Col>
+        </Row>
+
+
 
         <FloatingLabel controlId='floatingUsernameInput'
           label={convertKeyToSelectedLanguage('username', i18nData)} className='mb-3' >
@@ -119,8 +129,24 @@ export default function Register() {
           </Form.Control.Feedback>
         </FloatingLabel>
 
+        <span className='about_me'>
+          <Form.Label>
+            {convertKeyToSelectedLanguage('about_me', i18nData)}
+          </Form.Label>
+          <Form.Control as='textarea' rows={3}
+            placeholder={convertKeyToSelectedLanguage('about_me', i18nData)}
+            value={form.about_me} isInvalid={!!errors.about_me} autoComplete='off'
+            onChange={e => { setField('about_me', e.target.value) }} />
+          <Form.Text className='text-muted'>
+            {convertKeyToSelectedLanguage('about_me_guide', i18nData)}
+          </Form.Text>
+          <Form.Control.Feedback type='invalid' >
+            {convertKeyToSelectedLanguage(errors['about_me'], i18nData)}
+          </Form.Control.Feedback>
+        </span>
+
         <FloatingLabel controlId='floatingPassword'
-          label={convertKeyToSelectedLanguage('passwd', i18nData)} className='mb-3' >
+          label={convertKeyToSelectedLanguage('passwd', i18nData)} className='mb-3 mt-3' >
           <Form.Control type='password' placeholder={convertKeyToSelectedLanguage('passwd', i18nData)}
             value={form.passwd} isInvalid={!!errors.passwd} autoComplete='off'
             onChange={e => { setField('passwd', e.target.value) }} />
@@ -159,6 +185,6 @@ export default function Register() {
         </Nav>
 
       </Form>
-    </FormContainer>
+    </FormContainer >
   )
 }

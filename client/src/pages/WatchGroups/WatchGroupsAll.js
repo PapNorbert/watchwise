@@ -99,9 +99,23 @@ export default function WatchGroupsAll() {
               // logged in
               currentElement.doc.creator === auth.username ?
                 // own thread
-                buttonTypes.manage :
+                buttonTypes.manage
+                :
                 // not own thread
-                (currentElement?.joined ? buttonTypes.leave : buttonTypes.join) : null
+                currentElement?.joined ?
+                  buttonTypes.leave
+                  :
+                  // not joined
+                  currentElement?.has_request ?
+                    buttonTypes.cancel_req
+                    :
+                    // has no join request
+                    currentElement.doc.currentNrOfPersons < currentElement.doc.personLimit ?
+                      buttonTypes.join
+                      :
+                      buttonTypes.full
+              :
+              null
           } key={
             currentElement?.doc ? currentElement?.doc._key : currentElement._key
           } />

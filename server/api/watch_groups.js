@@ -7,8 +7,12 @@ import {
   findWatchGroupsByUserJoined, getWatchGroupCountByUserJoined, findWatchGroupsWithJoinedInformation,
   findWatchGroupByKeyWithoutComments, findWatchGroupByKeyWithJoinedInformation,
   findWatchGroupsAndDistance, findWatchGroupsByCreatorAndDistance, findWatchGroupsByUserJoinedAndDistance,
-  findWatchGroupsWithJoinedInformationAndDistance
+  findWatchGroupsWithJoinedInformationAndDistance,
+  handleJoinTransaction
 } from '../db/watch_groups_db.js'
+import {
+  findJoinRequestByCreator, getJoinRequestCountByCreator, deleteJoinRequestEdge
+} from '../db/join_requests_db.js'
 import { getMovieKeyByName } from '../db/movies_db.js'
 import { getSerieKeyByName } from '../db/series_db.js'
 import {
@@ -18,9 +22,8 @@ import {
 import { findUserByUsername } from '../db/users_db.js';
 import { createPaginationInfo } from '../util/util.js'
 import { createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_dto.js'
-import { validateWatchGroupCreation, validateWatchDate } from '../util/watchGroupValidation.js'
+import { validateWatchGroupCreation, validateWatchDate, validatePersonLimit } from '../util/watchGroupValidation.js'
 import { validateCommentCreation } from '../util/commentValidation.js'
-import { checkEdgeExists, deleteJoinedEdge, insertJoinedEdge } from '../db/joined_group_db.js';
 import { authorize } from '../middlewares/auth.js'
 
 const router = express.Router();
@@ -315,7 +318,46 @@ router.get('', async (request, response) => {
       error: "error"
     });
   }
+});
 
+router.get('/join_requests', async (request, response) => {
+  response.set('Content-Type', 'application/json');
+  response.status(200);
+  try {
+    let { page = 1, limit = 10, creator } = request.query;
+    if (parseInt(page) == page && parseInt(limit) == limit
+      && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
+      page = parseInt(page);
+      limit = parseInt(limit);
+
+      if (creator) {
+        if (creator !== response.locals.payload.username) {
+          response.sendStatus(403);
+          return
+        }
+
+        const [JoinRequests, count] = await Promise.all([
+          findJoinRequestByCreator(creator, page, limit),
+          getJoinRequestCountByCreator(creator),
+        ]);
+        response.json({
+          "data": createResponseDtos(JoinRequests),
+          "pagination": createPaginationInfo(page, limit, count)
+        });
+
+      } else {
+        // no creator specified
+        response.status(400).json({ error: "creator_required" })
+      }
+    } else {
+      response.status(400).json({ error: "bad_paging" })
+    }
+  } catch (err) {
+    console.log(err);
+    response.status(400).json({
+      error: "error"
+    });
+  }
 });
 
 router.get('/:id', async (request, response) => {
@@ -389,14 +431,14 @@ router.post('', authorize(), async (request, response) => {
       watchGroupJson.creation_date = new Date(Date.now());
       watchGroupJson.comments = [];
       watchGroupJson.currentNrOfPersons = 1;
-      
+
       // get name of the location
       const axiosRequest = axios.create({
         headers: { 'Content-Type': 'application/json' }
       });
       const axiosResponse = await axiosRequest.get(
         `https://geocode.maps.co/reverse?lat=${watchGroupJson.location[0]}&lon=${watchGroupJson.location[1]}`);
-      if( axiosResponse?.data?.display_name ) {
+      if (axiosResponse?.data?.display_name) {
         watchGroupJson.locationName = axiosResponse.data.display_name;
       }
 
@@ -444,29 +486,35 @@ router.post('/:id/joines', authorize(), async (request, response) => {
     && parseInt(request.params.id) > 0) { // correct parameter
     const id = request.params.id;
     try {
-      const watchGroup = await findWatchGroupByKeyWithoutComments(id);
-      const user = await findUserByUsername(response.locals.payload.username);
-      if (watchGroup !== null && user !== null) {
-        const exists = await checkEdgeExists(user._id, watchGroup._id);
-        if (exists) {
-          const deleted = await deleteJoinedEdge(user._id, watchGroup._id);
-          if (!deleted) {
-            response.status(404);
-          }
-          response.end();
+      const transactionRespn = await handleJoinTransaction(id, response.locals.payload.username);
+      if (transactionRespn.error) {
+        if (transactionRespn.errorMessage === '404') {
+          response.status(404).end();
         } else {
-          const key = await insertJoinedEdge(user._id, watchGroup._id);
-          response.status(201).json({ id: key })
+          response.status(400).json({ error: transactionRespn.errorMessage });
         }
-      } else { // watchgroup or user not found
-        response.status(404).end();
+
+      } else {
+        //transaction completed succesfully
+        if (transactionRespn.actionPerformed === 'deleted') {
+          response.end();
+          return
+        }
+        if (transactionRespn.actionPerformed === 'created') {
+          response.status(201).json({ id: transactionRespn.joinRequestKey })
+          return
+        }
+        if (transactionRespn.actionPerformed === 'request_exists') {
+          response.sendStatus(200);
+          return
+        }
       }
 
     } catch (err) {
       console.log(err);
       response.status(400);
       response.json({
-        error: err.message
+        error: err
       });
     }
   } else { // incorrect parameter
@@ -474,6 +522,39 @@ router.post('/:id/joines', authorize(), async (request, response) => {
     response.json({ error: "bad_req_par_number" });
   }
 
+});
+
+router.post('/:id/join_req/cancel', authorize(), async (request, response) => {
+  response.set('Content-Type', 'application/json');
+  response.status(204);
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
+    try {
+      const user = await findUserByUsername(response.locals.payload.username);
+      if (user !== null) {
+        const deleted = await deleteJoinRequestEdge(user._id, `watch_groups/${request.params.id}`);
+        if (deleted) {
+          response.end();
+        } else {
+          response.sendStatus(404);
+        }
+      } else {
+        // no user found
+        response.status(400).json({
+          error: 'user_not_exists'
+        });
+      }
+    } catch (err) {
+      console.log(err);
+      response.status(400).json({
+        error: err
+      });
+    }
+
+  } else { // incorrect parameter
+    response.status(400);
+    response.json({ error: "bad_req_par_number" });
+  }
 });
 
 router.put('/:id', authorize(), async (request, response) => {
@@ -486,6 +567,16 @@ router.put('/:id', authorize(), async (request, response) => {
     if (newWatchGroupAttributes.watch_date !== undefined) {
       // changes the watch date
       const { correct, error } = validateWatchDate(newWatchGroupAttributes.watch_date);
+      if (!correct) {
+        response.status(400).json({
+          error: error
+        });
+        return
+      }
+    }
+    if (newWatchGroupAttributes.personLimit !== undefined) {
+      // changes the person limit
+      const { correct, error } = validatePersonLimit(newWatchGroupAttributes.personLimit);
       if (!correct) {
         response.status(400).json({
           error: error

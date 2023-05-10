@@ -13,6 +13,7 @@ export default function WatchGroupsTab() {
   const { i18nData } = useLanguage();
   const joinedRoute = `/watch_groups/joined/${auth?.userID}`
   const myGroupsRoute = `/watch_groups/my_groups/${auth?.userID}`
+  const joinReqRoute = `/watch_groups/my_groups/join_requests`
   const createRoute = `/watch_groups/create`
 
   return (
@@ -34,6 +35,11 @@ export default function WatchGroupsTab() {
           <Nav.Item>
             <Nav.Link eventKey={myGroupsRoute} >
               {convertKeyToSelectedLanguage('my_groups', i18nData)}
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link eventKey={joinReqRoute} >
+              {convertKeyToSelectedLanguage('join_req', i18nData)}
             </Nav.Link>
           </Nav.Item>
           <Nav.Item>

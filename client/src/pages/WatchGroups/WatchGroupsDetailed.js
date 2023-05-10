@@ -34,7 +34,7 @@ export default function WatchGroupsDetailed() {
     return <h3 className='error text-center'>{convertKeyToSelectedLanguage('404_group', i18nData)}</h3>
   }
 
-  if (statusCode === 503 ) {
+  if (statusCode === 503) {
     return <h2 className='error'>{convertKeyToSelectedLanguage('server_no_resp', i18nData)}</h2>
   }
 
@@ -51,7 +51,21 @@ export default function WatchGroupsDetailed() {
     <WatchGroupDetails watch_group={
       watch_group?.data?.doc ? watch_group?.data?.doc : watch_group?.data
     } buttonType={
-      watch_group?.data?.doc ? (watch_group?.data?.joined ? buttonTypes.leave : buttonTypes.join) : null
+      watch_group?.data?.doc ?
+        watch_group?.data?.joined ?
+          buttonTypes.leave
+          :
+          // not joined
+          watch_group?.data?.has_request ?
+            buttonTypes.cancel_req
+            :
+            // has no join request
+            watch_group?.data?.doc.currentNrOfPersons < watch_group?.data?.doc.personLimit ?
+              buttonTypes.join
+              :
+              buttonTypes.full
+        :
+        null
     } key={
       watch_group?.data?.doc ? watch_group?.data?.doc._key : watch_group?.data._key
     } setUrl={setUrl} totalPages={watch_group?.pagination.totalPages}
