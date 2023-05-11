@@ -44,33 +44,34 @@ export default function WatchGroupsJoined() {
     );
   }, [])
 
+
   useEffect(() => {
-    // eslint-disable-next-line eqeqeq
-    if (parseInt(limit) != limit) {
-      setLimit(querryParamDefaultValues.limit);
-      // eslint-disable-next-line eqeqeq
-    } else if (parseInt(page) != page) {
-      setPage(querryParamDefaultValues.page);
-    } else if (!limitValues.includes(parseInt(limit))) {
-      setLimit(querryParamDefaultValues.limit);
-    } else if (page > watch_groups?.pagination.totalPages && page > 1) {
-      setPage(watch_groups?.pagination.totalPages);
+    if (watch_groups?.pagination.totalPages === 0) {
+      // no data
+      if (parseInt(page) !== 1) {
+        setPage(1);
+      }
     } else {
-      // limit and page have correct values
-      if (userLocation[0] && userLocation[1]) {
-        setUrl(`/api/watch_groups/?userId=${userID}&joined=true&page=${page}&limit=${limit}&userLocLat=${userLocation[0]}&userLocLong=${userLocation[1]}`);
+      // eslint-disable-next-line eqeqeq
+      if (parseInt(limit) != limit) {
+        setLimit(querryParamDefaultValues.limit);
+        // eslint-disable-next-line eqeqeq
+      } else if (parseInt(page) != page) {
+        setPage(querryParamDefaultValues.page);
+      } else if (!limitValues.includes(parseInt(limit))) {
+        setLimit(querryParamDefaultValues.limit);
+      } else if (page > watch_groups?.pagination.totalPages && page > 1) {
+        setPage(watch_groups?.pagination.totalPages);
       } else {
-        setUrl(`/api/watch_groups/?userId=${userID}&joined=true&page=${page}&limit=${limit}`);
+        // limit and page have correct values
+        if (userLocation[0] && userLocation[1]) {
+          setUrl(`/api/watch_groups/?userId=${userID}&joined=true&page=${page}&limit=${limit}&userLocLat=${userLocation[0]}&userLocLong=${userLocation[1]}`);
+        } else {
+          setUrl(`/api/watch_groups/?userId=${userID}&joined=true&page=${page}&limit=${limit}`);
+        }
       }
     }
   }, [limit, page, setLimit, setPage, userID, userLocation, watch_groups?.pagination.totalPages])
-
-  useEffect(() => {
-    if (watch_groups?.data.length === 0) {
-      // if we get an empty page load the previous
-      setPage(prev => prev > 1 ? prev - 1 : 1);
-    }
-  }, [setPage, watch_groups?.data])
 
 
   if (statusCode === 401) {

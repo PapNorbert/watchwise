@@ -3,7 +3,7 @@ import express from 'express';
 import {
   findUsersByUsernameContains, findUsers,
   getUsersCountByUsernameContains, getUsersCount,
-  deleteUser, findUserByKey, updateUser
+  handleUserBanTransaction
 } from '../db/users_db.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
 import { createPaginationInfo } from '../util/paginationInfo.js'
@@ -62,26 +62,21 @@ router.post('/:user_id/ban', authorize([adminRoleCode]), async (request, respons
   response.status(204);
   if (parseInt(request.params.user_id) == request.params.user_id
     && parseInt(request.params.user_id) > 0) { // correct parameter
-    const id = request.params.user_id;
     try {
-      const user = await findUserByKey(id);
-      if (user !== null ) {
-        if( user.role === adminRoleCode) {
-          console.log('Attempt to ban an admin user')
-          response.status(400).json({
-            error: 'error_admin_ban'
-          });
+      const transactionRespn = await handleUserBanTransaction(request.params.user_id);
+      if (transactionRespn.error) {
+        if (transactionRespn.errorMessage === '404') {
+          response.status(404).end();
+        } else {
+          response.status(400).json({ error: transactionRespn.errorMessage });
         }
-        if (user.banned) {
-          response.status(202);
+      } else {
+        //transaction completed succesfully
+        if (transactionRespn.actionPerformed === 'ban') {
+          response.end();
+        } else {
+          response.sendStatus(202);
         }
-        const updated = await updateUser(user._id, { banned: !user.banned });
-        if (!updated) {
-          response.status(404);
-        }
-        response.end();
-      } else { // user not found
-        response.status(404).end();
       }
 
     } catch (err) {

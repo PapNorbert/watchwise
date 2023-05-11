@@ -24,19 +24,26 @@ export default function OpinionsThreadsMy() {
   const location = useLocation();
 
   useEffect(() => {
-    // eslint-disable-next-line eqeqeq
-    if (parseInt(limit) != limit) {
-      setLimit(querryParamDefaultValues.limit);
-      // eslint-disable-next-line eqeqeq
-    } else if (parseInt(page) != page) {
-      setPage(querryParamDefaultValues.page);
-    } else if (!limitValues.includes(parseInt(limit))) {
-      setLimit(querryParamDefaultValues.limit);
-    } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
-      setPage(opinion_threads?.pagination.totalPages);
+    if (opinion_threads?.pagination.totalPages === 0) {
+      // no data
+      if (parseInt(page) !== 1) {
+        setPage(1);
+      }
     } else {
-      // limit and page have correct values
-      setUrl(`/api/opinion_threads/?creator=${auth?.username}&page=${page}&limit=${limit}`);
+      // eslint-disable-next-line eqeqeq
+      if (parseInt(limit) != limit) {
+        setLimit(querryParamDefaultValues.limit);
+        // eslint-disable-next-line eqeqeq
+      } else if (parseInt(page) != page) {
+        setPage(querryParamDefaultValues.page);
+      } else if (!limitValues.includes(parseInt(limit))) {
+        setLimit(querryParamDefaultValues.limit);
+      } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
+        setPage(opinion_threads?.pagination.totalPages);
+      } else {
+        // limit and page have correct values
+        setUrl(`/api/opinion_threads/?creator=${auth?.username}&page=${page}&limit=${limit}`);
+      }
     }
   }, [limit, page, auth?.username, opinion_threads?.pagination.totalPages, setLimit, setPage])
 
@@ -52,7 +59,7 @@ export default function OpinionsThreadsMy() {
     return <Navigate to='/unauthorized' state={{ from: location }} replace />
   }
 
-  if (statusCode === 503 ) {
+  if (statusCode === 503) {
     return <h2 className='error'>{convertKeyToSelectedLanguage('server_no_resp', i18nData)}</h2>
   }
 

@@ -191,5 +191,6 @@
   "group_full": "A kiválasztott csoport megtelt!",
   "error_join_accept": "Hiba a csatlakozási kérelem elfogadása közben!",
   "joined_users": "Csatlakozott felhasználók",
-  "no_user_joined": "Még nincsenek csatlakozott felhasználók"
+  "no_user_joined": "Még nincsenek csatlakozott felhasználók",
+  "error_ban_status_update": "Hiba felhasználó státuszának frissítése közben!"
 }

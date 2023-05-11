@@ -150,7 +150,7 @@ export async function handleJoinReqAcceptTransaction(joinReqKey) {
           });
           if (!updatedGroupPersonCount) {
             const transactionResult = await transaction.abort();
-            console.log('Transaction for joining grou: ', transactionResult.status, '. Error updating watch group person nr');
+            console.log('Transaction for joining group: ', transactionResult.status, '. Error updating watch group person nr');
             return {
               error: true,
               errorMessage: 'error_join_accept'
@@ -171,7 +171,7 @@ export async function handleJoinReqAcceptTransaction(joinReqKey) {
 
       if (deleted) {
         const transactionResult = await transaction.commit();
-        console.log('Transaction for joining grou: ', transactionResult.status,
+        console.log('Transaction for joining group: ', transactionResult.status,
           '. Request accepted');
         return {
           error: false,
@@ -180,7 +180,7 @@ export async function handleJoinReqAcceptTransaction(joinReqKey) {
 
       } else {
         const transactionResult = await transaction.abort();
-        console.log('Transaction for joining grou: ', transactionResult.status, '. Error during join delete');
+        console.log('Transaction for joining group: ', transactionResult.status, '. Error during join delete');
         return {
           error: true,
           errorMessage: 'error_join_accept'

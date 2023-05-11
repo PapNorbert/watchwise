@@ -43,22 +43,29 @@ export default function WatchGroupsMy() {
   }, [])
 
   useEffect(() => {
-    // eslint-disable-next-line eqeqeq
-    if (parseInt(limit) != limit) {
-      setLimit(querryParamDefaultValues.limit);
-      // eslint-disable-next-line eqeqeq
-    } else if (parseInt(page) != page) {
-      setPage(querryParamDefaultValues.page);
-    } else if (!limitValues.includes(parseInt(limit))) {
-      setLimit(querryParamDefaultValues.limit);
-    } else if (page > watch_groups?.pagination.totalPages && page > 1) {
-      setPage(watch_groups?.pagination.totalPages);
+    if (watch_groups?.pagination.totalPages === 0) {
+      // no data
+      if (parseInt(page) !== 1) {
+        setPage(1);
+      }
     } else {
-      // limit and page have correct values
-      if (userLocation[0] && userLocation[1]) {
-        setUrl(`/api/watch_groups/?creator=${auth?.username}&page=${page}&limit=${limit}&userLocLat=${userLocation[0]}&userLocLong=${userLocation[1]}`);
+      // eslint-disable-next-line eqeqeq
+      if (parseInt(limit) != limit) {
+        setLimit(querryParamDefaultValues.limit);
+        // eslint-disable-next-line eqeqeq
+      } else if (parseInt(page) != page) {
+        setPage(querryParamDefaultValues.page);
+      } else if (!limitValues.includes(parseInt(limit))) {
+        setLimit(querryParamDefaultValues.limit);
+      } else if (page > watch_groups?.pagination.totalPages && page > 1) {
+        setPage(watch_groups?.pagination.totalPages);
       } else {
-        setUrl(`/api/watch_groups/?creator=${auth?.username}&page=${page}&limit=${limit}`);
+        // limit and page have correct values
+        if (userLocation[0] && userLocation[1]) {
+          setUrl(`/api/watch_groups/?creator=${auth?.username}&page=${page}&limit=${limit}&userLocLat=${userLocation[0]}&userLocLong=${userLocation[1]}`);
+        } else {
+          setUrl(`/api/watch_groups/?creator=${auth?.username}&page=${page}&limit=${limit}`);
+        }
       }
     }
   }, [limit, page, auth?.username, watch_groups?.pagination.totalPages, setLimit, setPage, userLocation])
@@ -75,7 +82,7 @@ export default function WatchGroupsMy() {
     return <Navigate to='/unauthorized' state={{ from: location }} replace />
   }
 
-  if (statusCode === 503 ) {
+  if (statusCode === 503) {
     return <h2 className='error'>{convertKeyToSelectedLanguage('server_no_resp', i18nData)}</h2>
   }
 

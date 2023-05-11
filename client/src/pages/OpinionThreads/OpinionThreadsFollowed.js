@@ -26,31 +26,29 @@ export default function OpinionThreadsFollowed() {
   const location = useLocation();
   const { i18nData } = useLanguage();
 
-
   useEffect(() => {
-    // eslint-disable-next-line eqeqeq
-    if (parseInt(limit) != limit) {
-      setLimit(querryParamDefaultValues.limit);
-      // eslint-disable-next-line eqeqeq
-    } else if (parseInt(page) != page) {
-      setPage(querryParamDefaultValues.page);
-    } else if (!limitValues.includes(parseInt(limit))) {
-      setLimit(querryParamDefaultValues.limit);
-    } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
-      setPage(opinion_threads?.pagination.totalPages);
+    if (opinion_threads?.pagination.totalPages === 0) {
+      // no data
+      if (parseInt(page) !== 1) {
+        setPage(1);
+      }
     } else {
-      // limit and page have correct values
-      setUrl(`/api/opinion_threads/?userId=${userID}&followed=true&page=${page}&limit=${limit}`);
+      // eslint-disable-next-line eqeqeq
+      if (parseInt(limit) != limit) {
+        setLimit(querryParamDefaultValues.limit);
+        // eslint-disable-next-line eqeqeq
+      } else if (parseInt(page) != page) {
+        setPage(querryParamDefaultValues.page);
+      } else if (!limitValues.includes(parseInt(limit))) {
+        setLimit(querryParamDefaultValues.limit);
+      } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
+        setPage(opinion_threads?.pagination.totalPages);
+      } else {
+        // limit and page have correct values
+        setUrl(`/api/opinion_threads/?userId=${userID}&followed=true&page=${page}&limit=${limit}`);
+      }
     }
   }, [limit, opinion_threads?.pagination.totalPages, page, setLimit, setPage, userID])
-
-  
-  useEffect(() => {
-    if (opinion_threads?.data.length === 0) {
-      // if we get an empty page load the previous
-      setPage(prev => prev > 1 ? prev - 1 : 1);
-    }
-  }, [opinion_threads?.data, setPage])
 
 
   if (statusCode === 401) {
@@ -63,8 +61,8 @@ export default function OpinionThreadsFollowed() {
   if (statusCode === 403) {
     return <Navigate to='/unauthorized' state={{ from: location }} replace />
   }
-  
-  if (statusCode === 503 ) {
+
+  if (statusCode === 503) {
     return <h2 className='error'>{convertKeyToSelectedLanguage('server_no_resp', i18nData)}</h2>
   }
 

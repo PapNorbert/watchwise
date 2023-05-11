@@ -191,5 +191,6 @@
   "group_full": "The selected group is full!",
   "error_join_accept": "Error during accepting join request!",
   "joined_users": "Joined users",
-  "no_user_joined": "No users join so far"
+  "no_user_joined": "No users join so far",
+  "error_ban_status_update": "Error updating user status!"
 }
