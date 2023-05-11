@@ -18,7 +18,7 @@ export default function WatchGroupsMy() {
   const [page, setPage] = useSearchParamsState(querryParamNames.page, querryParamDefaultValues.page);
   const { auth, setAuth, setLoginExpired } = useAuth();
   const [url, setUrl] = useState(`/api/watch_groups/join_requests/?creator=${auth?.username}`);
-  const { data: join_requests, error, statusCode, loading } = useGetAxios(url);
+  const { data: join_requests, error, refetch, statusCode, loading } = useGetAxios(url);
   const { i18nData } = useLanguage();
   const location = useLocation();
 
@@ -74,7 +74,7 @@ export default function WatchGroupsMy() {
         // there are elements returned
         join_requests?.data.map(currentElement => {
           return (
-            <JoinRequests join_request={currentElement} key={currentElement._key} />
+            <JoinRequests join_request={currentElement} refetch={refetch} key={currentElement._key} />
           );
         }) :
         // no elements returned

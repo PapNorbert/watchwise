@@ -27,6 +27,7 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
       if (statusCode === 204) {
         // expected when edge was deleted
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.join, i18nData);
+        buttonType = buttonTypes.join;
       } else if (statusCode === 401) {
         setAuth({ logged_in: false });
       } else if (statusCode === 403) {
@@ -37,22 +38,24 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
         setRequestError(errorMessage);
       }
     }
-    else if (e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.join, i18nData)
-      || e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.leave, i18nData)) {
+    else if (buttonType === buttonTypes.join || buttonType === buttonTypes.leave) {
       const { errorMessage, statusCode } = await postRequest(`/api/watch_groups/${watch_group._key}/joines`);
 
       if (statusCode === 204) {
         // expected when edge was deleted
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.join, i18nData);
+        buttonType = buttonTypes.join;
         if (removeOnLeave) {
           refetch();
         }
       } else if (statusCode === 201 || statusCode === 200) {
         // expected when join request was created or exists
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.pendingJoin, i18nData);
+        buttonType = buttonTypes.pendingJoin;
         setTimeout(() => {
           // after some time change text to cancel
           e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.cancel_req, i18nData);
+          buttonType = buttonTypes.cancel_req;
         }, 3000);
       } else if (statusCode === 401) {
         setAuth({ logged_in: false });

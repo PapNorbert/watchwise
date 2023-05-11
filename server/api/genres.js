@@ -3,7 +3,7 @@ import {
   findGenres, findGenreByKey, insertGenre, updateGenre, deleteGenreAndEdges,
   getGenreCount, findAllGenres
 } from '../db/genres_db.js'
-import { createPaginationInfo } from '../util/util.js'
+import { createPaginationInfo } from '../util/paginationInfo.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
 import { adminRoleCode } from '../config/UserRoleCodes.js'
 import { authorize } from '../middlewares/auth.js'

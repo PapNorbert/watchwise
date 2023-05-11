@@ -187,5 +187,9 @@
   "cancel_req": "Cancel join request",
   "404_join_req": "Join request not found.",
   "join_req_for_group": "Join request for group: ",
-  "error_group_full": "The group has no free space!"
+  "error_group_full": "The group has no free space!",
+  "group_full": "The selected group is full!",
+  "error_join_accept": "Error during accepting join request!",
+  "joined_users": "Joined users",
+  "no_user_joined": "No users join so far"
 }

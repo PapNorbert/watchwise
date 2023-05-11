@@ -17,7 +17,7 @@ import {
   checkEdgeExists, insertFollowedEdge, deleteFollowedEdge
 } from '../db/followed_thread_db.js'
 import { findUserByUsername } from '../db/users_db.js'
-import { createPaginationInfo } from '../util/util.js'
+import { createPaginationInfo } from '../util/paginationInfo.js'
 import { createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_dto.js'
 import { validateOpinionTreadCreation } from '../util/opinionThreadValidation.js'
 import { validateCommentCreation } from '../util/commentValidation.js'

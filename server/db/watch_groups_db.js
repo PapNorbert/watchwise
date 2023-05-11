@@ -1,6 +1,6 @@
 import pool from './connection_db.js'
 
-import { findUserByUsername } from './users_db.js'
+
 
 const watchGroupCollection = pool.collection("watch_groups");
 
@@ -326,8 +326,8 @@ export async function deleteWatchGroup(key) {
 export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
   try {
     const transaction = await pool.beginTransaction({
-      write: ["join_request", "joined_group"],
-      read: ["watch_groups", "users"],
+      write: ["join_request", "joined_group", "watch_groups"],
+      read: ["users"],
       allowImplicit: false
     });
     const watchGroup = await transaction.step(async () => {
@@ -366,7 +366,7 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
         });
         if (!deleted) {
           const transactionResult = await transaction.abort();
-          console.log('Transaction for creating join request: ', transactionResult.status, '. Error during join delete');
+          console.log('Transaction for join request: ', transactionResult.status, '. Error during join delete');
           return {
             error: true,
             errorMessage: 'error_leave_try'
@@ -379,14 +379,14 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
         });
         if (!updatedGroupPersonCount) {
           const transactionResult = await transaction.abort();
-          console.log('Transaction for creating join request: ', transactionResult.status, '. Error during join delete');
+          console.log('Transaction for join request: ', transactionResult.status, '. Error during join delete');
           return {
             error: true,
             errorMessage: 'error_leave_try'
           }
         }
         const transactionResult = await transaction.commit();
-        console.log('Transaction for creating join request: ', transactionResult.status, '. Left the group');
+        console.log('Transaction for join request: ', transactionResult.status, '. Left the group');
         return {
           error: false,
           actionPerformed: 'deleted'
@@ -409,7 +409,7 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
           if (watchGroup.currentNrOfPersons >= watchGroup.personLimit) {
             // the group is full
             const transactionResult = await transaction.abort();
-            console.log('Transaction for creating join request: ', transactionResult.status, '. Group already full');
+            console.log('Transaction for join request: ', transactionResult.status, '. Group already full');
             return {
               error: true,
               errorMessage: 'error_group_full'
@@ -432,7 +432,7 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
             return (await cursor.all())[0];
           });
           const transactionResult = await transaction.commit();
-          console.log('Transaction for creating join request: ', transactionResult.status,
+          console.log('Transaction for join request: ', transactionResult.status,
             '. Request created with id', joinRequestKey);
           return {
             error: false,
@@ -442,7 +442,7 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
         }
         // request already exists
         const transactionResult = await transaction.commit();
-        console.log('Transaction for creating join request: ', transactionResult.status,
+        console.log('Transaction for join request: ', transactionResult.status,
           '. Request already exists');
         return {
           error: false,
@@ -452,7 +452,7 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
     } else {
       // watchgroup or user not found
       const transactionResult = await transaction.abort();
-      console.log('Transaction for creating join request: ', transactionResult.status, '. No group or user');
+      console.log('Transaction for join request: ', transactionResult.status, '. No group or user');
       return {
         error: true,
         errorMessage: '404'

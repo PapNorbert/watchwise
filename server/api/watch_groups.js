@@ -11,8 +11,10 @@ import {
   handleJoinTransaction
 } from '../db/watch_groups_db.js'
 import {
-  findJoinRequestByCreator, getJoinRequestCountByCreator, deleteJoinRequestEdge
+  findJoinRequestByCreator, getJoinRequestCountByCreator, deleteJoinRequestEdge,
+  deleteJoinRequestEdgeByKey, handleJoinReqAcceptTransaction
 } from '../db/join_requests_db.js'
+import { getJoinedUsersByGroupKey } from '../db/joined_group_db.js'
 import { getMovieKeyByName } from '../db/movies_db.js'
 import { getSerieKeyByName } from '../db/series_db.js'
 import {
@@ -20,7 +22,7 @@ import {
   getCommentCountForGroupByKey, updateComment
 } from '../db/comments_db.js'
 import { findUserByUsername } from '../db/users_db.js';
-import { createPaginationInfo } from '../util/util.js'
+import { createPaginationInfo } from '../util/paginationInfo.js'
 import { createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_dto.js'
 import { validateWatchGroupCreation, validateWatchDate, validatePersonLimit } from '../util/watchGroupValidation.js'
 import { validateCommentCreation } from '../util/commentValidation.js'
@@ -212,7 +214,7 @@ router.get('', async (request, response) => {
           // user defined a location for groups to be close to
           const [watchGroups, count] = await Promise.all([
             findWatchGroupsByCreatorAndDistance(creator, page, limit, userLocLat, userLocLong),
-            getWatchGroupCountByCreator(creator),
+            getWatchGroupCountByCreator(creator)
           ]);
           response.json({
             "data": createResponseDtos(watchGroups),
@@ -320,7 +322,7 @@ router.get('', async (request, response) => {
   }
 });
 
-router.get('/join_requests', async (request, response) => {
+router.get('/join_requests', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
@@ -380,10 +382,21 @@ router.get('/:id', async (request, response) => {
           ]);
 
           if (watchGroup != null) {
-            response.json({
-              'data': watchGroup,
-              'pagination': createPaginationInfo(page, limit, count)
-            });
+            if (watchGroup.doc.creator === response.locals.payload.username || watchGroup.joined) {
+              // user is the creator              
+              const joinedUsers = await getJoinedUsersByGroupKey(request.params.id);
+              watchGroup.doc.joined_users = joinedUsers;
+              response.json({
+                'data': watchGroup,
+                'pagination': createPaginationInfo(page, limit, count)
+              });
+            } else {
+
+              response.json({
+                'data': watchGroup,
+                'pagination': createPaginationInfo(page, limit, count)
+              });
+            }
           } else { // no entity found with id
             response.status(404).end();
           }
@@ -479,14 +492,43 @@ router.post('', authorize(), async (request, response) => {
 
 });
 
+router.post('/join_requests/:id', authorize(), async (request, response) => {
+  // accepting join request with given id
+  response.set('Content-Type', 'application/json');
+  response.status(201);
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
+    try {
+      const transactionRespn = await handleJoinReqAcceptTransaction(request.params.id);
+      if (transactionRespn.error) {
+        if (transactionRespn.errorMessage === '404') {
+          response.status(404).end();
+        } else {
+          response.status(400).json({ error: transactionRespn.errorMessage });
+        }
+      } else {
+        //transaction completed succesfully
+        response.json({ refetch: transactionRespn.groupBecameFull });
+      }
+    } catch (err) {
+      console.log(err);
+      response.status(400).json({
+        error: "error"
+      });
+    }
+  } else { // incorrect parameter
+    response.status(400);
+    response.json({ error: "bad_req_par_number" });
+  }
+});
+
 router.post('/:id/joines', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(204);
   if (parseInt(request.params.id) == request.params.id
     && parseInt(request.params.id) > 0) { // correct parameter
-    const id = request.params.id;
     try {
-      const transactionRespn = await handleJoinTransaction(id, response.locals.payload.username);
+      const transactionRespn = await handleJoinTransaction(request.params.id, response.locals.payload.username);
       if (transactionRespn.error) {
         if (transactionRespn.errorMessage === '404') {
           response.status(404).end();
@@ -640,6 +682,29 @@ router.put('/:id', authorize(), async (request, response) => {
     response.json({ error: "bad_req_par_number" });
   }
 
+});
+
+router.delete('/join_requests/:id', authorize(), async (request, response) => {
+  response.set('Content-Type', 'application/json');
+  response.status(204);
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
+    try {
+      const succesfull = await deleteJoinRequestEdgeByKey(request.params.id);
+      if (!succesfull) {
+        response.status(404);
+      }
+      response.end();
+    } catch (err) {
+      console.log(err);
+      response.status(400).json({
+        error: "error"
+      });
+    }
+  } else { // incorrect parameter
+    response.status(400);
+    response.json({ error: "bad_req_par_number" });
+  }
 });
 
 router.delete('/:id', authorize(), async (request, response) => {

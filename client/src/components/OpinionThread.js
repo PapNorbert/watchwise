@@ -21,19 +21,20 @@ export default function OpinionThread({ opinion_thread, buttonType, removeOnLeav
     if (buttonType === buttonTypes.manage) {
       navigate(`/opinion_threads/${opinion_thread._key}`);
     }
-    else if (e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.follow, i18nData)
-      || e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.leave, i18nData)) {
+    else if (buttonType === buttonTypes.follow || buttonType === buttonTypes.leave) {
       const { errorMessage, statusCode } = await postRequest(`/api/opinion_threads/${opinion_thread._key}/followes`);
 
       if (statusCode === 204) {
         // expected when edge was deleted
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.follow, i18nData);
+        buttonType = buttonTypes.follow;
         if (removeOnLeave) {
           refetch();
         }
       } else if (statusCode === 201) {
         // expected when edge was created
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.leave, i18nData);
+        buttonType = buttonTypes.leave;
       } else if (statusCode === 401) {
         setAuth({ logged_in: false });
       } else if (statusCode === 403) {

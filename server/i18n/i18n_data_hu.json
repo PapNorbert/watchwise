@@ -187,6 +187,9 @@
   "cancel_req": "Csatlakozási kérelem visszavonása",
   "404_join_req": "Csatlakozási kérelem nem található.",
   "join_req_for_group": "Csatlakozási kérelem a következő csoporthoz: ",
-  "error_group_full": "A csoportnak nincs szabad helye!"
-
+  "error_group_full": "A csoportnak nincs szabad helye!",
+  "group_full": "A kiválasztott csoport megtelt!",
+  "error_join_accept": "Hiba a csatlakozási kérelem elfogadása közben!",
+  "joined_users": "Csatlakozott felhasználók",
+  "no_user_joined": "Még nincsenek csatlakozott felhasználók"
 }

@@ -88,6 +88,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
       if (statusCode === 204) {
         // expected when edge was deleted
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.join, i18nData);
+        buttonType = buttonTypes.join;
       } else if (statusCode === 401) {
         setAuth({ logged_in: false });
       } else if (statusCode === 403) {
@@ -98,19 +99,21 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
         setSubmitError(errorMessage);
       }
     }
-    else if (e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.join, i18nData)
-      || e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.leave, i18nData)) {
+    else if (buttonType === buttonTypes.join || buttonType === buttonTypes.leave) {
       const { errorMessage, statusCode } = await postRequest(`/api/watch_groups/${watch_group._key}/joines`);
 
       if (statusCode === 204) {
         // expected when edge was deleted
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.join, i18nData);
+        buttonType = buttonTypes.join;
       } else if (statusCode === 201 || statusCode === 200) {
         // expected when edge was created
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.pendingJoin, i18nData);
+        buttonType = buttonTypes.pendingJoin;
         setTimeout(() => {
           // after some time change text to cancel
           e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.cancel_req, i18nData);
+          buttonType = buttonTypes.cancel_req;
         }, 3000);
       } else if (statusCode === 401) {
         setAuth({ logged_in: false });
@@ -457,11 +460,25 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
             </Row>
           </div>
 
+          {auth.logged_in && (auth.username === watch_group.creator || buttonType === buttonTypes.leave) &&
+            <Row key={`${watch_group._key}_joined_users`} className='justify-content-md-center'>
+              <Col xs lg={4} className='object-label' key={`${watch_group._key}_label_joined_users`} >
+                {convertKeyToSelectedLanguage('joined_users', i18nData)}
+              </Col>
+              <Col xs lg={7} key={`${watch_group._key}_value_joined_users`} >
+                {watch_group['joined_users'].length > 0 ?
+                  watch_group['joined_users'].join(', ')
+                  :
+                  convertKeyToSelectedLanguage('no_user_joined', i18nData)
+                }
+              </Col>
+            </Row>
+          }
 
           {
             auth.logged_in && auth.username === watch_group.creator ?
               // creator of group
-              <Container className='mt-2' >
+              <Container className='mt-2 creator-buttons' >
                 <OverlayTrigger trigger='click' placement='bottom' rootClose={true}
                   overlay={popover}
                 >
@@ -480,7 +497,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
               :
               // not creator
               auth.logged_in &&
-              <Container className='mt-2' >
+              <Container className='mt-2 join-button' >
                 <Button className='btn btn-orange float-end mx-2' onClick={handleJoinButtonClicked}
                   key={`${watch_group._key}_join_button`} >
                   {convertKeyToSelectedLanguage(buttonType, i18nData)}
@@ -518,7 +535,7 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
             onPageChange={setPage} key='pagination' />
         }
         {watch_group.comments.length <= 0 &&
-          <Container>
+          <Container className='mb-5'>
             {convertKeyToSelectedLanguage('no_comment', i18nData)}
           </Container>
         }

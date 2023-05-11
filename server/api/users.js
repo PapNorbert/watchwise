@@ -6,7 +6,7 @@ import {
   deleteUser, findUserByKey, updateUser
 } from '../db/users_db.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
-import { createPaginationInfo } from '../util/util.js'
+import { createPaginationInfo } from '../util/paginationInfo.js'
 import { authorize } from '../middlewares/auth.js'
 import { adminRoleCode } from '../config/UserRoleCodes.js'
 

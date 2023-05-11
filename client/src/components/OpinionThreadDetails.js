@@ -57,7 +57,7 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
     // eslint-disable-next-line eqeqeq
     if (parseInt(limit) != limit) {
       setLimit(querryParamDefaultValues.limit);
-    // eslint-disable-next-line eqeqeq
+      // eslint-disable-next-line eqeqeq
     } else if (parseInt(page) != page) {
       setPage(querryParamDefaultValues.page);
     } else if (!limitValues.includes(parseInt(limit))) {
@@ -71,16 +71,17 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
   }, [limit, page, setUrl, opinion_thread._key, totalPages, setLimit, setPage])
 
   async function handleFollowesButtonClicked(e) {
-    if (e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.follow, i18nData)
-      || e.target.textContent === convertKeyToSelectedLanguage(buttonTypes.leave, i18nData)) {
+    if (buttonType === buttonTypes.follow || buttonType === buttonTypes.leave) {
       const { errorMessage, statusCode } = await postRequest(`/api/opinion_threads/${opinion_thread._key}/followes`);
 
       if (statusCode === 204) {
         // expected when edge was deleted
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.follow, i18nData);
+        buttonType = buttonTypes.follow;
       } else if (statusCode === 201) {
         // expected when edge was created
         e.target.textContent = convertKeyToSelectedLanguage(buttonTypes.leave, i18nData);
+        buttonType = buttonTypes.leave;
       } else if (statusCode === 401) {
         setAuth({ logged_in: false });
       } else if (statusCode === 403) {

@@ -173,3 +173,7 @@ svg {
 .text-large {
   font-size: large;
 }
+
+.text-error {
+  color: #ff2204;
+}
