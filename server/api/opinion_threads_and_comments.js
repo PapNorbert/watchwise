@@ -194,7 +194,10 @@ router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10, creator, followed = false, userId } = request.query;
+    let {
+      page = 1, limit = 10, creator, followed = false, userId,
+      titleSearch = null, showSearch = null, creatorSearch = null, sortBy = 'newest'
+    } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit
       && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);
@@ -206,8 +209,8 @@ router.get('', async (request, response) => {
           return
         }
         const [opinion_threads, count] = await Promise.all([
-          findOpinionThreadsByCreator(creator, page, limit),
-          getOpinionThreadCountByCreator(creator),
+          findOpinionThreadsByCreator(creator, page, limit, titleSearch, showSearch, sortBy),
+          getOpinionThreadCountByCreator(creator, titleSearch, showSearch),
         ]);
         response.json({
           'data': createResponseDtos(opinion_threads),
@@ -220,8 +223,9 @@ router.get('', async (request, response) => {
           return
         }
         const [opinion_threads, count] = await Promise.all([
-          findOpinionThreadsByUserFollowed(`users/${response.locals.payload.userID}`, page, limit),
-          getOpinionThreadCountByUserFollowed(`users/${response.locals.payload.userID}`),
+          findOpinionThreadsByUserFollowed(`users/${response.locals.payload.userID}`, 
+          page, limit, titleSearch, showSearch, creatorSearch, sortBy),
+          getOpinionThreadCountByUserFollowed(`users/${response.locals.payload.userID}`, titleSearch, showSearch, creatorSearch),
         ]);
         response.json({
           'data': createResponseDtos(opinion_threads),
@@ -232,8 +236,9 @@ router.get('', async (request, response) => {
         if (response.locals?.payload?.userID) {
           // logged in
           const [opinion_threads, count] = await Promise.all([
-            findOpinionThreadsWithFollowedInformation(`users/${response.locals.payload.userID}`, page, limit),
-            getOpinionThreadCount(),
+            findOpinionThreadsWithFollowedInformation(`users/${response.locals.payload.userID}`, 
+            page, limit, titleSearch, showSearch, creatorSearch, sortBy),
+            getOpinionThreadCount(titleSearch, showSearch, creatorSearch),
           ]);
           response.json({
             'data': createResponseDtosLoggedIn(opinion_threads),
@@ -242,8 +247,8 @@ router.get('', async (request, response) => {
         } else {
           // not logged in
           const [opinion_threads, count] = await Promise.all([
-            findOpinionThreads(page, limit),
-            getOpinionThreadCount(),
+            findOpinionThreads(page, limit, titleSearch, showSearch, creatorSearch, sortBy),
+            getOpinionThreadCount(titleSearch, showSearch, creatorSearch),
           ]);
           response.json({
             'data': createResponseDtos(opinion_threads),

@@ -4,12 +4,14 @@ import { useLocation, Navigate } from "react-router-dom"
 import OpinionThread from '../../components/OpinionThread'
 import Limit from '../../components/Limit'
 import PaginationElements from '../../components/PaginationElements'
+import OpinionThreadSearchSort from '../../components/OpinionThreadSearchSort'
+
 import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
 import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
 import { buttonTypes } from '../../util/buttonTypes'
-import { querryParamDefaultValues, querryParamNames, limitValues } from '../../config/querryParams'
+import { querryParamDefaultValues, querryParamNames, limitValues, sortByValuesOT } from '../../config/querryParams'
 import { useSearchParamsState } from '../../hooks/useSearchParamsState'
 
 export default function OpinionsThreadsMy() {
@@ -19,17 +21,22 @@ export default function OpinionsThreadsMy() {
   const { auth, setAuth, setLoginExpired } = useAuth();
   const [url, setUrl] = useState(`/api/opinion_threads/?creator=${auth?.username}`);
   const { data: opinion_threads, error, statusCode, loading } = useGetAxios(url);
+  const [nameSearch] =
+    useSearchParamsState(querryParamNames.name, querryParamDefaultValues.name);
+  const [currentNameSearch, setCurrentNameSearch] = useState(nameSearch);
+  const [showSearch] =
+    useSearchParamsState(querryParamNames.show, querryParamDefaultValues.show);
+  const [currentShowSearch, setCurrentShowSearch] = useState(showSearch);
+  const [creatorSearch] =
+    useSearchParamsState(querryParamNames.creator, querryParamDefaultValues.creator);
+  const [currentCreatorSearch, setCurrentCreatorSearch] = useState(creatorSearch);
+  const [sortBy, setSortBy] =
+    useSearchParamsState(querryParamNames.sortBy, querryParamDefaultValues.sortBy);
+  const [currentSortBy, setCurrentSortBy] = useState(sortBy);
   const { i18nData } = useLanguage();
-
   const location = useLocation();
 
   useEffect(() => {
-    if (opinion_threads?.pagination.totalPages === 0) {
-      // no data
-      if (parseInt(page) !== 1) {
-        setPage(1);
-      }
-    } else {
       // eslint-disable-next-line eqeqeq
       if (parseInt(limit) != limit) {
         setLimit(querryParamDefaultValues.limit);
@@ -40,12 +47,27 @@ export default function OpinionsThreadsMy() {
         setLimit(querryParamDefaultValues.limit);
       } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
         setPage(opinion_threads?.pagination.totalPages);
+      } else if (!sortByValuesOT.includes(sortBy)) {
+        setSortBy(querryParamDefaultValues.sortBy);
       } else {
         // limit and page have correct values
-        setUrl(`/api/opinion_threads/?creator=${auth?.username}&page=${page}&limit=${limit}`);
+        let newUrl = `/api/opinion_threads/?creator=${auth?.username}&page=${page}&limit=${limit}`;
+        if (nameSearch) {
+          newUrl += `&titleSearch=${nameSearch}`
+        }
+        if (showSearch) {
+          newUrl += `&showSearch=${showSearch}`
+        }
+        if (creatorSearch) {
+          newUrl += `&creatorSearch=${creatorSearch}`
+        }
+        if (sortBy !== querryParamDefaultValues.sortBy) {
+          newUrl += `&sortBy=${sortBy}`
+        }
+        setUrl(newUrl);
       }
-    }
-  }, [limit, page, auth?.username, opinion_threads?.pagination.totalPages, setLimit, setPage])
+  }, [limit, page, auth?.username, opinion_threads?.pagination.totalPages, setLimit,
+    setPage, sortBy, setSortBy, nameSearch, showSearch, creatorSearch])
 
 
   if (statusCode === 401) {
@@ -73,10 +95,11 @@ export default function OpinionsThreadsMy() {
 
   return (opinion_threads &&
     <>
-      <Limit limit={limit} key='limit' />
-      <PaginationElements currentPage={parseInt(page)}
-        totalPages={opinion_threads?.pagination.totalPages}
-        onPageChange={setPage} key='pagination-top' />
+      <OpinionThreadSearchSort currentNameSearch={currentNameSearch} setCurrentNameSearch={setCurrentNameSearch}
+        currentShowSearch={currentShowSearch} setCurrentShowSearch={setCurrentShowSearch}
+        currentCreatorSearch={currentCreatorSearch} setCurrentCreatorSearch={setCurrentCreatorSearch}
+        currentSortBy={currentSortBy} setCurrentSortBy={setCurrentSortBy} withCreator={false} />
+      <Limit limit={limit} />
       {opinion_threads?.data.length > 0 ?
         // there are elements returned
         opinion_threads?.data.map(currentElement => {

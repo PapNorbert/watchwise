@@ -1,14 +1,69 @@
 import pool from './connection_db.js'
+import { sortTypesOT } from '../config/sortTypes.js'
 
 const opinionThreadCollection = pool.collection("opinion_threads");
 
 
-export async function findOpinionThreads(page, limit) {
+export async function findOpinionThreads(page, limit, titleSearch, showSearch, creatorSearch, sortBy) {
   try {
-    const aqlQuery = `FOR doc IN opinion_threads
+    let aqlParameters = {
+      offset: (page - 1) * limit,
+      count: limit
+    }
+    let aqlQuery = `FOR doc IN opinion_threads
+    `
+    // add filters and sort
+    if (titleSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.title), @titleFilter)
+      `;
+      aqlParameters.titleFilter = titleSearch.toUpperCase();
+    }
+    if (showSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.show), @showFilter)
+      `;
+      aqlParameters.showFilter = showSearch.toUpperCase();
+    }
+    if (creatorSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.creator), @creatorFilter)
+      `;
+      aqlParameters.creatorFilter = creatorSearch.toUpperCase();
+    }
+    switch (sortBy) {
+      case sortTypesOT.oldest:
+        aqlQuery += `
+        SORT doc.creation_date DESC
+        `;
+        break;
+      case sortTypesOT.show:
+        aqlQuery += `
+        SORT doc.show
+        `;
+        break;
+      case sortTypesOT.title:
+        aqlQuery += `
+        SORT doc.title
+        `;
+        break;
+      case sortTypesOT.creator:
+        aqlQuery += `
+        SORT doc.creator
+        `;
+        break;
+      default:
+        // newest
+        aqlQuery += `
+        SORT doc.creation_date
+        `;
+        break;
+    }
+
+    aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(doc, "comments")`;
-    const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -16,16 +71,71 @@ export async function findOpinionThreads(page, limit) {
   }
 }
 
-export async function findOpinionThreadsWithFollowedInformation(userId, page, limit) {
+export async function findOpinionThreadsWithFollowedInformation(userId, page, limit, titleSearch, showSearch, creatorSearch, sortBy) {
   try {
-    const aqlQuery = `FOR doc IN opinion_threads
+    let aqlParameters = {
+      from: userId,
+      offset: (page - 1) * limit,
+      count: limit
+    };
+    let aqlQuery = `FOR doc IN opinion_threads
+    `
+    // add filters and sort
+    if (titleSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.title), @titleFilter)
+      `;
+      aqlParameters.titleFilter = titleSearch.toUpperCase();
+    }
+    if (showSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.show), @showFilter)
+      `;
+      aqlParameters.showFilter = showSearch.toUpperCase();
+    }
+    if (creatorSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.creator), @creatorFilter)
+      `;
+      aqlParameters.creatorFilter = creatorSearch.toUpperCase();
+    }
+    switch (sortBy) {
+      case sortTypesOT.oldest:
+        aqlQuery += `
+        SORT doc.creation_date DESC
+        `;
+        break;
+      case sortTypesOT.show:
+        aqlQuery += `
+          SORT doc.show
+          `;
+        break;
+      case sortTypesOT.title:
+        aqlQuery += `
+          SORT doc.title
+          `;
+        break;
+      case sortTypesOT.creator:
+        aqlQuery += `
+            SORT doc.creator
+            `;
+        break;
+      default:
+        // newest
+        aqlQuery += `
+        SORT doc.creation_date
+        `;
+        break;
+    }
+
+    aqlQuery += `
     LIMIT @offset, @count
     LET follow = LENGTH(FOR edge IN follows_thread
       FILTER edge._from == @from
       FILTER edge._to == doc._id
       LIMIT 1 RETURN true) > 0
     RETURN { doc: UNSET(doc, "comments"), followed: follow }`;
-    const cursor = await pool.query(aqlQuery, { from: userId, offset: (page - 1) * limit, count: limit });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -33,13 +143,62 @@ export async function findOpinionThreadsWithFollowedInformation(userId, page, li
   }
 }
 
-export async function findOpinionThreadsByCreator(creator, page, limit) {
+export async function findOpinionThreadsByCreator(creator, page, limit, titleSearch, showSearch, sortBy) {
   try {
-    const aqlQuery = `FOR doc IN opinion_threads
+    const aqlParameters = {
+      creator: creator,
+      offset: (page - 1) * limit,
+      count: limit
+    }
+    let aqlQuery = `FOR doc IN opinion_threads
     FILTER doc.creator == @creator
+    `;
+    // add filters and sort
+    if (titleSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.title), @titleFilter)
+      `;
+      aqlParameters.titleFilter = titleSearch.toUpperCase();
+    }
+    if (showSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.show), @showFilter)
+      `;
+      aqlParameters.showFilter = showSearch.toUpperCase();
+    }
+    switch (sortBy) {
+      case sortTypesOT.oldest:
+        aqlQuery += `
+        SORT doc.creation_date DESC
+        `;
+        break;
+      case sortTypesOT.show:
+        aqlQuery += `
+          SORT doc.show
+          `;
+        break;
+      case sortTypesOT.title:
+        aqlQuery += `
+          SORT doc.title
+          `;
+        break;
+      case sortTypesOT.creator:
+        aqlQuery += `
+            SORT doc.creator
+            `;
+        break;
+      default:
+        // newest
+        aqlQuery += `
+        SORT doc.creation_date
+        `;
+        break;
+    }
+
+    aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(doc, "comments")`;
-    const cursor = await pool.query(aqlQuery, { creator: creator, offset: (page - 1) * limit, count: limit });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -47,13 +206,68 @@ export async function findOpinionThreadsByCreator(creator, page, limit) {
   }
 }
 
-export async function findOpinionThreadsByUserFollowed(userId, page, limit) {
+export async function findOpinionThreadsByUserFollowed(userId, page, limit, titleSearch, showSearch, creatorSearch, sortBy) {
   try {
-    const aqlQuery = `FOR vertex IN OUTBOUND
+    let aqlParameters = {
+      userId: userId,
+      offset: (page - 1) * limit,
+      count: limit
+    };
+    let aqlQuery = `FOR vertex IN OUTBOUND
     @userId follows_thread
+    `
+
+    // add filters and sort
+    if (titleSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(vertex.title), @titleFilter)
+      `;
+      aqlParameters.titleFilter = titleSearch.toUpperCase();
+    }
+    if (showSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(vertex.show), @showFilter)
+      `;
+      aqlParameters.showFilter = showSearch.toUpperCase();
+    }
+    if (creatorSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(vertex.creator), @creatorFilter)
+      `;
+      aqlParameters.creatorFilter = creatorSearch.toUpperCase();
+    }
+    switch (sortBy) {
+      case sortTypesOT.oldest:
+        aqlQuery += `
+        SORT vertex.creation_date DESC
+        `;
+        break;
+      case sortTypesOT.show:
+        aqlQuery += `
+          SORT vertex.show
+          `;
+        break;
+      case sortTypesOT.title:
+        aqlQuery += `
+          SORT vertex.title
+          `;
+        break;
+      case sortTypesOT.creator:
+        aqlQuery += `
+            SORT vertex.creator
+            `;
+        break;
+      default:
+        // newest
+        aqlQuery += `
+        SORT vertex.creation_date
+        `;
+        break;
+    }
+    aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(vertex, "comments")`;
-    const cursor = await pool.query(aqlQuery, { userId: userId, offset: (page - 1) * limit, count: limit });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
     console.log(err);
@@ -148,10 +362,37 @@ export async function findOpinionThreadByKeyWithFollowedInformation(userId, key,
   }
 }
 
-export async function getOpinionThreadCount() {
+export async function getOpinionThreadCount(titleSearch, showSearch, creatorSearch) {
   try {
-    const cursor = await opinionThreadCollection.count();
-    return cursor.count;
+    let aqlParameters = {};
+    let aqlQuery = `RETURN LENGTH(
+      FOR doc IN opinion_threads
+        `;
+
+    // add filters 
+    if (titleSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.title), @titleFilter)
+      `;
+      aqlParameters.titleFilter = titleSearch.toUpperCase();
+    }
+    if (showSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.show), @showFilter)
+      `;
+      aqlParameters.showFilter = showSearch.toUpperCase();
+    }
+    if (creatorSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.creator), @creatorFilter)
+      `;
+      aqlParameters.creatorFilter = creatorSearch.toUpperCase();
+    }
+
+    aqlQuery += `
+    RETURN true)`;
+    const cursor = await pool.query(aqlQuery, aqlParameters);
+    return (await cursor.all())[0];
   } catch (err) {
     console.log(err);
     throw err;
@@ -159,13 +400,31 @@ export async function getOpinionThreadCount() {
 
 }
 
-export async function getOpinionThreadCountByCreator(creator) {
+export async function getOpinionThreadCountByCreator(creator, titleSearch, showSearch) {
   try {
-    const aqlQuery = `RETURN LENGTH(
+    let aqlParameters = { creator: creator };
+    let aqlQuery = `RETURN LENGTH(
       FOR doc IN opinion_threads
         FILTER doc.creator == @creator
-        RETURN true)`;
-    const cursor = await pool.query(aqlQuery, { creator: creator });
+        `;
+
+    // add filters 
+    if (titleSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.title), @titleFilter)
+      `;
+      aqlParameters.titleFilter = titleSearch.toUpperCase();
+    }
+    if (showSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(doc.show), @showFilter)
+      `;
+      aqlParameters.showFilter = showSearch.toUpperCase();
+    }
+
+    aqlQuery += `
+    RETURN true)`;
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
     console.log(err);
@@ -173,13 +432,37 @@ export async function getOpinionThreadCountByCreator(creator) {
   }
 }
 
-export async function getOpinionThreadCountByUserFollowed(userId) {
+export async function getOpinionThreadCountByUserFollowed(userId, titleSearch, showSearch, creatorSearch) {
   try {
-    const aqlQuery = `RETURN LENGTH(
+    let aqlParameters = { userId: userId };
+
+    let aqlQuery = `RETURN LENGTH(
       FOR vertex IN OUTBOUND
       @userId follows_thread
+      `
+    // add filters 
+    if (titleSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(vertex.title), @titleFilter)
+      `;
+      aqlParameters.titleFilter = titleSearch.toUpperCase();
+    }
+    if (showSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(vertex.show), @showFilter)
+      `;
+      aqlParameters.showFilter = showSearch.toUpperCase();
+    }
+    if (creatorSearch) {
+      aqlQuery += `
+      FILTER CONTAINS(UPPER(vertex.creator), @creatorFilter)
+      `;
+      aqlParameters.creatorFilter = creatorSearch.toUpperCase();
+    }
+
+    aqlQuery += `
         RETURN true)`;
-    const cursor = await pool.query(aqlQuery, { userId: userId });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
     console.log(err);

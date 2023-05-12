@@ -28,8 +28,7 @@ export default function LimitAndSearch({ limit, currentNameSearch, setCurrentNam
         </Col>
         <Col xs lg={3} >
           <Form.Control type='text' value={currentNameSearch} onChange={e => setCurrentNameSearch(e.target.value)}
-            placeholder={convertKeyToSelectedLanguage('search_name', i18nData)}
-            className='dark-border' />
+            placeholder={convertKeyToSelectedLanguage('search_name', i18nData)} />
         </Col>
         <Col xs lg={1} >
           <Button className='btn-orange-dark' onClick={handleSearchButton} >
