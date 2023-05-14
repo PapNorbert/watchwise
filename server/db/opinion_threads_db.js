@@ -34,7 +34,7 @@ export async function findOpinionThreads(page, limit, titleSearch, showSearch, c
     switch (sortBy) {
       case sortTypesOT.oldest:
         aqlQuery += `
-        SORT doc.creation_date DESC
+        SORT doc.creation_date
         `;
         break;
       case sortTypesOT.show:
@@ -55,7 +55,7 @@ export async function findOpinionThreads(page, limit, titleSearch, showSearch, c
       default:
         // newest
         aqlQuery += `
-        SORT doc.creation_date
+        SORT doc.creation_date DESC
         `;
         break;
     }
@@ -102,7 +102,7 @@ export async function findOpinionThreadsWithFollowedInformation(userId, page, li
     switch (sortBy) {
       case sortTypesOT.oldest:
         aqlQuery += `
-        SORT doc.creation_date DESC
+        SORT doc.creation_date 
         `;
         break;
       case sortTypesOT.show:
@@ -123,7 +123,7 @@ export async function findOpinionThreadsWithFollowedInformation(userId, page, li
       default:
         // newest
         aqlQuery += `
-        SORT doc.creation_date
+        SORT doc.creation_date DESC
         `;
         break;
     }
@@ -169,7 +169,7 @@ export async function findOpinionThreadsByCreator(creator, page, limit, titleSea
     switch (sortBy) {
       case sortTypesOT.oldest:
         aqlQuery += `
-        SORT doc.creation_date DESC
+        SORT doc.creation_date 
         `;
         break;
       case sortTypesOT.show:
@@ -190,7 +190,7 @@ export async function findOpinionThreadsByCreator(creator, page, limit, titleSea
       default:
         // newest
         aqlQuery += `
-        SORT doc.creation_date
+        SORT doc.creation_date DESC
         `;
         break;
     }
@@ -239,7 +239,7 @@ export async function findOpinionThreadsByUserFollowed(userId, page, limit, titl
     switch (sortBy) {
       case sortTypesOT.oldest:
         aqlQuery += `
-        SORT vertex.creation_date DESC
+        SORT vertex.creation_date
         `;
         break;
       case sortTypesOT.show:
@@ -260,7 +260,7 @@ export async function findOpinionThreadsByUserFollowed(userId, page, limit, titl
       default:
         // newest
         aqlQuery += `
-        SORT vertex.creation_date
+        SORT vertex.creation_date DESC
         `;
         break;
     }

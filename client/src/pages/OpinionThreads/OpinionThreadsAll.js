@@ -31,7 +31,7 @@ export default function OpinionThreadsAll() {
     useSearchParamsState(querryParamNames.creator, querryParamDefaultValues.creator);
   const [currentCreatorSearch, setCurrentCreatorSearch] = useState(creatorSearch);
   const [sortBy, setSortBy] =
-    useSearchParamsState(querryParamNames.sortBy, querryParamDefaultValues.sortBy);
+    useSearchParamsState(querryParamNames.sortBy, querryParamDefaultValues.OTsortBy);
   const [currentSortBy, setCurrentSortBy] = useState(sortBy);
   const location = useLocation();
   const { i18nData } = useLanguage();
@@ -48,7 +48,7 @@ export default function OpinionThreadsAll() {
     } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
       setPage(opinion_threads?.pagination.totalPages);
     } else if (!sortByValuesOT.includes(sortBy)) {
-      setSortBy(querryParamDefaultValues.sortBy);
+      setSortBy(querryParamDefaultValues.OTsortBy);
     } else {
       // limit and page have correct values
       let newUrl = `/api/opinion_threads/?page=${page}&limit=${limit}`;

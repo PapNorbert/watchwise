@@ -6,8 +6,6 @@ import {
   getWatchGroupCount, findWatchGroupsByCreator, getWatchGroupCountByCreator,
   findWatchGroupsByUserJoined, getWatchGroupCountByUserJoined, findWatchGroupsWithJoinedInformation,
   findWatchGroupByKeyWithoutComments, findWatchGroupByKeyWithJoinedInformation,
-  findWatchGroupsAndDistance, findWatchGroupsByCreatorAndDistance, findWatchGroupsByUserJoinedAndDistance,
-  findWatchGroupsWithJoinedInformationAndDistance,
   handleJoinTransaction
 } from '../db/watch_groups_db.js'
 import {
@@ -26,7 +24,9 @@ import { createPaginationInfo } from '../util/paginationInfo.js'
 import { createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_dto.js'
 import { validateWatchGroupCreation, validateWatchDate, validatePersonLimit } from '../util/watchGroupValidation.js'
 import { validateCommentCreation } from '../util/commentValidation.js'
+import { locationsToCoordCache } from '../util/locationsCache.js'
 import { authorize } from '../middlewares/auth.js'
+import { maxDistanceDefaultValue } from '../config/maxDistanceDefault.js'
 
 const router = express.Router();
 
@@ -191,7 +191,12 @@ router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10, creator, joined = false, userId, userLocLat, userLocLong } = request.query;
+    let {
+      page = 1, limit = 10, creator, joined = false, userId, userLocLat, userLocLong,
+      titleSearch = null, showSearch = null, creatorSearch = null, sortBy = 'newest',
+      watchDateSearch = null, locationSearch = null, maxDistanceSearch = maxDistanceDefaultValue,
+      onlyNotFullSearch = false
+    } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit
       && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);
@@ -200,8 +205,29 @@ router.get('', async (request, response) => {
         userLocLat = parseFloat(userLocLat);
         userLocLong = parseFloat(userLocLong);
       } else {
-        userLocLat = null;
-        userLocLong = null;
+        if (locationSearch) {
+          if (!locationsToCoordCache[locationSearch]) {
+            // if this location is not cached so far make a request to translate it to coordinates
+            const axiosRequest = axios.create({
+              headers: { 'Content-Type': 'application/json' }
+            });
+            console.log('Request to: ', `https://geocode.maps.co/search?q=${locationSearch}`);
+            const axiosResponse = await axiosRequest.get(
+              `https://geocode.maps.co/search?q=${locationSearch}`);
+
+            if (axiosResponse?.data[0].lat && axiosResponse?.data[0].lon) {
+              locationsToCoordCache[locationSearch] = {
+                lat: parseFloat(axiosResponse?.data[0].lat),
+                long: parseFloat(axiosResponse?.data[0].lon)
+              }
+            }
+          }
+          userLocLat = locationsToCoordCache[locationSearch].lat;
+          userLocLong = locationsToCoordCache[locationSearch].long;
+        } else {
+          userLocLat = null;
+          userLocLong = null;
+        }
       }
 
       if (creator) {
@@ -210,104 +236,62 @@ router.get('', async (request, response) => {
           response.sendStatus(403);
           return
         }
-        if (userLocLat && userLocLong) {
-          // user defined a location for groups to be close to
-          const [watchGroups, count] = await Promise.all([
-            findWatchGroupsByCreatorAndDistance(creator, page, limit, userLocLat, userLocLong),
-            getWatchGroupCountByCreator(creator)
-          ]);
-          response.json({
-            "data": createResponseDtos(watchGroups),
-            "pagination": createPaginationInfo(page, limit, count)
-          });
-        } else {
-          // no location for groups to be close to
-          const [watchGroups, count] = await Promise.all([
-            findWatchGroupsByCreator(creator, page, limit),
-            getWatchGroupCountByCreator(creator),
-          ]);
-          response.json({
-            "data": createResponseDtos(watchGroups),
-            "pagination": createPaginationInfo(page, limit, count)
-          });
-        }
+        const [watchGroups, count] = await Promise.all([
+          findWatchGroupsByCreator(creator, page, limit, userLocLat, userLocLong,
+            titleSearch, showSearch, null, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, sortBy),
+          getWatchGroupCountByCreator(creator, userLocLat, userLocLong,
+            titleSearch, showSearch, null, watchDateSearch, maxDistanceSearch, onlyNotFullSearch),
+        ]);
+        response.json({
+          "data": createResponseDtos(watchGroups),
+          "pagination": createPaginationInfo(page, limit, count)
+        });
+
       } else if (joined && userId) {
         // searching for watchgroups that the user joined
-
         if (userId !== response.locals.payload?.userID) {
           response.sendStatus(403);
           return
         }
-        if (userLocLat && userLocLong) {
-          // user defined a location for groups to be close to
-          const [watchGroups, count] = await Promise.all([
-            findWatchGroupsByUserJoinedAndDistance(`users/${userId}`, page, limit, userLocLat, userLocLong),
-            getWatchGroupCountByUserJoined(`users/${userId}`),
-          ]);
-          response.json({
-            "data": createResponseDtos(watchGroups),
-            "pagination": createPaginationInfo(page, limit, count)
-          });
-        } else {
-          // no location for groups to be close to
-          const [watchGroups, count] = await Promise.all([
-            findWatchGroupsByUserJoined(`users/${userId}`, page, limit),
-            getWatchGroupCountByUserJoined(`users/${userId}`),
-          ]);
-          response.json({
-            "data": createResponseDtos(watchGroups),
-            "pagination": createPaginationInfo(page, limit, count)
-          });
-        }
+        const [watchGroups, count] = await Promise.all([
+          findWatchGroupsByUserJoined(`users/${userId}`, page, limit, userLocLat, userLocLong,
+            titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, sortBy),
+          getWatchGroupCountByUserJoined(`users/${userId}`, userLocLat, userLocLong,
+            titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch),
+        ]);
+        response.json({
+          "data": createResponseDtos(watchGroups),
+          "pagination": createPaginationInfo(page, limit, count)
+        });
+
 
       } else {
         // searching for all watchgroups
         if (response.locals?.payload?.userID) {
           // logged in
-          if (userLocLat && userLocLong) {
-            // user defined a location for groups to be close to
-            const [watchGroups, count] = await Promise.all([
-              findWatchGroupsWithJoinedInformationAndDistance(
-                `users/${response.locals.payload.userID}`, page, limit, userLocLat, userLocLong),
-              getWatchGroupCount(),
-            ]);
-            response.json({
-              "data": createResponseDtosLoggedIn(watchGroups),
-              "pagination": createPaginationInfo(page, limit, count)
-            });
-          } else {
-            // no distance calculation
-            const [watchGroups, count] = await Promise.all([
-              findWatchGroupsWithJoinedInformation(`users/${response.locals.payload.userID}`, page, limit),
-              getWatchGroupCount(),
-            ]);
-            response.json({
-              "data": createResponseDtosLoggedIn(watchGroups),
-              "pagination": createPaginationInfo(page, limit, count)
-            });
-          }
+          const [watchGroups, count] = await Promise.all([
+            findWatchGroupsWithJoinedInformation(`users/${response.locals.payload.userID}`, page, limit, userLocLat, userLocLong,
+              titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, sortBy),
+            getWatchGroupCount(userLocLat, userLocLong,
+              titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch),
+          ]);
+          response.json({
+            "data": createResponseDtosLoggedIn(watchGroups),
+            "pagination": createPaginationInfo(page, limit, count)
+          });
+
         } else {
           // not logged in
-          if (userLocLat && userLocLong) {
-            // user defined a location for groups to be close to
-            const [watchGroups, count] = await Promise.all([
-              findWatchGroupsAndDistance(page, limit, userLocLat, userLocLong),
-              getWatchGroupCount(),
-            ]);
-            response.json({
-              "data": createResponseDtos(watchGroups),
-              "pagination": createPaginationInfo(page, limit, count)
-            });
-          } else {
-            const [watchGroups, count] = await Promise.all([
-              findWatchGroups(page, limit),
-              getWatchGroupCount(),
-            ]);
-            response.json({
-              "data": createResponseDtos(watchGroups),
-              "pagination": createPaginationInfo(page, limit, count)
-            });
-          }
+          const [watchGroups, count] = await Promise.all([
+            findWatchGroups(page, limit, userLocLat, userLocLong,
+              titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, sortBy),
+            getWatchGroupCount(userLocLat, userLocLong,
+              titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch),
+          ]);
+          response.json({
+            "data": createResponseDtos(watchGroups),
+            "pagination": createPaginationInfo(page, limit, count)
+          });
         }
       }
     } else {
@@ -444,11 +428,15 @@ router.post('', authorize(), async (request, response) => {
       watchGroupJson.creation_date = new Date(Date.now());
       watchGroupJson.comments = [];
       watchGroupJson.currentNrOfPersons = 1;
+      watchGroupJson.personLimit = parseInt(watchGroupJson.personLimit);
 
       // get name of the location
       const axiosRequest = axios.create({
         headers: { 'Content-Type': 'application/json' }
       });
+      console.log('Request to: ',
+        `https://geocode.maps.co/reverse?lat=${watchGroupJson.location[0]}&lon=${watchGroupJson.location[1]}`);
+
       const axiosResponse = await axiosRequest.get(
         `https://geocode.maps.co/reverse?lat=${watchGroupJson.location[0]}&lon=${watchGroupJson.location[1]}`);
       if (axiosResponse?.data?.display_name) {

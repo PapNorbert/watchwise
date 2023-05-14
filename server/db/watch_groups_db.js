@@ -1,41 +1,139 @@
 import pool from './connection_db.js'
-
-
+import { sortTypesWG } from '../config/sortTypes.js'
 
 const watchGroupCollection = pool.collection("watch_groups");
 
+function addFilters(aqlQuery, aqlParameters, userLocLat, userLocLong, titleSearch, showSearch,
+  creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, docName = 'doc') {
+  if (titleSearch) {
+    aqlQuery += `
+    FILTER CONTAINS(UPPER(${docName}.title), @titleFilter)
+    `;
+    aqlParameters.titleFilter = titleSearch.toUpperCase();
+  }
+  if (showSearch) {
+    aqlQuery += `
+    FILTER CONTAINS(UPPER(${docName}.show), @showFilter)
+    `;
+    aqlParameters.showFilter = showSearch.toUpperCase();
+  }
+  if (creatorSearch) {
+    aqlQuery += `
+    FILTER CONTAINS(UPPER(${docName}.creator), @creatorFilter)
+    `;
+    aqlParameters.creatorFilter = creatorSearch.toUpperCase();
+  }
+  if (watchDateSearch) {
+    aqlQuery += `
+    FILTER CONTAINS(UPPER(${docName}.watch_date), @watchDateSearch)
+    `;
+    aqlParameters.watchDateSearch = watchDateSearch.toUpperCase();
+  }
+  if (onlyNotFullSearch == 'true') {
+    aqlQuery += `
+    FILTER ${docName}.currentNrOfPersons < ${docName}.personLimit
+    `;
+  }
+  if (userLocLat && userLocLong && maxDistanceSearch) {
+    aqlQuery += `
+    FILTER DISTANCE(${docName}.location[0], ${docName}.location[1], @userLocLat, @userLocLong) <= @maxDistanceSearch
+    `;
+    aqlParameters.userLocLat = userLocLat;
+    aqlParameters.userLocLong = userLocLong;
+    // DISTANCE function returns distance in m
+    aqlParameters.maxDistanceSearch = (maxDistanceSearch * 1000);
+  }
+  return aqlQuery;
+}
 
-export async function findWatchGroups(page, limit) {
+function addSort(aqlQuery, aqlParameters, userLocLat, userLocLong, sortBy, docName = 'doc') {
+  switch (sortBy) {
+    case sortTypesWG.oldest:
+      aqlQuery += `
+      SORT ${docName}.creation_date 
+      `;
+      break;
+    case sortTypesWG.show:
+      aqlQuery += `
+      SORT ${docName}.show
+      `;
+      break;
+    case sortTypesWG.title:
+      aqlQuery += `
+      SORT ${docName}.title
+      `;
+      break;
+    case sortTypesWG.creator:
+      aqlQuery += `
+      SORT ${docName}.creator
+      `;
+      break;
+    case sortTypesWG.watch_date:
+      aqlQuery += `
+      SORT ${docName}.watch_date DESC
+      `;
+      break;
+    case sortTypesWG.distance:
+      if (userLocLat && userLocLong) {
+        aqlQuery += `
+        SORT DISTANCE(${docName}.location[0], ${docName}.location[1], @userLocLat, @userLocLong)
+        `;
+        aqlParameters.userLocLat = userLocLat;
+        aqlParameters.userLocLong = userLocLong;
+      }
+      break;
+    default:
+      // newest
+      aqlQuery += `
+      SORT ${docName}.creation_date DESC
+      `;
+      break;
+  }
+  return aqlQuery;
+
+}
+
+
+
+export async function findWatchGroups(page, limit, userLocLat, userLocLong,
+  titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, sortBy) {
   try {
-    const aqlQuery = `FOR doc IN watch_groups
+    let aqlParameters = { offset: (page - 1) * limit, count: limit };
+    let aqlQuery = `FOR doc IN watch_groups
+    `;
+
+    aqlQuery = addFilters(aqlQuery, aqlParameters, userLocLat, userLocLong,
+      titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch);
+    aqlQuery = addSort(aqlQuery, aqlParameters, userLocLat, userLocLong, sortBy);
+
+    aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(doc, "comments")`;
-    const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
+    console.log(aqlQuery)
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
-    console.log(err);
-    throw err;
+    console.log(err.message);
+    throw err.message;
   }
 }
 
-export async function findWatchGroupsAndDistance(page, limit, userLocLat, userLocLong) {
+export async function findWatchGroupsWithJoinedInformation(userId, page, limit, userLocLat, userLocLong,
+  titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, sortBy) {
   try {
-    const aqlQuery = `FOR doc IN watch_groups
-    SORT DISTANCE(doc.location[0], doc.location[1], @userLocLat, @userLocLong)
-    LIMIT @offset, @count
-    RETURN UNSET(doc, "comments")`;
-    const cursor = await pool.query(aqlQuery,
-      { offset: (page - 1) * limit, count: limit, userLocLat: userLocLat, userLocLong: userLocLong });
-    return await cursor.all();
-  } catch (err) {
-    console.log(err);
-    throw err;
-  }
-}
+    let aqlParameters = {
+      from: userId,
+      offset: (page - 1) * limit,
+      count: limit
+    }
+    let aqlQuery = `FOR doc IN watch_groups
+    `;
 
-export async function findWatchGroupsWithJoinedInformation(userId, page, limit) {
-  try {
-    const aqlQuery = `FOR doc IN watch_groups
+    aqlQuery = addFilters(aqlQuery, aqlParameters, userLocLat, userLocLong,
+      titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch);
+    aqlQuery = addSort(aqlQuery, aqlParameters, userLocLat, userLocLong, sortBy);
+
+    aqlQuery += `
     LIMIT @offset, @count
     LET join = LENGTH(FOR edge IN joined_group
       FILTER edge._from == @from
@@ -46,94 +144,67 @@ export async function findWatchGroupsWithJoinedInformation(userId, page, limit) 
       FILTER edge._to == doc._id
       LIMIT 1 RETURN true) > 0
     RETURN { doc: UNSET(doc, "comments"), joined: join, has_request: has_request }`;
-    const cursor = await pool.query(aqlQuery, { from: userId, offset: (page - 1) * limit, count: limit });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
-    console.log(err);
-    throw err;
+    console.log(err.message);
+    throw err.message;
   }
 }
 
-export async function findWatchGroupsWithJoinedInformationAndDistance(userId, page, limit, userLocLat, userLocLong) {
+export async function findWatchGroupsByCreator(creator, page, limit, userLocLat, userLocLong,
+  titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, sortBy) {
   try {
-    const aqlQuery = `FOR doc IN watch_groups
-    SORT DISTANCE(doc.location[0], doc.location[1], @userLocLat, @userLocLong)
-    LIMIT @offset, @count
-    LET join = LENGTH(FOR edge IN joined_group
-      FILTER edge._from == @from
-      FILTER edge._to == doc._id
-      LIMIT 1 RETURN true) > 0
-    LET has_request = LENGTH(FOR edge IN join_request
-      FILTER edge._from == @from
-      FILTER edge._to == doc._id
-      LIMIT 1 RETURN true) > 0
-    RETURN { doc: UNSET(doc, "comments"), joined: join, has_request: has_request }`;
-    const cursor = await pool.query(aqlQuery,
-      { from: userId, offset: (page - 1) * limit, count: limit, userLocLat: userLocLat, userLocLong: userLocLong });
-    return await cursor.all();
-  } catch (err) {
-    console.log(err);
-    throw err;
-  }
-}
-
-export async function findWatchGroupsByCreator(creator, page, limit) {
-  try {
-    const aqlQuery = `FOR doc IN watch_groups
+    let aqlParameters = {
+      creator: creator,
+      offset: (page - 1) * limit,
+      count: limit
+    }
+    let aqlQuery = `FOR doc IN watch_groups
     FILTER doc.creator == @creator
+    `;
+
+    // add filters and sort
+    aqlQuery = addFilters(aqlQuery, aqlParameters, userLocLat, userLocLong,
+      titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch);
+    aqlQuery = addSort(aqlQuery, aqlParameters, userLocLat, userLocLong, sortBy);
+
+    aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(doc, "comments")`;
-    const cursor = await pool.query(aqlQuery, { creator: creator, offset: (page - 1) * limit, count: limit });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
-    console.log(err);
-    throw err;
+    console.log(err.message);
+    throw err.message;
   }
 }
 
-export async function findWatchGroupsByCreatorAndDistance(creator, page, limit, userLocLat, userLocLong) {
+export async function findWatchGroupsByUserJoined(userId, page, limit, userLocLat, userLocLong,
+  titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, sortBy) {
   try {
-    const aqlQuery = `FOR doc IN watch_groups
-    FILTER doc.creator == @creator
-    SORT DISTANCE(doc.location[0], doc.location[1], @userLocLat, @userLocLong)
-    LIMIT @offset, @count
-    RETURN UNSET(doc, "comments")`;
-    const cursor = await pool.query(aqlQuery,
-      { creator: creator, offset: (page - 1) * limit, count: limit, userLocLat: userLocLat, userLocLong: userLocLong });
-    return await cursor.all();
-  } catch (err) {
-    console.log(err);
-    throw err;
-  }
-}
-
-export async function findWatchGroupsByUserJoined(userId, page, limit) {
-  try {
-    const aqlQuery = `FOR vertex IN OUTBOUND
+    let aqlParameters = {
+      userId: userId,
+      offset: (page - 1) * limit,
+      count: limit
+    }
+    let aqlQuery = `FOR vertex IN OUTBOUND
     @userId joined_group
+    `;
+
+    // add filters and sort
+    aqlQuery = addFilters(aqlQuery, aqlParameters, userLocLat, userLocLong,
+      titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, 'vertex');
+    aqlQuery = addSort(aqlQuery, aqlParameters, userLocLat, userLocLong, sortBy, 'vertex');
+
+    aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(vertex, "comments")`;
-    const cursor = await pool.query(aqlQuery, { userId: userId, offset: (page - 1) * limit, count: limit });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
-    console.log(err);
-    throw err;
-  }
-}
-
-export async function findWatchGroupsByUserJoinedAndDistance(userId, page, limit, userLocLat, userLocLong) {
-  try {
-    const aqlQuery = `FOR vertex IN OUTBOUND
-    @userId joined_group
-    SORT DISTANCE(vertex.location[0], vertex.location[1], @userLocLat, @userLocLong)
-    LIMIT @offset, @count
-    RETURN UNSET(vertex, "comments")`;
-    const cursor = await pool.query(aqlQuery,
-      { userId: userId, offset: (page - 1) * limit, count: limit, userLocLat: userLocLat, userLocLong: userLocLong });
-    return await cursor.all();
-  } catch (err) {
-    console.log(err);
-    throw err;
+    console.log(err.message);
+    throw err.message;
   }
 }
 
@@ -149,8 +220,8 @@ export async function findWatchGroupByKeyWithoutComments(key) {
       console.log(`WatchGroup document with _key ${key} not found: `, err.message);
       return null;
     } else {
-      console.log(err);
-      throw err;
+      console.log(err.message);
+      throw err.message;
     }
 
   }
@@ -195,8 +266,8 @@ export async function findWatchGroupByKeyWithJoinedInformation(userId, key, page
     const cursor = await pool.query(aqlQuery, { from: userId, key: key, offset: (page - 1) * limit, count: limit });
     return (await cursor.all())[0];
   } catch (err) {
-    console.log(err);
-    throw err;
+    console.log(err.message);
+    throw err.message;
   }
 }
 
@@ -232,50 +303,75 @@ export async function findWatchGroupByKey(key, page, limit) {
       console.log(`OpinionThread document with _key ${key} not found: `, err.message);
       return null;
     } else {
-      console.log(err);
-      throw err;
+      console.log(err.message);
+      throw err.message;
     }
 
   }
 }
 
 
-export async function getWatchGroupCount() {
+export async function getWatchGroupCount(userLocLat, userLocLong,
+  titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch) {
   try {
-    const cursor = await watchGroupCollection.count();
-    return cursor.count;
+    let aqlParameters = {};
+    let aqlQuery = `RETURN LENGTH(
+      FOR doc IN watch_groups
+      `
+    aqlQuery = addFilters(aqlQuery, aqlParameters, userLocLat, userLocLong, titleSearch, showSearch,
+      creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch);
+
+    aqlQuery += `
+        RETURN true)`;
+    const cursor = await pool.query(aqlQuery, aqlParameters);
+    return (await cursor.all())[0];
   } catch (err) {
-    console.log(err);
-    throw err;
+    console.log(err.message);
+    throw err.message;
   }
 
 }
 
-export async function getWatchGroupCountByCreator(creator) {
+export async function getWatchGroupCountByCreator(creator, userLocLat, userLocLong,
+  titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch) {
   try {
-    const aqlQuery = `RETURN LENGTH(
+    let aqlParameters = { creator: creator };
+    let aqlQuery = `RETURN LENGTH(
       FOR doc IN watch_groups
         FILTER doc.creator == @creator
+      `
+    aqlQuery = addFilters(aqlQuery, aqlParameters, userLocLat, userLocLong, titleSearch, showSearch,
+      creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch);
+
+    aqlQuery += `
         RETURN true)`;
-    const cursor = await pool.query(aqlQuery, { creator: creator });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
-    console.log(err);
-    throw err;
+    console.log(err.message);
+    throw err.message;
   }
 }
 
-export async function getWatchGroupCountByUserJoined(userId) {
+export async function getWatchGroupCountByUserJoined(userId, userLocLat, userLocLong,
+  titleSearch, showSearch, creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch) {
   try {
-    const aqlQuery = `RETURN LENGTH(
+    let aqlParameters = { userId: userId };
+    let aqlQuery = `RETURN LENGTH(
       FOR vertex IN OUTBOUND
       @userId joined_group
+      `;
+
+    aqlQuery = addFilters(aqlQuery, aqlParameters, userLocLat, userLocLong, titleSearch, showSearch,
+      creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, 'vertex');
+
+    aqlQuery += `
         RETURN true)`;
-    const cursor = await pool.query(aqlQuery, { userId: userId });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
-    console.log(err);
-    throw err;
+    console.log(err.message);
+    throw err.message;
   }
 }
 
@@ -286,8 +382,8 @@ export async function insertWatchGroup(watchGroupDocument) {
     const cursor = await watchGroupCollection.save(watchGroupDocument);
     return cursor._key;
   } catch (err) {
-    console.log(err);
-    throw err;
+    console.log(err.message);
+    throw err.message;
   }
 }
 
@@ -300,8 +396,8 @@ export async function updateWatchGroup(key, newWatchGroupAttributes) {
       console.log(`Error for watchGroup document with _key ${key} during update request: `, err.message);
       return false;
     } else {
-      console.log(err);
-      throw err;
+      console.log(err.message);
+      throw err.message;
     }
 
   }
@@ -316,8 +412,8 @@ export async function deleteWatchGroup(key) {
       console.log(`Warning for watchGroup document with _key ${key} during delete request: `, err.message);
       return false;
     } else {
-      console.log(err);
-      throw err;
+      console.log(err.message);
+      throw err.message;
     }
 
   }
