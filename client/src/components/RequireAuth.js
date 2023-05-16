@@ -1,10 +1,10 @@
 import { useLocation, Navigate, Outlet } from 'react-router-dom'
 
 import useAuth from "../hooks/useAuth"
-import { adminRoleCode, userRoleCode } from '../config/UserRoleCodes'
+import { adminRoleCode, moderatorRoleCode, userRoleCode } from '../config/UserRoleCodes'
 
 
-export default function RequireAuth({ allowedRoles = [adminRoleCode, userRoleCode] }) {
+export default function RequireAuth({ allowedRoles = [adminRoleCode, userRoleCode, moderatorRoleCode] }) {
   const { auth } = useAuth();
   const location = useLocation();
 

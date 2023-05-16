@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-import { userRoleCode, adminRoleCode } from '../config/UserRoleCodes.js'
+import { userRoleCode, adminRoleCode, moderatorRoleCode } from '../config/UserRoleCodes.js'
 import { findUserByRefreshToken, updateUser } from '../db/users_db.js';
 
 export function addJwtCookie(req, response, next) {
@@ -63,7 +63,7 @@ export function addJwtCookie(req, response, next) {
   }
 }
 
-export function authorize(roles = [userRoleCode, adminRoleCode]) {
+export function authorize(roles = [userRoleCode, adminRoleCode, moderatorRoleCode]) {
   return (_req, response, next) => {
     if (!response.locals.jwt) {
       response.status(401).end();

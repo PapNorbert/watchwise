@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
+import { Row, Col, Form, Card } from 'react-bootstrap'
 
 import UsersTab from './UsersTab'
 import User from '../../components/User'
@@ -9,11 +10,11 @@ import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
 import useAuth from '../../hooks/useAuth'
 import useGetAxios from '../../hooks/useGetAxios'
-import { querryParamDefaultValues, querryParamNames, limitValues } from '../../config/querryParams'
+import { querryParamDefaultValues, querryParamNames, limitValues, bannedValues } from '../../config/querryParams'
 import { useSearchParamsState } from '../../hooks/useSearchParamsState'
+import { banSearchTypes } from '../../config/userBanFilterTypes'
 
-
-export default function Users() {
+export default function Users({ moderatorsOnly = false }) {
   const [limit, setLimit] =
     useSearchParamsState(querryParamNames.limit, querryParamDefaultValues.limit);
   const [page, setPage] =
@@ -21,11 +22,13 @@ export default function Users() {
   const [nameSearch] =
     useSearchParamsState(querryParamNames.name, querryParamDefaultValues.name);
   const [currentNameSearch, setCurrentNameSearch] = useState(nameSearch);
+  const [bannedSearch, setBannedSearch] =
+    useSearchParamsState(querryParamNames.banned, querryParamDefaultValues.banned);
 
   const { i18nData } = useLanguage();
   const { auth, setAuth, setLoginExpired } = useAuth();
   const location = useLocation();
-  const [url, setUrl] = useState('/api/users');
+  const [url, setUrl] = useState(`/api/users/?moderatorsOnly=${moderatorsOnly}`);
   const { data: users, error, statusCode } = useGetAxios(url);
 
   useEffect(() => {
@@ -43,11 +46,31 @@ export default function Users() {
       setLimit(querryParamDefaultValues.limit);
     } else if (page > users?.pagination.totalPages && page > 1) {
       setPage(users?.pagination.totalPages);
+    } else if (bannedSearch && !bannedValues.includes(bannedSearch)) {
+      setBannedSearch(querryParamDefaultValues.banned);
     } else {
       // limit and page have correct values
-      setUrl(`/api/users/?short=true&page=${page}&limit=${limit}&name=${nameSearch}`);
+      let newUrl = `/api/users/?moderatorsOnly=${moderatorsOnly}&page=${page}&limit=${limit}`;
+      if (nameSearch) {
+        newUrl += `&name=${nameSearch}`;
+      }
+      if (bannedSearch) {
+        newUrl += `&banType=${bannedSearch}`;
+      }
+
+      setUrl(newUrl);
     }
-  }, [limit, users?.pagination.totalPages, nameSearch, page, setLimit, setPage])
+  }, [limit, users?.pagination.totalPages, nameSearch, page, setLimit, setPage,
+    moderatorsOnly, bannedSearch, setBannedSearch]
+  )
+
+  function handleBannedSearchChange(bannedSearchType) {
+    if (bannedSearch === bannedSearchType) {
+      setBannedSearch(querryParamDefaultValues.banned);
+    } else {
+      setBannedSearch(bannedSearchType);
+    }
+  }
 
 
   if (statusCode === 401) {
@@ -74,6 +97,23 @@ export default function Users() {
       <LimitAndSearch limit={limit} currentNameSearch={currentNameSearch}
         setCurrentNameSearch={setCurrentNameSearch} />
       <UsersTab />
+      { !moderatorsOnly &&
+        <Card className='my-4 mx-5 banned-search-filters bg-sort-filter'>
+        <Row>
+          <Col xs>
+            <Form.Check label={convertKeyToSelectedLanguage('search_not_banned', i18nData)}
+              name='search_not_banned' type='checkbox' className='mx-3 my-3' inline
+              checked={bannedSearch === banSearchTypes.onlyNotBanned} onChange={() => { }}
+              onClick={() => handleBannedSearchChange(banSearchTypes.onlyNotBanned)} />
+
+            <Form.Check label={convertKeyToSelectedLanguage('search_banned', i18nData)}
+              name='search_banned' type='checkbox' className='mx-3 my-3' inline
+              checked={bannedSearch === banSearchTypes.onlyBanned} onChange={() => { }}
+              onClick={() => handleBannedSearchChange(banSearchTypes.onlyBanned)} />
+          </Col>
+        </Row>
+      </Card>
+      }
       <PaginationElements currentPage={parseInt(page)}
         totalPages={users?.pagination.totalPages}
         onPageChange={setPage} key='pagination-top' />
@@ -86,7 +126,9 @@ export default function Users() {
           })
           :
           // no elements returned
-          <h2>{convertKeyToSelectedLanguage('no_users', i18nData)}</h2>
+          <h3>
+            {convertKeyToSelectedLanguage(moderatorsOnly ? 'no_moderators' : 'no_users', i18nData)}
+          </h3>
       }
       <PaginationElements currentPage={parseInt(page)}
         totalPages={users?.pagination.totalPages}

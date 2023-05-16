@@ -9,6 +9,8 @@ import { deleteRequest } from '../axiosRequests/DeleteAxios'
 import { putRequest } from '../axiosRequests/PutAxios'
 import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage, convertDateAndTimeToLocale } from '../i18n/conversion'
+import { adminRoleCode, moderatorRoleCode } from '../config/UserRoleCodes'
+
 
 export default function Comment({ comment, commentLocationType, commentLocationId, commentLocationCreator }) {
   const { auth, setAuth } = useAuth();
@@ -108,9 +110,29 @@ export default function Comment({ comment, commentLocationType, commentLocationI
       <Row className='justify-content-md-center mt-2 username-and-controlls'>
         {/* username and controll buttons */}
         {auth.username !== comment.user ?
-          <Col xs lg={10} className='bold' >
-            {comment.user}
-          </Col> :
+          (
+            (auth.role === adminRoleCode || auth.role === moderatorRoleCode) ?
+              // moderator or admin
+              <>
+                <Col xs lg={9} className='bold' >
+                  {comment.user}
+                </Col>
+                <Col xs lg={1} className='d-flex justify-content-end'>
+                  <OverlayTrigger trigger='click' placement='bottom' rootClose={true}
+                    overlay={popover}
+                  >
+                    <span>
+                      <DeleteIcon />
+                    </span>
+                  </OverlayTrigger>
+                </Col>
+              </>
+              :
+              <Col xs lg={10} className='bold' >
+                {comment.user}
+              </Col>
+          )
+          :
           <>
             {/* logged in user is the creator of the comment */}
             <Col xs lg={8} className='bold' >
@@ -147,7 +169,7 @@ export default function Comment({ comment, commentLocationType, commentLocationI
         <Col xs lg={3} >
           {convertDateAndTimeToLocale(comment.creation_date, language)}
         </Col>
-        { (editing && auth.logged_in) ?
+        {(editing && auth.logged_in) ?
           <Col xs lg={8} className='mb-4'>
             <Form onSubmit={handleCommentEditSubmit}>
               <Form.Control as='textarea' rows={5} className='mb-2 mt-3'

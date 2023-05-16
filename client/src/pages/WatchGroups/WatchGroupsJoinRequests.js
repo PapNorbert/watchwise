@@ -78,7 +78,7 @@ export default function WatchGroupsMy() {
           );
         }) :
         // no elements returned
-        <h2>{convertKeyToSelectedLanguage('no_groups_join_req', i18nData)}</h2>
+        <h3>{convertKeyToSelectedLanguage('no_groups_join_req', i18nData)}</h3>
       }
       <PaginationElements currentPage={parseInt(page)}
         totalPages={join_requests?.pagination.totalPages}

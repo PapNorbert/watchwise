@@ -17,6 +17,7 @@ import MoviesPage from './pages/Movies/MoviesPage'
 import SeriesPage from './pages/Series/SeriesPage'
 import UsersPage from './pages/Users/UsersPage'
 import OpinionThreadsPage from './pages/OpinionThreads/OpinionThreadsPage'
+import ModeratorRequestCreatePage from './pages/ModeratorRequestCreatePage'
 import RequireAuth from './components/RequireAuth'
 import { adminRoleCode } from './config/UserRoleCodes'
 
@@ -40,6 +41,9 @@ function App() {
                   <Route path='/series/*' element={<SeriesPage />} />
                   <Route element={<RequireAuth allowedRoles={[adminRoleCode]} />}>
                     <Route path='/users/*' element={<UsersPage />} />
+                  </Route>
+                  <Route element={<RequireAuth />}>
+                    <Route path='/moderator/requests' element={<ModeratorRequestCreatePage />} />
                   </Route>
                   <Route path='/unauthorized' element={<UnauthorizedPage />} />
                   <Route path='/error-page' element={<ErrorPage />} />

@@ -100,7 +100,7 @@ export default function MoviesAll() {
         })
         :
         // no elements returned
-        <h2>{convertKeyToSelectedLanguage('no_movies', i18nData)}</h2>
+        <h3>{convertKeyToSelectedLanguage('no_movies', i18nData)}</h3>
       }
       <PaginationElements currentPage={parseInt(page)}
         totalPages={movies?.pagination.totalPages}

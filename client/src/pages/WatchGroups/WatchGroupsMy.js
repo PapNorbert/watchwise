@@ -179,7 +179,7 @@ export default function WatchGroupsMy() {
           );
         }) :
         // no elements returned
-        <h2>{convertKeyToSelectedLanguage('no_own_groups', i18nData)}</h2>
+        <h3>{convertKeyToSelectedLanguage('no_own_groups', i18nData)}</h3>
       }
       <PaginationElements currentPage={parseInt(page)}
         totalPages={watch_groups?.pagination.totalPages}

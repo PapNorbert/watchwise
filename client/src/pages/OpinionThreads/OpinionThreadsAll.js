@@ -118,7 +118,7 @@ export default function OpinionThreadsAll() {
           })
           :
           // no elements returned
-          <h2>{convertKeyToSelectedLanguage('no_threads', i18nData)}</h2>
+          <h3>{convertKeyToSelectedLanguage('no_threads', i18nData)}</h3>
       }
       <PaginationElements currentPage={parseInt(page)}
         totalPages={opinion_threads?.pagination.totalPages}

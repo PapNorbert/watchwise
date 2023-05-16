@@ -1,8 +1,7 @@
 import express from 'express';
 
 import {
-  findUsersByUsernameContains, findUsers,
-  getUsersCountByUsernameContains, getUsersCount,
+  findUsers, getUsersCount,
   handleUserBanTransaction
 } from '../db/users_db.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
@@ -18,38 +17,27 @@ router.get('', authorize([adminRoleCode]), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10, name } = request.query;
+    let { page = 1, limit = 10, name, moderatorsOnly, banType = 'all' } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit
       && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);
       limit = parseInt(limit);
-      if (name) {
-        // get users filtered by name
-        const [users, count] = await Promise.all([
-          findUsersByUsernameContains(page, limit, name.toUpperCase()),
-          getUsersCountByUsernameContains(name.toUpperCase()),
-        ]);
-        response.json({
-          "data": createResponseDtos(users),
-          "pagination": createPaginationInfo(page, limit, count)
-        });
-      } else {
-        // get all users
-        const [users, count] = await Promise.all([
-          findUsers(page, limit),
-          getUsersCount(),
-        ]);
-        response.json({
-          "data": createResponseDtos(users),
-          "pagination": createPaginationInfo(page, limit, count)
-        });
-      }
+
+      const [users, count] = await Promise.all([
+        findUsers(page, limit, name, moderatorsOnly, banType),
+        getUsersCount(name, moderatorsOnly, banType),
+      ]);
+      response.json({
+        "data": createResponseDtos(users),
+        "pagination": createPaginationInfo(page, limit, count)
+      });
+
 
     } else {
       response.status(400).json({ error: "bad_paging" })
     }
   } catch (err) {
-    console.log(err.message);
+    console.log(err);
     response.status(400).json({
       error: "error"
     });

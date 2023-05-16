@@ -48,7 +48,7 @@ export default function PaginationElements({currentPage, totalPages, onPageChang
     setcurrentButtons(tempCurrentButtons);
   }, [currentPage, totalPages, numbers]);
   
-  return (
+  return ( currentButtons.length > 1 && 
     <Pagination className='d-flex align-items-center justify-content-center' key='paginationContainer'>
       {currentPage > 1 && 
         <>

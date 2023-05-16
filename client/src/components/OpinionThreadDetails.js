@@ -15,6 +15,7 @@ import { putRequest } from '../axiosRequests/PutAxios'
 import DeletedSuccesfully from './DeletedSuccesfully'
 import { querryParamDefaultValues, querryParamNames, limitValues } from '../config/querryParams'
 import { useSearchParamsState } from '../hooks/useSearchParamsState'
+import { adminRoleCode, moderatorRoleCode } from '../config/UserRoleCodes'
 
 
 export default function OpinionThreadDetails({ opinion_thread, buttonType, setUrl, totalPages, refetch }) {
@@ -296,7 +297,7 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
           {
             auth.logged_in && auth.username === opinion_thread.creator ?
               // creator of thread
-              <Container className='mt-2' >
+              <Container className='mt-2 creator-buttons' >
                 <OverlayTrigger trigger='click' placement='bottom' rootClose={true}
                   overlay={popover}
                 >
@@ -315,7 +316,20 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
               :
               // not creator of the thread
               auth.logged_in &&
-              <Container className='mt-2' >
+              <Container className='mt-2 follow-button' >
+                {(auth.role === adminRoleCode || auth.role === moderatorRoleCode) &&
+                  // moderator or admin can also delete
+                  <OverlayTrigger trigger='click' placement='bottom' rootClose={true}
+                  overlay={popover}
+                >
+                  <span className='float-end'>
+                    <Button className='btn btn-orange mx-2'
+                      key={`${opinion_thread._key}_delete_button`} >
+                      {convertKeyToSelectedLanguage('delete', i18nData)}
+                    </Button>
+                  </span>
+                </OverlayTrigger>
+                }
                 <Button className='btn btn-orange float-end mx-2' onClick={handleFollowesButtonClicked}
                   key={`${opinion_thread._key}_follows_button`} >
                   {convertKeyToSelectedLanguage(buttonType, i18nData)}

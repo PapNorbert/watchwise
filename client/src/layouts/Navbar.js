@@ -55,7 +55,7 @@ function Navigationbar() {
             </Nav.Link>
             {
               auth.logged_in && auth?.role === adminRoleCode &&
-              <Nav.Link className='me-4' onClick={() => { navigate('/users',) }}>
+              <Nav.Link className='me-4' onClick={() => { navigate('/users') }}>
                 {convertKeyToSelectedLanguage('users', i18nData)}
               </Nav.Link>
             }

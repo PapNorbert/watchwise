@@ -20,6 +20,7 @@ import { putRequest } from '../axiosRequests/PutAxios'
 import DeletedSuccesfully from './DeletedSuccesfully'
 import { querryParamDefaultValues, querryParamNames, limitValues } from '../config/querryParams'
 import { useSearchParamsState } from '../hooks/useSearchParamsState'
+import { adminRoleCode, moderatorRoleCode } from '../config/UserRoleCodes'
 
 
 export default function WatchGroupDetails({ watch_group, buttonType, setUrl, totalPages, refetch }) {
@@ -498,6 +499,19 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
               // not creator
               auth.logged_in &&
               <Container className='mt-2 join-button' >
+                {(auth.role === adminRoleCode || auth.role === moderatorRoleCode) &&
+                  // moderator or admin can also delete
+                  < OverlayTrigger trigger='click' placement='bottom' rootClose={true}
+                    overlay={popover}
+                  >
+                    <span className='float-end'>
+                      <Button className='btn btn-orange mx-2'
+                        key={`${watch_group._key}_delete_button`} >
+                        {convertKeyToSelectedLanguage('delete', i18nData)}
+                      </Button>
+                    </span>
+                  </OverlayTrigger>
+                }
                 <Button className='btn btn-orange float-end mx-2' onClick={handleJoinButtonClicked}
                   key={`${watch_group._key}_join_button`} >
                   {convertKeyToSelectedLanguage(buttonType, i18nData)}

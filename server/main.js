@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
 
 import allowedOrigin from './config/allowedOrigin.js'
-import { createCollections, createEdgeCollections, insertAdminUser } from './db/setup_db.js'
+import { createCollections, createEdgeCollections, insertAdminUser, insertModeratorEmploymentFile } from './db/setup_db.js'
 import { readLanguageDataFiles } from './i18n/i18n_files.js'
 import { credentialsAllow } from './middlewares/credentialsAllow.js'
 import { addJwtCookie } from './middlewares/auth.js'
@@ -20,6 +20,7 @@ import languageDataFilesRoute from './api/languageDataFiles.js'
 import usersRoute from './api/users.js'
 import authRoute from './api/authentication.js'
 import showsRoute from './api/shows.js'
+import moderatorRequestsRoute from './api/moderator_requests.js'
 
 
 const app = express();
@@ -54,6 +55,7 @@ app.use('/api/language', languageDataFilesRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/shows', showsRoute);
+app.use('/api/moderator_requests', moderatorRequestsRoute);
 
 // read .env file
 dotenv.config()
@@ -61,6 +63,7 @@ dotenv.config()
 createCollections()
   .then(createEdgeCollections)
   .then(insertAdminUser)
+  .then(insertModeratorEmploymentFile)
   .then(() => {
     app.listen(3000, () => { console.log('Server listening on http://localhost:3000/ ...'); });
     if (!readLanguageDataFiles("eng")) {

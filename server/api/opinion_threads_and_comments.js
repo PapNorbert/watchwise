@@ -22,6 +22,7 @@ import { createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_
 import { validateOpinionTreadCreation } from '../util/opinionThreadValidation.js'
 import { validateCommentCreation } from '../util/commentValidation.js'
 import { authorize } from '../middlewares/auth.js'
+import { adminRoleCode, moderatorRoleCode } from '../config/userRoleCodes.js';
 
 
 const router = express.Router();
@@ -159,7 +160,8 @@ router.delete('/:thread_id/comments/:id', authorize(), async (request, response)
     const thread_id = request.params.thread_id;
     const id = request.params.id;
     const comment = await findCommentByKey(thread_id, id, 'opinion_threads');
-    if (comment.user !== response.locals.payload.username) {
+    if (comment.user !== response.locals.payload.username && response.locals.payload.role !== adminRoleCode
+      && response.locals.payload.role !== moderatorRoleCode) {
       response.sendStatus(403);
       return
     }
@@ -486,7 +488,8 @@ router.delete('/:id', authorize(), async (request, response) => {
     const id = request.params.id;
     try {
       const opinionThread = await findOpinionThreadByKeyWithoutComments(id);
-      if (opinionThread.creator !== response.locals.payload.username) {
+      if (opinionThread.creator !== response.locals.payload.username && response.locals.payload.role !== adminRoleCode
+        && response.locals.payload.role !== moderatorRoleCode) {
         response.sendStatus(403);
         return
       }

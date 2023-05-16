@@ -27,6 +27,7 @@ import { validateCommentCreation } from '../util/commentValidation.js'
 import { locationsToCoordCache } from '../util/locationsCache.js'
 import { authorize } from '../middlewares/auth.js'
 import { maxDistanceDefaultValue } from '../config/maxDistanceDefault.js'
+import { adminRoleCode, moderatorRoleCode } from '../config/userRoleCodes.js';
 
 const router = express.Router();
 
@@ -158,7 +159,8 @@ router.delete('/:group_id/comments/:id', authorize(), async (request, response) 
     const group_id = request.params.group_id;
     const id = request.params.id;
     const comment = await findCommentByKey(group_id, id, 'watch_groups');
-    if (comment.user !== response.locals.payload.username) {
+    if (comment.user !== response.locals.payload.username && response.locals.payload.role !== adminRoleCode
+      && response.locals.payload.role !== moderatorRoleCode) {
       response.sendStatus(403);
       return
     }
@@ -703,7 +705,8 @@ router.delete('/:id', authorize(), async (request, response) => {
     const id = request.params.id;
     try {
       const watchGroup = await findWatchGroupByKeyWithoutComments(id);
-      if (watchGroup.creator !== response.locals.payload.username) {
+      if (watchGroup.creator !== response.locals.payload.username && response.locals.payload.role !== adminRoleCode
+        && response.locals.payload.role !== moderatorRoleCode) {
         response.sendStatus(403);
         return
       }

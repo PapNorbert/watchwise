@@ -1,14 +1,60 @@
 import pool from './connection_db.js'
-import { userRoleCode, adminRoleCode } from '../config/userRoleCodes.js'
+import { userRoleCode, adminRoleCode, moderatorRoleCode } from '../config/userRoleCodes.js'
+import { banSearchTypes } from '../config/userBanFilterTypes.js'
 
 const usersCollection = pool.collection("users");
 
 
+function addFilters(aqlQuery, aqlParameters, name, moderatorsOnly, banType, docName = 'doc') {
+  if (name) {
+    aqlQuery += `
+    FILTER CONTAINS(UPPER(${docName}.username), @usernameFilter)
+    `;
+    aqlParameters.usernameFilter = name.toUpperCase();
+  }
+  if (moderatorsOnly == 'true') {
+    aqlQuery += `
+    FILTER ${docName}.role == @userRole
+    `;
+    aqlParameters.userRole = moderatorRoleCode;
+  } else {
+    aqlQuery += `
+    FILTER ${docName}.role != @userRole
+    `;
+    aqlParameters.userRole = adminRoleCode;
+  }
+  switch (banType) {
+    case banSearchTypes.onlyBanned:
+      aqlQuery += `
+      FILTER ${docName}.banned
+      `;
+      break;
+    case banSearchTypes.onlyNotBanned:
+      aqlQuery += `
+      FILTER ! ${docName}.banned 
+      `;
+      break;
+    default:
+      // all
+      break;
+  }
 
-export async function findUsers(page, limit) {
+  return aqlQuery;
+}
+
+
+
+export async function findUsers(page, limit, name, moderatorsOnly, banType) {
   try {
-    const aqlQuery = `FOR doc IN users
-    FILTER doc.role == @userRole
+    let aqlParameters = {
+      offset: (page - 1) * limit,
+      count: limit
+    }
+    let aqlQuery = `FOR doc IN users
+    `
+    aqlQuery = addFilters(aqlQuery, aqlParameters, name, moderatorsOnly, banType);
+
+    aqlQuery += `
     SORT doc.username
     LIMIT @offset, @count
     RETURN { 
@@ -20,36 +66,10 @@ export async function findUsers(page, limit) {
       about_me: doc.about_me,
       banned: doc.banned
     }`;
-    const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, userRole: userRoleCode });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
-    console.log(err);
-    throw err;
-  }
-}
-
-export async function findUsersByUsernameContains(page, limit, name) {
-  try {
-    const aqlQuery = `FOR doc IN users
-    FILTER doc.role == @userRole
-    FILTER CONTAINS(UPPER(doc.username), @nameFilter)
-    LIMIT @offset, @count
-    RETURN { 
-      _key: doc._key,
-      first_name: doc.first_name, 
-      last_name: doc.last_name, 
-      username: doc.username, 
-      create_date: doc.create_date,
-      about_me: doc.about_me,
-      banned: doc.banned
-    }`;
-    const cursor = await pool.query(aqlQuery, {
-      offset: (page - 1) * limit, count: limit, userRole: userRoleCode, nameFilter: name
-    });
-    return await cursor.all();
-  } catch (err) {
-    console.log(err);
-    throw err;
+    throw err.message;
   }
 }
 
@@ -101,33 +121,20 @@ export async function findUserByRefreshToken(refreshToken) {
   }
 }
 
-export async function getUsersCount() {
+export async function getUsersCount(name, moderatorsOnly, banType) {
   try {
-    const aqlQuery = `RETURN LENGTH(FOR doc IN users
-      FILTER doc.role == @userRole
+    let aqlParameters = {}
+    let aqlQuery = `RETURN LENGTH(FOR doc IN users
+    `
+    aqlQuery = addFilters(aqlQuery, aqlParameters, name, moderatorsOnly, banType);
+
+    aqlQuery += `
       RETURN true)`;
-    const cursor = await pool.query(aqlQuery, { userRole: userRoleCode });
+    const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
-    console.log(err);
-    throw err;
+    throw err.message;
   }
-
-}
-
-export async function getUsersCountByUsernameContains(name) {
-  try {
-    const aqlQuery = `RETURN LENGTH(FOR doc IN users
-      FILTER doc.role == @userRole
-      FILTER CONTAINS(UPPER(doc.username), @nameFilter)
-      RETURN true)`;
-    const cursor = await pool.query(aqlQuery, { userRole: userRoleCode, nameFilter: name });
-    return (await cursor.all())[0];
-  } catch (err) {
-    console.log(err);
-    throw err;
-  }
-
 }
 
 export async function checkUserExistsWithUsername(username) {
@@ -197,7 +204,7 @@ export async function handleUserBanTransaction(userKey) {
       return await usersCollection.firstExample({ _key: userKey });
     });
 
-    if( !user ) {
+    if (!user) {
       const transactionResult = await transaction.abort();
       console.log('Transaction for user ban: ', transactionResult.status, '. No user found');
       return {
@@ -205,7 +212,7 @@ export async function handleUserBanTransaction(userKey) {
         errorMessage: '404'
       }
     }
-    if( user.role === adminRoleCode) {
+    if (user.role === adminRoleCode) {
       const transactionResult = await transaction.abort();
       console.log('Transaction for user ban: ', transactionResult.status, '. Attempt to ban an admin user');
       return {
@@ -229,7 +236,7 @@ export async function handleUserBanTransaction(userKey) {
         errorMessage: 'error_ban_status_update'
       }
     }
-    if( actionPerformed === 'ban' ) {
+    if (actionPerformed === 'ban') {
       // delete edges for user
       const deletedRequests = await transaction.step(async () => {
         const aqlQuery = `FOR doc IN join_request

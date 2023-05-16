@@ -81,7 +81,8 @@ router.post('/login', async (req, response) => {
             process.env.JWT_SECRET,
             { expiresIn: '1d' }
           );
-          const saved = await updateUser(user._key, { refreshToken: refreshToken });
+
+          const saved = await updateUser(user._key, { refreshToken: refreshToken, lastLogInDate: new Date(Date.now()) });
           if (saved) {
             response.cookie('Auth', refreshToken, {
               httpOnly: true, sameSite: 'None',
@@ -144,7 +145,7 @@ router.use('/logout', async (req, response) => {
   } else {  // there is a cookie
     try {
       const user = await findUserByRefreshToken(cookies.Auth);
-      if (user !== null ) {
+      if (user !== null) {
         // delete refresh token in db if user is found
         const succesfull = await updateUser(user._key, { refreshToken: null });
         if (!succesfull) {

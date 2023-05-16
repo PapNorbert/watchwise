@@ -103,7 +103,7 @@ export default function SeriesAll() {
         })
         :
         // no elements returned
-        <h2>{convertKeyToSelectedLanguage('no_series', i18nData)}</h2>
+        <h3>{convertKeyToSelectedLanguage('no_series', i18nData)}</h3>
       }
       <PaginationElements currentPage={parseInt(page)}
         totalPages={series?.pagination.totalPages}

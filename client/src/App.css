@@ -1,4 +1,3 @@
-
 .App-logo {
   height: 40vmin;
   pointer-events: none;
@@ -29,6 +28,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -44,7 +44,7 @@ h1 {
 }
 
 .bg-customColor {
-  background-color: #e99000fa ;
+  background-color: #e99000fa;
 }
 
 .tabs-nav {
@@ -64,7 +64,8 @@ h2 {
   width: 5em;
 }
 
-.small-error, .small-input {
+.small-error,
+.small-input {
   width: 60%;
 }
 
@@ -105,19 +106,23 @@ h2 {
 
 .corner-borders {
   /* border on corners */
-  --b: 5px;   /* thickness of the border */
-  --c: #f76f00;   /* color of the border */
-  --w: 25%;  /* width of border */
+  --b: 5px;
+  /* thickness of the border */
+  --c: #f76f00;
+  /* color of the border */
+  --w: 25%;
+  /* width of border */
   padding: 1em;
 
-  border: var(--b) solid #0000; /* space for the border */
-  --_g: #0000 90deg,var(--c) 0;
+  border: var(--b) solid #0000;
+  /* space for the border */
+  --_g: #0000 90deg, var(--c) 0;
   --_p: var(--w) var(--w) border-box no-repeat;
   background:
     /* conic-gradient(from 90deg  at top    var(--b) left  var(--b),var(--_g)) 0    0    / var(--_p), */
-    conic-gradient(from 180deg at top    var(--b) right var(--b),var(--_g)) 100% 0    / var(--_p),
-    conic-gradient(from 0deg   at bottom var(--b) left  var(--b),var(--_g)) 0    100% / var(--_p);
-    /* conic-gradient(from -90deg at bottom var(--b) right var(--b),var(--_g)) 100% 100% / var(--_p); */
+    conic-gradient(from 180deg at top var(--b) right var(--b), var(--_g)) 100% 0 / var(--_p),
+    conic-gradient(from 0deg at bottom var(--b) left var(--b), var(--_g)) 0 100% / var(--_p);
+  /* conic-gradient(from -90deg at bottom var(--b) right var(--b),var(--_g)) 100% 100% / var(--_p); */
 }
 
 .insert-button:disabled {
@@ -139,9 +144,10 @@ svg {
   background-color: #e99000fa;
 }
 
-.popover-arrow, .delete-popover-header::before  {
- /* display: none !important;  */
- border-color: #e99000fa !important;
+.popover-arrow,
+.delete-popover-header::before {
+  /* display: none !important;  */
+  border-color: #e99000fa !important;
 }
 
 .is_creator {
@@ -167,7 +173,8 @@ svg {
 
 .leaflet-container {
   width: 100%;
-  padding-top: 75%; /* 4:3 aspect ratio */
+  padding-top: 75%;
+  /* 4:3 aspect ratio */
 }
 
 .text-large {
@@ -184,4 +191,21 @@ svg {
 
 .search-sort-title {
   cursor: pointer;
+}
+
+.banned-search-filter {
+  text-align: center;
+}
+
+.color-red {
+  color: red;
+}
+
+.color-green {
+  color: green;
+}
+
+.announcements {
+  text-decoration: underline;
+  margin-left: 8%;
 }
