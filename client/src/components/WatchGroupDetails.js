@@ -14,7 +14,7 @@ import { convertKeyToSelectedLanguage, convertDateAndTimeToLocale } from '../i18
 import { convertDateToFormInput } from '../util/dateFormat'
 import useAuth from '../hooks/useAuth'
 import { postRequest } from '../axiosRequests/PostAxios'
-import { buttonTypes } from '../util/buttonTypes'
+import { buttonTypes } from '../config/buttonTypes'
 import { deleteRequest } from '../axiosRequests/DeleteAxios'
 import { putRequest } from '../axiosRequests/PutAxios'
 import DeletedSuccesfully from './DeletedSuccesfully'
@@ -572,7 +572,8 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
             <Button variant='light' key='clear' className='mx-2 border border-2 mb-5' onClick={clearComment}>
               {convertKeyToSelectedLanguage('cancel', i18nData)}
             </Button>
-          </Form>}
+          </Form>
+        }
 
       </Container>
     </>

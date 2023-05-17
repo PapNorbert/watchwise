@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt'
 
 import pool from './connection_db.js'
 import { adminRoleCode } from '../config/UserRoleCodes.js'
-import { adminFirstName, adminLastName, adminPassword, adminUsername } from '../config/adminUserData.js'
+import { adminFirstName, adminLastName, adminPassword, adminUsername, about_me } from '../config/adminUserData.js'
 import { checkUserExistsWithUsername, insertUser } from './users_db.js'
 import { checkEmploymentFileExists, insertEmploymentFile } from './moderator_req_db.js'
 
@@ -30,6 +30,9 @@ export async function createCollections() {
   if (! await pool.collection('moderator_requests').exists()) {
     await pool.collection('moderator_requests').create();
   }
+  if (! await pool.collection('announcements').exists()) {
+    await pool.collection('announcements').create();
+  }
 }
 
 export async function createEdgeCollections() {
@@ -56,6 +59,8 @@ export async function insertAdminUser() {
       last_name: adminLastName,
       username: adminUsername,
       role: adminRoleCode,
+      about_me: about_me,
+      create_date: new Date(Date.now())
     }
     adminData['password'] = await bcrypt.hash(adminPassword, 10);
     await insertUser(adminData);

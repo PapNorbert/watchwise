@@ -17,7 +17,7 @@ router.get('', async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10, short = false, genre = 'all', name } = request.query;
+    let { page = 1, limit = 5, short = false, genre = 'all', name } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit
       && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);

@@ -66,7 +66,7 @@
   "details": "Részletek",
   "join": "Csatlakozás",
   "manage": "Kezelés",
-  "empty_title": "Kérem, adja meg a csoport nevét",
+  "empty_title": "Kérem, adjon meg egy nevet!",
   "empty_show": "Kérem, válasszon ki egy TV-műsort",
   "empty_description": "Kérem, adjon egy rövid leírást a csoportnak",
   "empty_watch_date": "Kérem, válasszon ki egy időpontot",
@@ -251,5 +251,17 @@
   "req_from": "Kérés a következő felhasználótól: ",
   "register_date": "Felhasználó regisztráció dátuma",
   "404_mod_req": "Moderátor felvétel kérés nem található.",
-  "full": "Megtelt"
+  "full": "Megtelt",
+  "empty_ann_text": "Kérem, írd meg a hirdetés szövegét!",
+  "no_announcements": "Jelenleg nincsenek hirdetések.",
+  "no_other_announcements": "Jelenleg nincsenek más hirdetések.",
+  "add_announcement": "Hirdetés létrehozása",
+  "create_ann": "Hozz létre egy hirdetést",
+  "announcement_write": "Hirdetés írása...",
+  "empty_announcement": "A hirdetés nem lehet üres!",
+  "ann_succesfull_created": "Hirdetés sikeresen létrehozva.",
+  "404_announcement": "Hirdetés nem található.",
+  "created": "Létrehozva",
+  "delete_announcement": "Hirdetés törlése",
+  "delete_confirm_announcement": "Biztosan törlöd a hirdetést?"
 }

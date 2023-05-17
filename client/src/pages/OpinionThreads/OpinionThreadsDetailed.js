@@ -6,7 +6,7 @@ import { convertKeyToSelectedLanguage } from '../../i18n/conversion'
 import useLanguage from '../../hooks/useLanguage'
 import useGetAxios from '../../hooks/useGetAxios'
 import useAuth from '../../hooks/useAuth'
-import { buttonTypes } from '../../util/buttonTypes'
+import { buttonTypes } from '../../config/buttonTypes'
 
 
 export default function OpinionThreadsDetailed() {

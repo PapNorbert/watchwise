@@ -65,7 +65,7 @@
   "details": "Details",
   "join": "Join",
   "manage": "Manage",
-  "empty_title": "Please enter a group title",
+  "empty_title": "Please enter a title",
   "empty_show": "Please select a TV Show",
   "empty_description": "Please give a description to your group",
   "empty_watch_date": "Please select a date",
@@ -250,5 +250,17 @@
   "req_from": "Request from user: ",
   "register_date": "User registration date",
   "404_mod_req": "Moderator recruiting request not found.",
-  "full": "Full"
+  "full": "Full",
+  "empty_ann_text": "Please write the announcement text!",
+  "no_announcements": "Currently there are no announcements.",
+  "no_other_announcements": "Currently there are no other announcements.",
+  "add_announcement": "Add announcement",
+  "create_ann": "Create an announcement",
+  "announcement_write": "Write your announcement...",
+  "empty_announcement": "The announcement cannot be empty!",
+  "ann_succesfull_created": "Announcement succesfully created.",
+  "404_announcement": "Announcement not found.",
+  "created": "Created",
+  "delete_announcement": "Delete announcement",
+  "delete_confirm_announcement": "Are you sure you want to delete this announcement?"
 }

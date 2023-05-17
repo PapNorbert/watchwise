@@ -164,7 +164,7 @@ export default function Comment({ comment, commentLocationType, commentLocationI
           }
         </Col>
       </Row>
-      <Row className='justify-content-md-center creation-date-text'>
+      <Row className='justify-content-md-center creation-date-and-text'>
         {/* comment creation date and text */}
         <Col xs lg={3} >
           {convertDateAndTimeToLocale(comment.creation_date, language)}
@@ -193,7 +193,18 @@ export default function Comment({ comment, commentLocationType, commentLocationI
             </Form>
           </Col> :
           <Col xs lg={8} className='mb-4'>
-            {commentText}
+            {
+              commentText.split('\n').map((textRow, i) => {
+                return (
+                  <span key={`text_row_container_${i}`}>
+                    <span key={`text_row_${i}`}>
+                      {textRow}
+                    </span>
+                    <br />
+                  </span>
+                )
+              })
+            }
           </Col>
         }
       </Row>

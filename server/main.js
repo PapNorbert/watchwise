@@ -21,6 +21,7 @@ import usersRoute from './api/users.js'
 import authRoute from './api/authentication.js'
 import showsRoute from './api/shows.js'
 import moderatorRequestsRoute from './api/moderator_requests.js'
+import announcementsRequestsRoute from './api/announcements.js'
 
 
 const app = express();
@@ -56,6 +57,7 @@ app.use('/api/users', usersRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/shows', showsRoute);
 app.use('/api/moderator_requests', moderatorRequestsRoute);
+app.use('/api/announcements', announcementsRequestsRoute);
 
 // read .env file
 dotenv.config()

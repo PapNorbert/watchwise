@@ -197,7 +197,7 @@ router.get('', async (request, response) => {
   response.status(200);
   try {
     let {
-      page = 1, limit = 10, creator, followed = false, userId,
+      page = 1, limit = 5, creator, followed = false, userId,
       titleSearch = null, showSearch = null, creatorSearch = null, sortBy = 'newest'
     } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit
@@ -277,7 +277,7 @@ router.get('/:thread_id', async (request, response) => {
   response.status(200);
   if (parseInt(request.params.thread_id) == request.params.thread_id) { // correct parameter
     try {
-      let { page = 1, limit = 10 } = request.query;
+      let { page = 1, limit = 5 } = request.query;
       if (parseInt(page) == page && parseInt(limit) == limit
         && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
         page = parseInt(page);

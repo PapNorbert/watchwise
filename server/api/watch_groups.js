@@ -194,7 +194,7 @@ router.get('', async (request, response) => {
   response.status(200);
   try {
     let {
-      page = 1, limit = 10, creator, joined = false, userId, userLocLat, userLocLong,
+      page = 1, limit = 5, creator, joined = false, userId, userLocLat, userLocLong,
       titleSearch = null, showSearch = null, creatorSearch = null, sortBy = 'newest',
       watchDateSearch = null, locationSearch = null, maxDistanceSearch = maxDistanceDefaultValue,
       onlyNotFullSearch = false
@@ -312,7 +312,7 @@ router.get('/join_requests', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');
   response.status(200);
   try {
-    let { page = 1, limit = 10, creator } = request.query;
+    let { page = 1, limit = 5, creator } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit
       && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);
@@ -354,7 +354,7 @@ router.get('/:id', async (request, response) => {
   if (parseInt(request.params.id) == request.params.id
     && parseInt(request.params.id) > 0) { // correct parameter
     try {
-      let { page = 1, limit = 10 } = request.query;
+      let { page = 1, limit = 5 } = request.query;
       if (parseInt(page) == page && parseInt(limit) == limit
         && parseInt(page) > 0 && parseInt(limit) > 0) {  // correct paging information
         page = parseInt(page);

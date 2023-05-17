@@ -6,7 +6,7 @@ import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage, convertDateAndTimeToLocale } from '../i18n/conversion'
 import useAuth from '../hooks/useAuth'
 import { postRequest } from '../axiosRequests/PostAxios'
-import { buttonTypes } from '../util/buttonTypes'
+import { buttonTypes } from '../config/buttonTypes'
 
 export default function WatchGroup({ watch_group, buttonType, removeOnLeave = false, refetch }) {
   // watch_group - group doc, buttonType - leave / join group, 

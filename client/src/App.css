@@ -92,7 +92,7 @@ h2 {
   margin-right: 20%;
 }
 
-.short-hr {
+.short-hr, .short {
   width: 40%;
 }
 
@@ -189,7 +189,7 @@ svg {
   background-color: rgba(0, 0, 0, 0.03);
 }
 
-.search-sort-title {
+.search-sort-title, .announcement-create-header {
   cursor: pointer;
 }
 
