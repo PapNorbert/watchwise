@@ -19,8 +19,6 @@ export default function MapMarker({ markerPosition, editEnabled, setLocation }) 
   useMapEvents({
     click(e) {
       if (editEnabled) {
-        console.log(e.latlng.lat,
-          e.latlng.lng)
           setLocation(
           [
             e.latlng.lat,

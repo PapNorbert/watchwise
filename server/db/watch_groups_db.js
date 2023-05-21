@@ -109,7 +109,6 @@ export async function findWatchGroups(page, limit, userLocLat, userLocLong,
     aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(doc, "comments")`;
-    console.log(aqlQuery)
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -200,6 +199,22 @@ export async function findWatchGroupsByUserJoined(userId, page, limit, userLocLa
     aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(vertex, "comments")`;
+    const cursor = await pool.query(aqlQuery, aqlParameters);
+    return await cursor.all();
+  } catch (err) {
+    console.log(err.message);
+    throw err.message;
+  }
+}
+
+export async function findWatchGroupNamesAndKeyByUserJoined(userId) {
+  try {
+    const aqlParameters = {
+      userId: userId
+    }
+    const aqlQuery = `FOR vertex IN OUTBOUND
+    @userId joined_group
+    RETURN {name: vertex.title, wg_id: vertex._id}`;
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {

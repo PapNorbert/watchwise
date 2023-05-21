@@ -6,7 +6,7 @@ import {
   getWatchGroupCount, findWatchGroupsByCreator, getWatchGroupCountByCreator,
   findWatchGroupsByUserJoined, getWatchGroupCountByUserJoined, findWatchGroupsWithJoinedInformation,
   findWatchGroupByKeyWithoutComments, findWatchGroupByKeyWithJoinedInformation,
-  handleJoinTransaction
+  handleJoinTransaction, findWatchGroupNamesAndKeyByUserJoined
 } from '../db/watch_groups_db.js'
 import {
   findJoinRequestByCreator, getJoinRequestCountByCreator, deleteJoinRequestEdge,
@@ -339,6 +339,25 @@ router.get('/join_requests', authorize(), async (request, response) => {
       }
     } else {
       response.status(400).json({ error: "bad_paging" })
+    }
+  } catch (err) {
+    console.log(err);
+    response.status(400).json({
+      error: "error"
+    });
+  }
+});
+
+router.get('/names', authorize(), async (request, response) => {
+  response.set('Content-Type', 'application/json');
+  response.status(200);
+  try {
+    let { userId } = request.query;
+    if ( userId ) {
+      const watch_group_names = await findWatchGroupNamesAndKeyByUserJoined(`users/${userId}`);
+      response.json(watch_group_names);
+    } else {
+      response.sendStatus(204);
     }
   } catch (err) {
     console.log(err);

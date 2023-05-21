@@ -8,7 +8,6 @@ export default function Map({ editEnabled = false, middlePosition, setLocation =
   return (
     <div className="map" id="map" >
       <MapContainer center={middlePosition} zoom={13} className='mb-3' >
-        {/* <ChangeMapCenter center={middlePosition} zoom={zoom} /> */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

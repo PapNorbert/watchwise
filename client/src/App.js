@@ -20,39 +20,45 @@ import OpinionThreadsPage from './pages/OpinionThreads/OpinionThreadsPage'
 import ModeratorRequestCreatePage from './pages/ModeratorRequestCreatePage'
 import RequireAuth from './components/RequireAuth'
 import { adminRoleCode } from './config/UserRoleCodes'
+import SocketContextProvider from './context/SocketContextProvider'
+import SideBar from './components/SideBar'
 
 function App() {
 
   return (
     <div className='App'>
       <AuthContextProvider>
+        <SocketContextProvider>
           <LanguageContextProvider>
             <Router>
               <Navigationbar />
               <LoginExpired />
-              <div className='container container-fluid'>
-                <Routes>
-                  <Route path='/' element={<Home />} />
-                  <Route path='/register' element={<Register />} />
-                  <Route path='/login' element={<Login />} />
-                  <Route path='/watch_groups/*' element={<WatchGroupsPage />} />
-                  <Route path='/opinion_threads/*' element={<OpinionThreadsPage />} />
-                  <Route path='/movies/*' element={<MoviesPage />} />
-                  <Route path='/series/*' element={<SeriesPage />} />
-                  <Route element={<RequireAuth allowedRoles={[adminRoleCode]} />}>
-                    <Route path='/users/*' element={<UsersPage />} />
-                  </Route>
-                  <Route element={<RequireAuth />}>
-                    <Route path='/moderator/requests' element={<ModeratorRequestCreatePage />} />
-                  </Route>
-                  <Route path='/unauthorized' element={<UnauthorizedPage />} />
-                  <Route path='/error-page' element={<ErrorPage />} />
-                  <Route path='*' element={<Navigate to="/error-page" />} />
+              <SideBar>
+                <div className='container container-fluid'>
+                  <Routes>
+                    <Route path='/' element={<Home />} />
+                    <Route path='/register' element={<Register />} />
+                    <Route path='/login' element={<Login />} />
+                    <Route path='/watch_groups/*' element={<WatchGroupsPage />} />
+                    <Route path='/opinion_threads/*' element={<OpinionThreadsPage />} />
+                    <Route path='/movies/*' element={<MoviesPage />} />
+                    <Route path='/series/*' element={<SeriesPage />} />
+                    <Route element={<RequireAuth allowedRoles={[adminRoleCode]} />}>
+                      <Route path='/users/*' element={<UsersPage />} />
+                    </Route>
+                    <Route element={<RequireAuth />}>
+                      <Route path='/moderator/requests' element={<ModeratorRequestCreatePage />} />
+                    </Route>
+                    <Route path='/unauthorized' element={<UnauthorizedPage />} />
+                    <Route path='/error-page' element={<ErrorPage />} />
+                    <Route path='*' element={<Navigate to="/error-page" />} />
 
-                </Routes>
-              </div>
+                  </Routes>
+                </div>
+              </SideBar>
             </Router>
           </LanguageContextProvider>
+        </SocketContextProvider>
       </AuthContextProvider>
     </div>
   );

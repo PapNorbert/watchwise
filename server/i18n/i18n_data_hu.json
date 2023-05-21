@@ -212,7 +212,7 @@
   "search_watch_date": "Keresés megtekintési dátum szerint",
   "search_max_distance": "Keresés helyszín maximális távolsága szerint (km)",
   "search_use_diff_loc": "Eltérő helyszín használata, mint az aktuális pozíció",
-  "search_location": "Keresés helyszín környékén az aktuális pozíció helyett",
+  "search_location": "Keresés más helyszínen az aktuális pozíció helyett, nagyobb pontosság érdekében adja meg a megyét is",
   "incorrect_distance": "A távolságnak legalább 1-nek kell lennie!",
   "sort_watch_date": "Rendezés megtekintési dátum alapján",
   "search_full": "Keresés csak nem teli csoportok után",
@@ -263,5 +263,8 @@
   "404_announcement": "Hirdetés nem található.",
   "created": "Létrehozva",
   "delete_announcement": "Hirdetés törlése",
-  "delete_confirm_announcement": "Biztosan törlöd a hirdetést?"
+  "delete_confirm_announcement": "Biztosan törlöd a hirdetést?",
+  "chats": "Beszélgetések",
+  "no_joined_chats": "Nincsenek csatlakozott csoport beszélgetések",
+  "your_chats": "A beszélgetéseid a csatlakozott megtekintési csoportoktól"
 }

@@ -189,7 +189,7 @@ svg {
   background-color: rgba(0, 0, 0, 0.03);
 }
 
-.search-sort-title, .announcement-create-header {
+.search-sort-title, .announcement-create-header, .clickable {
   cursor: pointer;
 }
 

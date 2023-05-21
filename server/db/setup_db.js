@@ -33,11 +33,17 @@ export async function createCollections() {
   if (! await pool.collection('announcements').exists()) {
     await pool.collection('announcements').create();
   }
+  if (! await pool.collection('watch_group_chats').exists()) {
+    await pool.collection('watch_group_chats').create();
+  }
 }
 
 export async function createEdgeCollections() {
   if (! await pool.collection('joined_group').exists()) {
     await pool.createEdgeCollection('joined_group');
+  }
+  if (! await pool.collection('his_group_chat').exists()) {
+    await pool.createEdgeCollection('his_group_chat');
   }
   if (! await pool.collection('join_request').exists()) {
     await pool.createEdgeCollection('join_request');

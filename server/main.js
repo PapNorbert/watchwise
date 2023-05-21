@@ -4,6 +4,8 @@ import bodyParser from 'body-parser'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
+import { Server } from 'socket.io'
+import http from 'http'
 
 import allowedOrigin from './config/allowedOrigin.js'
 import { createCollections, createEdgeCollections, insertAdminUser, insertModeratorEmploymentFile } from './db/setup_db.js'
@@ -25,6 +27,8 @@ import announcementsRequestsRoute from './api/announcements.js'
 
 
 const app = express();
+
+const server = http.createServer(app);
 
 // loggolas
 app.use(morgan('tiny'));
@@ -62,12 +66,40 @@ app.use('/api/announcements', announcementsRequestsRoute);
 // read .env file
 dotenv.config()
 
+
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigin,
+    methods: ["GET", "POST"],
+  },
+});
+
+io.on("connection", (socket) => {
+
+  socket.on("join_room", (roomKey) => {
+    socket.join(roomKey);
+    console.log(`User with id ${socket.id} joined room ${roomKey}`);
+  });
+
+  socket.on("send_message", (messageData) => {
+    console.log('User with id', socket.id, 'sent message')
+    socket.emit('test', 'Test h')
+    socket.to(messageData.roomKey).emit("receive_message", messageData);
+  });
+
+  socket.on("disconnect", () => {
+    socket.disconnect();
+    console.log(`User with id ${socket.id} disconnected`);
+  });
+
+});
+
 createCollections()
   .then(createEdgeCollections)
   .then(insertAdminUser)
   .then(insertModeratorEmploymentFile)
   .then(() => {
-    app.listen(3000, () => { console.log('Server listening on http://localhost:3000/ ...'); });
+    server.listen(3000, () => { console.log('Server listening on http://localhost:3000/ ...'); });
     if (!readLanguageDataFiles("eng")) {
       console.log('Error reading i18n data files');
     }

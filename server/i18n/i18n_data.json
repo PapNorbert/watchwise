@@ -211,7 +211,7 @@
   "search_watch_date": "Search by watch date",
   "search_max_distance": "Search by maximum distance of location (km)",
   "search_use_diff_loc": "Use different location then current position",
-  "search_location": "Search around location instead of current position",
+  "search_location": "Search around location instead of current position, for greater accuracy, enter the county as well",
   "incorrect_distance": "Distance must be a number greater than 1!",
   "sort_watch_date": "Sort by watch date",
   "search_full": "Search for only not full groups",
@@ -262,5 +262,8 @@
   "404_announcement": "Announcement not found.",
   "created": "Created",
   "delete_announcement": "Delete announcement",
-  "delete_confirm_announcement": "Are you sure you want to delete this announcement?"
+  "delete_confirm_announcement": "Are you sure you want to delete this announcement?",
+  "chats": "Chats",
+  "no_joined_chats": "There are no joined group chats",
+  "your_chats": "Your chats for joined watch groups"
 }

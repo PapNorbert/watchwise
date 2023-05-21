@@ -1,18 +1,21 @@
 import createPool from 'arangojs'
 
-import dbRootPasswd from '../config/dbSecret.js'
+import { 
+  dbPasswd, dbUsername, dbName, poolUrl, poolMax, 
+  poolMin, poolIdleTimeoutMillis, poolConnectionTimeoutMillis
+} from '../config/dbSecret.js'
 
 let pool;
 
 try {
    pool = await createPool({
-    url: 'http://localhost:8529',
-    databaseName: 'watchwise',
-    auth: { username: 'root', password: dbRootPasswd },
-    max: 5, 
-    min: 1, 
-    idleTimeoutMillis: 86400000, 
-    connectionTimeoutMillis: 360000, 
+    url: poolUrl,
+    databaseName: dbName,
+    auth: { username: dbUsername, password: dbPasswd },
+    max: poolMax, 
+    min: poolMin, 
+    idleTimeoutMillis: poolIdleTimeoutMillis, 
+    connectionTimeoutMillis: poolConnectionTimeoutMillis, 
   });
 } catch(err) {
   console.log(err);
