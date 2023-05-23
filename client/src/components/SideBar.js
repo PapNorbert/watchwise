@@ -6,6 +6,7 @@ import BarLeftIcon from './icons/BarLeftIcon'
 import useAuth from '../hooks/useAuth'
 import useLanguage from '../hooks/useLanguage'
 import useGetAxios from '../hooks/useGetAxios'
+import useSocket from '../hooks/useSocket'
 import { convertKeyToSelectedLanguage } from '../i18n/conversion'
 
 
@@ -13,12 +14,33 @@ export default function SideBar({ children }) {
   const { auth } = useAuth();
   const { i18nData } = useLanguage();
   const [collapsed, setCollapsed] = useState(true);
+  const { socket, selectedGroupChat, setSelectedGroupChat, setDisplayChatWindow } = useSocket();
   const { data: watch_group_names, refetch } =
     useGetAxios(`/api/watch_groups/names?userId=${auth.userID}`);
 
   function handleSideBarOpened() {
-    setCollapsed(false);
-    refetch();
+    if (collapsed) {
+      setCollapsed(false);
+      refetch();
+    }
+  }
+
+  function handleWatchGroupChatClicked(watchGroupShort) {
+    if (auth.logged_in) {
+      if (selectedGroupChat === null) {
+        setSelectedGroupChat(watchGroupShort)
+        socket.emit('join_room', watchGroupShort.wg_id);
+        setDisplayChatWindow(true);
+      } else {
+        // not null
+        if (selectedGroupChat.wg_id !== watchGroupShort.wg_id) {
+          socket.emit('leave_room', selectedGroupChat.wg_id);
+          setSelectedGroupChat(watchGroupShort)
+          socket.emit('join_room', watchGroupShort.wg_id);
+          setDisplayChatWindow(true);
+        }
+      }
+    }
   }
 
   return (
@@ -27,10 +49,12 @@ export default function SideBar({ children }) {
         <div style={{ display: 'flex', height: '100%', minHeight: '400px' }}>
           <Sidebar width='15%' collapsed={collapsed}
             collapsedWidth='3%' backgroundColor='rgba(0, 0, 0, 0.03)'
+            className={collapsed ? 'clickable' : ''}
+            onClick={handleSideBarOpened}
           >
             {
               collapsed ?
-                <span className='d-flex justify-content-center clickable' onClick={handleSideBarOpened}>
+                <span className='d-flex justify-content-center'>
                   <BarRightIcon />
                 </span>
                 :
@@ -46,11 +70,12 @@ export default function SideBar({ children }) {
                   </span>
                   {watch_group_names &&
                     (watch_group_names.length > 0 ?
-                      watch_group_names.map((wg_name, index) => {
-                        // {name: vertex.title, wg_id: vertex._id}
+                      watch_group_names.map((watchGroupShort, index) => {
                         return (
-                          <MenuItem key={`menu_item_${index}`} className={index === 0 ? 'mt-3' : ''}>
-                            {wg_name.name}
+                          <MenuItem key={`menu_item_${index}`} className={index === 0 ? 'mt-3' : ''}
+                            onClick={() => handleWatchGroupChatClicked(watchGroupShort)}
+                          >
+                            {watchGroupShort.name}
                           </MenuItem>
                         )
                       })

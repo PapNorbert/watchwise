@@ -14,7 +14,6 @@ import { postRequest } from '../axiosRequests/PostAxios'
 import { useSearchParamsState } from '../hooks/useSearchParamsState'
 import { querryParamNames, querryParamDefaultValues, limitValues } from '../config/querryParams'
 import { adminRoleCode } from '../config/UserRoleCodes';
-import ChatContainer from '../components/ChatContainer';
 
 
 export default function Home() {
@@ -126,10 +125,6 @@ export default function Home() {
       <h1>
         {convertKeyToSelectedLanguage('home', i18nData)}
       </h1>
-      {
-        auth.logged_in &&
-        <ChatContainer />
-      }
       <h2 className='announcements'>
         {convertKeyToSelectedLanguage('announcements', i18nData)}
       </h2>

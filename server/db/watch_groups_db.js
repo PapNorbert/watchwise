@@ -207,16 +207,26 @@ export async function findWatchGroupsByUserJoined(userId, page, limit, userLocLa
   }
 }
 
-export async function findWatchGroupNamesAndKeyByUserJoined(userId) {
+export async function findWatchGroupNamesAndKeyByUserJoinedOrCreator(userId) {
   try {
     const aqlParameters = {
       userId: userId
     }
-    const aqlQuery = `FOR vertex IN OUTBOUND
-    @userId joined_group
-    RETURN {name: vertex.title, wg_id: vertex._id}`;
+    const aqlQuery = `LET creatorGroups = (
+    FOR user In users
+    FILTER user._id == @userId
+    FOR doc IN watch_groups
+        FILTER doc.creator == user.username
+        RETURN {name: doc.title, wg_id: doc._id}
+    )
+    LET joinedGroups = (
+      FOR vertex IN OUTBOUND
+          @userId joined_group
+          RETURN {name: vertex.title, wg_id: vertex._id}
+      )
+    RETURN APPEND(creatorGroups, joinedGroups)`;
     const cursor = await pool.query(aqlQuery, aqlParameters);
-    return await cursor.all();
+    return (await cursor.all())[0];
   } catch (err) {
     console.log(err.message);
     throw err.message;

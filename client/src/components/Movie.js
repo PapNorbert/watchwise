@@ -33,7 +33,7 @@ export default function Movie({ movie }) {
                     return (
                       <Row key={`${movie._key}_${index}_${indexNr}`} className='justify-content-md-center mb-1'>
                         <Col xs lg={4} className='object-label' key={`${movie._key}_label${index}_${indexNr}`} >
-                          {indexNr === 0 && convertKeyToSelectedLanguage(key, i18nData).concat(':')}
+                          {indexNr === 0 && `${convertKeyToSelectedLanguage(key, i18nData)}:`}
                         </Col>
                         <Col xs lg={7} key={`${movie._key}_value${index}_${indexNr}`} >
                           {value}

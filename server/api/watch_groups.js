@@ -6,7 +6,7 @@ import {
   getWatchGroupCount, findWatchGroupsByCreator, getWatchGroupCountByCreator,
   findWatchGroupsByUserJoined, getWatchGroupCountByUserJoined, findWatchGroupsWithJoinedInformation,
   findWatchGroupByKeyWithoutComments, findWatchGroupByKeyWithJoinedInformation,
-  handleJoinTransaction, findWatchGroupNamesAndKeyByUserJoined
+  handleJoinTransaction, findWatchGroupNamesAndKeyByUserJoinedOrCreator
 } from '../db/watch_groups_db.js'
 import {
   findJoinRequestByCreator, getJoinRequestCountByCreator, deleteJoinRequestEdge,
@@ -354,7 +354,7 @@ router.get('/names', authorize(), async (request, response) => {
   try {
     let { userId } = request.query;
     if ( userId ) {
-      const watch_group_names = await findWatchGroupNamesAndKeyByUserJoined(`users/${userId}`);
+      const watch_group_names = await findWatchGroupNamesAndKeyByUserJoinedOrCreator(`users/${userId}`);
       response.json(watch_group_names);
     } else {
       response.sendStatus(204);

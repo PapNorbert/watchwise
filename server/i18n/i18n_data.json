@@ -265,5 +265,7 @@
   "delete_confirm_announcement": "Are you sure you want to delete this announcement?",
   "chats": "Chats",
   "no_joined_chats": "There are no joined group chats",
-  "your_chats": "Your chats for joined watch groups"
+  "your_chats": "Your chats for joined or created watch groups",
+  "no_messages": "No messages in the group chat so far",
+  "select_chat": "Select a group chat to see the messages"
 }

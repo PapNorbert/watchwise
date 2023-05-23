@@ -266,5 +266,7 @@
   "delete_confirm_announcement": "Biztosan törlöd a hirdetést?",
   "chats": "Beszélgetések",
   "no_joined_chats": "Nincsenek csatlakozott csoport beszélgetések",
-  "your_chats": "A beszélgetéseid a csatlakozott megtekintési csoportoktól"
+  "your_chats": "A beszélgetéseid a csatlakozott vagy saját megtekintési csoportoktól",
+  "no_messages": "Eddig nem érkezett üzenet a csoportos beszélgetésben",
+  "select_chat": "Az üzenetek megtekintéséhez válasszon egy csoport beszélgetést"
 }

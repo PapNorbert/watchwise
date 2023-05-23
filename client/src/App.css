@@ -209,3 +209,38 @@ svg {
   text-decoration: underline;
   margin-left: 8%;
 }
+
+/* chat box css */
+.chatbox {
+  right: 3.7% !important;
+}
+
+.textAreaBox {
+  flex-basis: 100% !important;
+  background: white !important;
+}
+
+.inputArea {
+  gap: 0px !important;
+}
+
+.textAreaBox textarea {
+  padding: 5px !important;
+  height: 60px !important;
+  border:  1px solid #47494e76 !important;
+  border-radius: 10px !important;
+}
+
+.buttonsBox {
+  padding: 15px 0px 0px 0px !important;
+}
+
+.inputfield {
+  padding-left: 2px !important;
+  height: 75px !important;
+}
+
+.inputfield .inputArea .buttonsBox div img {
+  height: 22px !important;
+  opacity: .8 !important;
+}

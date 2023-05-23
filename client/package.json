@@ -15,6 +15,7 @@
     "react": "^18.2.0",
     "react-bootstrap": "^2.7.2",
     "react-dom": "^18.2.0",
+    "react-group-chatup": "https://github.com/PapNorbert/react-group-chatup-edited/tarball/my-edits",
     "react-leaflet": "^4.2.1",
     "react-pro-sidebar": "^1.1.0-alpha.1",
     "react-router-dom": "^6.9.0",

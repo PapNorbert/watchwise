@@ -6,9 +6,11 @@ import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
 import { Server } from 'socket.io'
 import http from 'http'
+import { v4 as uuidv4 } from 'uuid'
 
 import allowedOrigin from './config/allowedOrigin.js'
 import { createCollections, createEdgeCollections, insertAdminUser, insertModeratorEmploymentFile } from './db/setup_db.js'
+import { insertWatchGroupChatComment, findWatchGroupChatByWGKey } from './db/watch_groups_chats.js'
 import { readLanguageDataFiles } from './i18n/i18n_files.js'
 import { credentialsAllow } from './middlewares/credentialsAllow.js'
 import { addJwtCookie } from './middlewares/auth.js'
@@ -70,26 +72,39 @@ dotenv.config()
 const io = new Server(server, {
   cors: {
     origin: allowedOrigin,
-    methods: ["GET", "POST"],
+    methods: ['GET', 'POST'],
   },
 });
 
-io.on("connection", (socket) => {
+io.on('connection', (socket) => {
 
-  socket.on("join_room", (roomKey) => {
+  socket.on('join_room', (roomKey) => {
+    // console.log(`User with id ${socket.id} joined room ${roomKey}`);
     socket.join(roomKey);
-    console.log(`User with id ${socket.id} joined room ${roomKey}`);
+    findWatchGroupChatByWGKey(roomKey)
+      .then((watchGroupChats) => {
+        socket.emit('message_history', watchGroupChats);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   });
 
-  socket.on("send_message", (messageData) => {
-    console.log('User with id', socket.id, 'sent message')
-    socket.emit('test', 'Test h')
-    socket.to(messageData.roomKey).emit("receive_message", messageData);
+  socket.on('send_message', (messageData) => {
+    // console.log('User with id', socket.id, 'sent message to room', messageData.watch_group_id)
+    messageData.key = uuidv4();
+    insertWatchGroupChatComment(messageData.watch_group_id, messageData)
+      .then(() => {
+        socket.to(messageData.watch_group_id).emit('receive_message', messageData);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   });
 
-  socket.on("disconnect", () => {
-    socket.disconnect();
-    console.log(`User with id ${socket.id} disconnected`);
+  socket.on('leave_room', (roomKey) => {
+    socket.leave(roomKey);
+    // console.log(`User with id ${socket.id} left room ${roomKey}`);
   });
 
 });
@@ -100,7 +115,7 @@ createCollections()
   .then(insertModeratorEmploymentFile)
   .then(() => {
     server.listen(3000, () => { console.log('Server listening on http://localhost:3000/ ...'); });
-    if (!readLanguageDataFiles("eng")) {
+    if (!readLanguageDataFiles('eng')) {
       console.log('Error reading i18n data files');
     }
   })

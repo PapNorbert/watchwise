@@ -11,7 +11,6 @@ import Navigationbar from './layouts/Navbar'
 import LanguageContextProvider from './context/LanguageContextProvider'
 import Register from './pages/Register'
 import Login from './pages/Login'
-import AuthContextProvider from './context/AuthContextProvider'
 import LoginExpired from './layouts/LoginExpired'
 import MoviesPage from './pages/Movies/MoviesPage'
 import SeriesPage from './pages/Series/SeriesPage'
@@ -22,44 +21,48 @@ import RequireAuth from './components/RequireAuth'
 import { adminRoleCode } from './config/UserRoleCodes'
 import SocketContextProvider from './context/SocketContextProvider'
 import SideBar from './components/SideBar'
+import useAuth from './hooks/useAuth'
+import ChatBoxComponent from './components/ChatBoxComponent'
 
 function App() {
+  const { auth } = useAuth();
 
   return (
     <div className='App'>
-      <AuthContextProvider>
-        <SocketContextProvider>
-          <LanguageContextProvider>
-            <Router>
-              <Navigationbar />
-              <LoginExpired />
-              <SideBar>
-                <div className='container container-fluid'>
-                  <Routes>
-                    <Route path='/' element={<Home />} />
-                    <Route path='/register' element={<Register />} />
-                    <Route path='/login' element={<Login />} />
-                    <Route path='/watch_groups/*' element={<WatchGroupsPage />} />
-                    <Route path='/opinion_threads/*' element={<OpinionThreadsPage />} />
-                    <Route path='/movies/*' element={<MoviesPage />} />
-                    <Route path='/series/*' element={<SeriesPage />} />
-                    <Route element={<RequireAuth allowedRoles={[adminRoleCode]} />}>
-                      <Route path='/users/*' element={<UsersPage />} />
-                    </Route>
-                    <Route element={<RequireAuth />}>
-                      <Route path='/moderator/requests' element={<ModeratorRequestCreatePage />} />
-                    </Route>
-                    <Route path='/unauthorized' element={<UnauthorizedPage />} />
-                    <Route path='/error-page' element={<ErrorPage />} />
-                    <Route path='*' element={<Navigate to="/error-page" />} />
+      <SocketContextProvider>
+        <LanguageContextProvider>
+          <Router>
+            <Navigationbar />
+            <LoginExpired />
+            <SideBar>
+              <div className='container container-fluid'>
+                <Routes>
+                  <Route path='/' element={<Home />} />
+                  <Route path='/register' element={<Register />} />
+                  <Route path='/login' element={<Login />} />
+                  <Route path='/watch_groups/*' element={<WatchGroupsPage />} />
+                  <Route path='/opinion_threads/*' element={<OpinionThreadsPage />} />
+                  <Route path='/movies/*' element={<MoviesPage />} />
+                  <Route path='/series/*' element={<SeriesPage />} />
+                  <Route element={<RequireAuth allowedRoles={[adminRoleCode]} />}>
+                    <Route path='/users/*' element={<UsersPage />} />
+                  </Route>
+                  <Route element={<RequireAuth />}>
+                    <Route path='/moderator/requests' element={<ModeratorRequestCreatePage />} />
+                  </Route>
+                  <Route path='/unauthorized' element={<UnauthorizedPage />} />
+                  <Route path='/error-page' element={<ErrorPage />} />
+                  <Route path='*' element={<Navigate to="/error-page" />} />
 
-                  </Routes>
-                </div>
-              </SideBar>
-            </Router>
-          </LanguageContextProvider>
-        </SocketContextProvider>
-      </AuthContextProvider>
+                </Routes>
+              </div>
+              {auth.logged_in &&
+                <ChatBoxComponent />
+              }
+            </SideBar>
+          </Router>
+        </LanguageContextProvider>
+      </SocketContextProvider>
     </div>
   );
 }
