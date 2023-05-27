@@ -125,7 +125,16 @@ export default function Home() {
       <h1>
         {convertKeyToSelectedLanguage('home', i18nData)}
       </h1>
-      <h2 className='announcements'>
+      <Container className='home-text' >
+        {convertKeyToSelectedLanguage('home_intro', i18nData)}
+      </Container>
+      <Container className='home-text' >
+        {convertKeyToSelectedLanguage('home_intro2', i18nData)}
+      </Container>
+      <Container className='home-text' >
+        {convertKeyToSelectedLanguage('home_rules', i18nData)}
+      </Container>
+      <h2 className='announcements mt-4'>
         {convertKeyToSelectedLanguage('announcements', i18nData)}
       </h2>
       {announcements &&

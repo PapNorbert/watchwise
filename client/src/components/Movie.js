@@ -26,7 +26,7 @@ export default function Movie({ movie }) {
               if (key === '_key' || key === 'title' || key === 'img_name') {
                 return null;
               }
-              if (key === 'release_date') {
+              if (key === 'release_date' || key === 'distributed_by') {
                 return (
                   movie[key].map((value, indexNr) => {
                     // value is an array
@@ -43,7 +43,7 @@ export default function Movie({ movie }) {
                   })
                 );
               }
-            
+
               if (key === 'genres') {
                 return (
                   <Row key={`${movie._key}_genres`} className='justify-content-md-center'>

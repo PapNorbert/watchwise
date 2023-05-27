@@ -207,7 +207,8 @@ svg {
 
 .announcements {
   text-decoration: underline;
-  margin-left: 8%;
+  text-align: center;
+  /* margin-left: 8%; */
 }
 
 /* chat box css */
@@ -243,4 +244,16 @@ svg {
 .inputfield .inputArea .buttonsBox div img {
   height: 22px !important;
   opacity: .8 !important;
+}
+
+.css-1xfiv92 {
+  min-height: 100vh !important;
+}
+
+.home-text {
+  text-align: center;
+  font-size: larger;
+  margin-bottom: 1em;
+  padding-left: 10em;
+  padding-right: 10em;
 }

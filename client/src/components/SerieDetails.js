@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Row, Col, Stack, Container } from 'react-bootstrap'
 
 import useLanguage from '../hooks/useLanguage'
@@ -7,6 +8,7 @@ import { convertKeyToSelectedLanguage } from '../i18n/conversion'
 
 export default function SerieDetails({ serie, genres }) {
   const { i18nData } = useLanguage();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -30,6 +32,19 @@ export default function SerieDetails({ serie, genres }) {
           <iframe src={serie.trailer_link} title="YouTube video player"
             allowFullScreen></iframe>
         </Row>
+      </Container>
+
+      <Container className='mb-3' >
+        <span className='btn-link p-0 link-dark clickable h4' key={`${serie._key}_watch_groups`}
+          onClick={() => navigate(`/watch_groups?show=${serie.name}`)}>
+          {convertKeyToSelectedLanguage('wg_with_serie', i18nData)}
+        </span>
+      </Container>
+      <Container className='mb-3 mt-3 ' >
+        <span className='btn-link p-0 link-dark clickable h4' key={`${serie._key}_opinion_threads`}
+          onClick={() => navigate(`/opinion_threads?show=${serie.name}`)}>
+          {convertKeyToSelectedLanguage('ot_with_serie', i18nData)}
+        </span>
       </Container>
 
       {genres &&

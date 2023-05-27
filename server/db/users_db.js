@@ -63,6 +63,7 @@ export async function findUsers(page, limit, name, moderatorsOnly, banType) {
       last_name: doc.last_name, 
       username: doc.username, 
       create_date: doc.create_date,
+      role: doc.role,
       about_me: doc.about_me,
       banned: doc.banned
     }`;

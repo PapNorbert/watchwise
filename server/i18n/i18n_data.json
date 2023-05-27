@@ -81,7 +81,7 @@
   "no_own_groups": "There are no groups created yet with selected options",
   "series": "TV Series",
   "movies": "Movies",
-  "imdb_link": "IMDB page",
+  "imdb_link": "IMDb page",
   "storyline": "Storyline",
   "follow": "Follow",
   "no_own_threads": "There are no threads created yet with selected options",
@@ -267,5 +267,18 @@
   "no_joined_chats": "There are no joined group chats",
   "your_chats": "Your chats for joined or created watch groups",
   "no_messages": "No messages in the group chat so far",
-  "select_chat": "Select a group chat to see the messages"
+  "select_chat": "Select a group chat to see the messages",
+  "role": "Role",
+  "adminType":"Admin",
+  "moderatorType":"Moderator",
+  "userType":"User",
+  "revoke_mod": "Revoke privileges",
+  "unsupported_update": "Unsupported update",
+  "wg_with_serie": "Watch Groups with this serie",
+  "ot_with_serie": "Opinion Threads with this serie",
+  "wg_with_movie": "Watch Groups with this movie",
+  "ot_with_movie": "Opinion Threads with this movie",
+  "home_intro" :"WatchWise was created to offer you a place, where you can share your passion about movies and series with others!",
+  "home_intro2" :"Create or joins other's Watch Groups to enjoy a show together with others, have a chat after it and make some new friends along the way. If you are looking only for a platform to see other's reaction and opinion about a show or character in it the Opinion Threads are made for you. In case you haven't decided yet on what to watch next you can search our list of movies and series to see if anything catches your attention.",
+  "home_rules": "We ask you to be polite to others, use appropriate language and follow the rules of general netiquette! Do not offend others, be open, accept the opinions of others, instead of fighting with them about their view try to understand where they come from!"
 }

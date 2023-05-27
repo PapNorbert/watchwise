@@ -1,13 +1,13 @@
 import express from 'express';
 
 import {
-  findUsers, getUsersCount,
+  findUsers, getUsersCount, updateUser,
   handleUserBanTransaction
 } from '../db/users_db.js'
 import { createResponseDto, createResponseDtos } from '../dto/outgoing_dto.js'
 import { createPaginationInfo } from '../util/paginationInfo.js'
 import { authorize } from '../middlewares/auth.js'
-import { adminRoleCode } from '../config/UserRoleCodes.js'
+import { adminRoleCode, moderatorRoleCode, userRoleCode } from '../config/UserRoleCodes.js'
 
 
 const router = express.Router();
@@ -108,33 +108,41 @@ router.post('/:user_id/ban', authorize([adminRoleCode]), async (request, respons
 
 // });
 
-// router.put('/:id', authorize([adminRoleCode]), async (request, response) => {
-//   response.set('Content-Type', 'application/json');
-//   response.status(204);
-//   if (parseInt(request.params.id) == request.params.id
-//     && parseInt(request.params.id) > 0) { // correct parameter
-//     const id = request.params.id;
-//     try {
-//       const newUserAttributes = request.body;
-//       const succesfull = await updateUser(id, newUserAttributes);
-//       if (!succesfull) {
-//         response.status(404);
-//       }
-//       response.end();
 
-//     } catch (err) {
-//       console.log(err);
-//       response.status(400);
-//       response.json({
-//         error: 'error'
-//       });
-//     }
-//   } else { // incorrect parameter
-//     response.status(400);
-//     response.json({ error: 'bad_req_par_number' });
-//   }
+router.put('/:id', authorize([adminRoleCode]), async (request, response) => {
+  response.set('Content-Type', 'application/json');
+  response.status(204);
+  if (parseInt(request.params.id) == request.params.id
+    && parseInt(request.params.id) > 0) { // correct parameter
+    const id = request.params.id;
+    try {
+      const newUserAttributes = request.body;
+      console.log(newUserAttributes)
+      if (newUserAttributes.role && newUserAttributes.role === userRoleCode) {
+        // revoking priviliges, setting role to user
+        const succesfull = await updateUser(id, { role: userRoleCode });
+        if (!succesfull) {
+          response.status(404);
+        }
+        response.end();
+      } else {
+        response.status(400).json({
+          error: 'unsupported_update'
+        });
+      }
 
-// });
+    } catch (err) {
+      console.log(err);
+      response.status(400).json({
+        error: 'error'
+      });
+    }
+  } else { // incorrect parameter
+    response.status(400);
+    response.json({ error: 'bad_req_par_number' });
+  }
+
+});
 
 // router.delete('/:id', authorize([adminRoleCode]), async (request, response) => {
 //   response.set('Content-Type', 'application/json');

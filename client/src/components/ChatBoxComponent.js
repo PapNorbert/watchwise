@@ -14,7 +14,7 @@ export default function ChatBoxComponent() {
   const { socket, selectedGroupChat, displayChatWindow, setDisplayChatWindow } = useSocket();
 
   async function handleMessageSend(newMessage) {
-    if (newMessage !== '') {
+    if (newMessage !== '' && selectedGroupChat !== null) {
       const messageData = {
         watch_group_id: selectedGroupChat.wg_id,
         auther_name: auth.username,

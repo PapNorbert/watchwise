@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Row, Col, Stack, Container } from 'react-bootstrap'
 
 import useLanguage from '../hooks/useLanguage'
@@ -7,6 +8,7 @@ import { convertKeyToSelectedLanguage } from '../i18n/conversion'
 
 export default function MovieDetails({ movie, genres }) {
   const { i18nData } = useLanguage();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -32,7 +34,20 @@ export default function MovieDetails({ movie, genres }) {
         </Row>
       </Container>
 
-      { genres &&
+      <Container className='mb-3' >
+        <span className='btn-link p-0 link-dark clickable h4' key={`${movie._key}_watch_groups`}
+          onClick={() => navigate(`/watch_groups?show=${movie.name}`)}>
+          {convertKeyToSelectedLanguage('wg_with_movie', i18nData)}
+        </span>
+      </Container>
+      <Container className='mb-3 mt-3 ' >
+        <span className='btn-link p-0 link-dark clickable h4' key={`${movie._key}_opinion_threads`}
+          onClick={() => navigate(`/opinion_threads?show=${movie.name}`)}>
+          {convertKeyToSelectedLanguage('ot_with_movie', i18nData)}
+        </span>
+      </Container>
+
+      {genres &&
         genres.map((value, indexNr) => {
           return (
             <Container key={`container_${movie._key}_genre_${indexNr}`} >
