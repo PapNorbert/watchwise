@@ -68,6 +68,24 @@ export async function deleteJoinRequestEdgeByKey(key) {
   }
 }
 
+export async function deleteJoinRequestEdgeByTo(to) {
+  try {
+    const aqlQuery = `FOR edge IN join_request
+    FILTER edge._to == @to
+    REMOVE { _key: edge._key } IN join_request`;
+    const cursor = await pool.query(aqlQuery, { to: to });
+    return true;
+  } catch (err) {
+    if (err.message == "AQL: document not found (while executing)") {
+      console.log(`Warning for joinRequestEdge document with _key ${key} during delete request: `, err.message);
+      return false;
+    } else {
+      throw err.message;
+    }
+
+  }
+}
+
 export async function handleJoinReqAcceptTransaction(joinReqKey) {
   try {
     const transaction = await pool.beginTransaction({

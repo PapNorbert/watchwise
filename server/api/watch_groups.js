@@ -2,7 +2,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios'
 import {
-  insertWatchGroup, findWatchGroupByKey, findWatchGroups, updateWatchGroup, deleteWatchGroup,
+  insertWatchGroup, findWatchGroupByKey, findWatchGroups, updateWatchGroup, deleteWatchGroupAndChats,
   getWatchGroupCount, findWatchGroupsByCreator, getWatchGroupCountByCreator,
   findWatchGroupsByUserJoined, getWatchGroupCountByUserJoined, findWatchGroupsWithJoinedInformation,
   findWatchGroupByKeyWithoutComments, findWatchGroupByKeyWithJoinedInformation,
@@ -10,9 +10,9 @@ import {
 } from '../db/watch_groups_db.js'
 import {
   findJoinRequestByCreator, getJoinRequestCountByCreator, deleteJoinRequestEdge,
-  deleteJoinRequestEdgeByKey, handleJoinReqAcceptTransaction
+  deleteJoinRequestEdgeByKey, handleJoinReqAcceptTransaction, deleteJoinRequestEdgeByTo
 } from '../db/join_requests_db.js'
-import { getJoinedUsersByGroupKey } from '../db/joined_group_db.js'
+import { getJoinedUsersByGroupKey, deleteJoinedGroupEdgeByTo } from '../db/joined_group_db.js'
 import { getMovieKeyByName } from '../db/movies_db.js'
 import { getSerieKeyByName } from '../db/series_db.js'
 import {
@@ -28,6 +28,7 @@ import { locationsToCoordCache } from '../util/locationsCache.js'
 import { authorize } from '../middlewares/auth.js'
 import { maxDistanceDefaultValue } from '../config/maxDistanceDefault.js'
 import { adminRoleCode, moderatorRoleCode } from '../config/userRoleCodes.js';
+import { insertHisGroupChatEdge, insertWatchGroupChat } from '../db/watch_groups_chats.js';
 
 const router = express.Router();
 
@@ -353,7 +354,7 @@ router.get('/names', authorize(), async (request, response) => {
   response.status(200);
   try {
     let { userId } = request.query;
-    if ( userId ) {
+    if (userId) {
       const watch_group_names = await findWatchGroupNamesAndKeyByUserJoinedOrCreator(`users/${userId}`);
       response.json(watch_group_names);
     } else {
@@ -468,16 +469,20 @@ router.post('', authorize(), async (request, response) => {
       if (movieKey) {
         watchGroupJson['show_id'] = movieKey;
         watchGroupJson['show_type'] = 'movie';
-        const id = await insertWatchGroup(watchGroupJson);
-        response.status(201).json({ id: id });
+        const wgId = await insertWatchGroup(watchGroupJson);
+        const wgChatId = await insertWatchGroupChat({ "chat_comments": [] });
+        const hisGroupChatEdge = await insertHisGroupChatEdge(`watch_groups/${wgId}`, `watch_group_chats/${wgChatId}`);
+        response.status(201).json({ id: wgId });
       } else {
         // movie not found, check series
         const seriesKey = await getSerieKeyByName(watchGroupJson.show);
         if (seriesKey) {
           watchGroupJson['show_id'] = seriesKey;
           watchGroupJson['show_type'] = 'serie';
-          const id = await insertWatchGroup(watchGroupJson);
-          response.status(201).json({ id: id });
+          const wgId = await insertWatchGroup(watchGroupJson);
+          const wgChatId = await insertWatchGroupChat({ "chat_comments": [] });
+          const hisGroupChatEdge = await insertHisGroupChatEdge(`watch_groups/${wgId}`, `watch_group_chats/${wgChatId}`);
+          response.status(201).json({ id: wgId });
         } else {
           // show not found
           response.status(400).json({
@@ -729,10 +734,12 @@ router.delete('/:id', authorize(), async (request, response) => {
         response.sendStatus(403);
         return
       }
-      const succesfull = await deleteWatchGroup(id);
+      const succesfull = await deleteWatchGroupAndChats(id);
       if (!succesfull) {
         response.status(404);
       }
+      await deleteJoinRequestEdgeByTo(`watch_groups/${id}`)
+      await deleteJoinedGroupEdgeByTo(`watch_groups/${id}`)
       response.end();
 
     } catch (err) {

@@ -16,3 +16,21 @@ export async function getJoinedUsersByGroupKey(watchGroupKey) {
     throw err;
   }
 }
+
+export async function deleteJoinedGroupEdgeByTo(to) {
+  try {
+    const aqlQuery = `FOR edge IN joined_group
+    FILTER edge._to == @to
+    REMOVE { _key: edge._key } IN joined_group`;
+    const cursor = await pool.query(aqlQuery, { to: to });
+    return true;
+  } catch (err) {
+    if (err.message == "AQL: document not found (while executing)") {
+      console.log(`Warning for joinedGroupEdge document with _key ${key} during delete request: `, err.message);
+      return false;
+    } else {
+      throw err.message;
+    }
+
+  }
+}

@@ -1,6 +1,7 @@
 import pool from './connection_db.js'
 
 const watchGroupChatCollection = pool.collection("watch_group_chats");
+//const hisGroupChatEdgeCollection = pool.collection("his_group_chat");
 
 
 export async function findWatchGroupChatByWGKey(wgId) {
@@ -17,6 +18,31 @@ export async function findWatchGroupChatByWGKey(wgId) {
         RETURN comment`;
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
+  } catch (err) {
+    throw err.message;
+  }
+}
+
+export async function insertWatchGroupChat(watchGroupChatDocument) {
+  try {
+    const cursor = await watchGroupChatCollection.save(watchGroupChatDocument);
+    return cursor._key;
+  } catch (err) {
+    console.log(err.message);
+    throw err.message;
+  }
+}
+
+
+export async function insertHisGroupChatEdge(wgId, whChatId) {
+  try {
+    const aqlQuery = `INSERT { 
+      _from: @from, _to: @to 
+    } INTO his_group_chat
+    RETURN NEW._key`;
+    console.log(aqlQuery,  { from: wgId, to: whChatId })
+    const cursor = await pool.query(aqlQuery, { from: wgId, to: whChatId });
+    return (await cursor.all())[0];
   } catch (err) {
     throw err.message;
   }

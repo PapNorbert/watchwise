@@ -80,7 +80,7 @@ export default function SideBar({ children }) {
                         )
                       })
                       :
-                      <h5>{convertKeyToSelectedLanguage('no_joined_chats', i18nData)}</h5>
+                      <h5 className='mt-2 p-2'>{convertKeyToSelectedLanguage('no_joined_chats', i18nData)}</h5>
                     )
                   }
                 </Menu>

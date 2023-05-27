@@ -444,6 +444,31 @@ export async function deleteWatchGroup(key) {
   }
 }
 
+export async function deleteWatchGroupAndChats(key) {
+  try {
+    const aqlQuery = `
+    FOR edge IN his_group_chat
+      FILTER edge._from == @from
+      FOR chat IN watch_group_chats
+        FILTER chat._id == edge._to
+        REMOVE chat IN watch_group_chats
+      REMOVE edge IN his_group_chat
+    FOR doc in watch_groups
+      FILTER doc._key == @key
+      REMOVE doc IN watch_groups`;
+    const cursor = await pool.query(aqlQuery, { key: key, from: ("watch_groups/" + key) });
+    return true;
+  } catch (err) {
+    if (err.message == "AQL: document not found (while executing)") {
+      console.log(`Warning for movie document with _key ${key} during delete request: `, err.message);
+      return false;
+    } else {
+      throw err.message;
+    }
+
+  }
+}
+
 export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
   try {
     const transaction = await pool.beginTransaction({
