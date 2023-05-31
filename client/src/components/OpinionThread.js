@@ -87,6 +87,29 @@ export default function OpinionThread({ opinion_thread, buttonType, removeOnLeav
                 </Row>
               )
             }
+            if (key === 'description') {
+              return (
+                <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center mt-1'>
+                  <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label${index}`} >
+                    {convertKeyToSelectedLanguage(key, i18nData)}
+                  </Col>
+                  <Col xs lg={7} key={`${opinion_thread._key}_value${index}`}  >
+                    {
+                      opinion_thread[key].split('\n').map((textRow, i) => {
+                        return (
+                          <span key={`desc_row_container_${i}`}>
+                            <span key={`desc_row_${i}`}>
+                              {textRow}
+                            </span>
+                            <br />
+                          </span>
+                        )
+                      })
+                    }
+                  </Col>
+                </Row>
+              )
+            }
             return (
               <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center'>
                 <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label${index}`} >

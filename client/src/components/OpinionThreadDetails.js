@@ -289,7 +289,18 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
                 {convertKeyToSelectedLanguage('description', i18nData)}
               </Col>
               <Col xs lg={7} key={`${opinion_thread._key}_value_description`} >
-                {descriptionText}
+                {
+                  descriptionText.split('\n').map((textRow, i) => {
+                    return (
+                      <span key={`desc_row_container_${i}`}>
+                        <span key={`desc_row_${i}`}>
+                          {textRow}
+                        </span>
+                        <br />
+                      </span>
+                    )
+                  })
+                }
               </Col>
             </Row>
           }
@@ -320,15 +331,15 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
                 {(auth.role === adminRoleCode || auth.role === moderatorRoleCode) &&
                   // moderator or admin can also delete
                   <OverlayTrigger trigger='click' placement='bottom' rootClose={true}
-                  overlay={popover}
-                >
-                  <span className='float-end'>
-                    <Button className='btn btn-orange mx-2'
-                      key={`${opinion_thread._key}_delete_button`} >
-                      {convertKeyToSelectedLanguage('delete', i18nData)}
-                    </Button>
-                  </span>
-                </OverlayTrigger>
+                    overlay={popover}
+                  >
+                    <span className='float-end'>
+                      <Button className='btn btn-orange mx-2'
+                        key={`${opinion_thread._key}_delete_button`} >
+                        {convertKeyToSelectedLanguage('delete', i18nData)}
+                      </Button>
+                    </span>
+                  </OverlayTrigger>
                 }
                 <Button className='btn btn-orange float-end mx-2' onClick={handleFollowesButtonClicked}
                   key={`${opinion_thread._key}_follows_button`} >

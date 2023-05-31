@@ -432,7 +432,18 @@ export default function WatchGroupDetails({ watch_group, buttonType, setUrl, tot
                 {convertKeyToSelectedLanguage('description', i18nData)}
               </Col>
               <Col xs lg={7} key={`${watch_group._key}_value_description`} >
-                {descriptionText}
+                {
+                  descriptionText.split('\n').map((textRow, i) => {
+                    return (
+                      <span key={`desc_row_container_${i}`}>
+                        <span key={`desc_row_${i}`}>
+                          {textRow}
+                        </span>
+                        <br />
+                      </span>
+                    )
+                  })
+                }
               </Col>
             </Row>
           }
