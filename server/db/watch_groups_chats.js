@@ -1,7 +1,27 @@
 import pool from './connection_db.js'
+import { findWatchGroupByKeyWithoutComments, updateWatchGroup } from './watch_groups_db.js';
+import { updateJoinedGroup } from './joined_group_db.js'
 
 const watchGroupChatCollection = pool.collection("watch_group_chats");
 //const hisGroupChatEdgeCollection = pool.collection("his_group_chat");
+
+export async function updateLastOpenedChatByUser(userId, userName, watchGroupId) {
+  try {
+    const watchGroup = await findWatchGroupByKeyWithoutComments(watchGroupId.split('/')[1]);
+    if (watchGroup) {
+      if (watchGroup.creator === userName) {
+    console.log(watchGroupId.split('/')[1], { creatorLastOpenedDate: new Date(Date.now()) })
+
+        await updateWatchGroup(watchGroupId.split('/')[1], { creatorLastOpenedDate: new Date(Date.now()) });
+      } else {
+        await updateJoinedGroup(`users/${userId}`, { lastOpenedDate: new Date(Date.now()) });
+      }
+    }
+  } catch (err) {
+    console.log(err.message);
+  }
+}
+
 
 
 export async function findWatchGroupChatByWGKey(wgId) {
@@ -14,7 +34,6 @@ export async function findWatchGroupChatByWGKey(wgId) {
     FOR doc IN watch_group_chats
       FILTER doc._id == edge._to
       FOR comment in doc.chat_comments
-        SORT comment.created_at DESC
         RETURN comment`;
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
@@ -40,7 +59,7 @@ export async function insertHisGroupChatEdge(wgId, whChatId) {
       _from: @from, _to: @to 
     } INTO his_group_chat
     RETURN NEW._key`;
-    console.log(aqlQuery,  { from: wgId, to: whChatId })
+    console.log(aqlQuery, { from: wgId, to: whChatId })
     const cursor = await pool.query(aqlQuery, { from: wgId, to: whChatId });
     return (await cursor.all())[0];
   } catch (err) {

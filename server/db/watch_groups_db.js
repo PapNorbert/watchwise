@@ -212,19 +212,32 @@ export async function findWatchGroupNamesAndKeyByUserJoinedOrCreator(userId) {
     const aqlParameters = {
       userId: userId
     }
-    const aqlQuery = `LET creatorGroups = (
-    FOR user In users
-    FILTER user._id == @userId
-    FOR doc IN watch_groups
-        FILTER doc.creator == user.username
-        RETURN {name: doc.title, wg_id: doc._id}
-    )
-    LET joinedGroups = (
-      FOR vertex IN OUTBOUND
-          @userId joined_group
-          RETURN {name: vertex.title, wg_id: vertex._id}
+    const aqlQuery = `
+    LET creatorGroups = (
+      FOR user In users
+      FILTER user._id == @userId
+      FOR doc IN watch_groups
+          FILTER doc.creator == user.username
+          LET lastDate = (
+              FOR edge IN his_group_chat
+                  FILTER edge._from == doc._id
+                  FOR chatDoc IN watch_group_chats
+                      FILTER chatDoc._id == edge._to
+                      RETURN LAST(chatDoc.chat_comments))
+          RETURN {name: doc.title, wg_id: doc._id, newMessages: lastDate[0].created_at > doc.creatorLastOpenedDate }
       )
-    RETURN APPEND(creatorGroups, joinedGroups)`;
+    LET joinedGroups = (
+      FOR vertex, joinEdge IN OUTBOUND
+          @userId joined_group
+          LET lastDate2 = (
+            FOR edge2 IN his_group_chat
+                FILTER edge2._from == vertex._id
+                FOR chatDoc2 IN watch_group_chats
+                    FILTER chatDoc2._id == edge2._to
+                    RETURN LAST(chatDoc2.chat_comments))
+          RETURN {name: vertex.title, wg_id: vertex._id, newMessages: lastDate2[0].created_at > joinEdge.lastOpenedDate}
+      )
+      RETURN APPEND(creatorGroups, joinedGroups)`;
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {

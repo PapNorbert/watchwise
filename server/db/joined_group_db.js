@@ -17,6 +17,19 @@ export async function getJoinedUsersByGroupKey(watchGroupKey) {
   }
 }
 
+export async function updateJoinedGroup(userId, newJoinedGroupAttributes) {
+  try {
+    const aqlQuery = `FOR edge IN joined_group
+    FILTER edge._from == @from
+      UPDATE edge._key WITH @newJoinedGroupAttributes in joined_group`;
+    await pool.query(aqlQuery, { from: userId, newJoinedGroupAttributes: newJoinedGroupAttributes });
+    return true;
+  } catch (err) {
+      console.log(err.message);
+      throw err.message;
+    }
+}
+
 export async function deleteJoinedGroupEdgeByTo(to) {
   try {
     const aqlQuery = `FOR edge IN joined_group

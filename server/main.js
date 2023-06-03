@@ -26,6 +26,7 @@ import authRoute from './api/authentication.js'
 import showsRoute from './api/shows.js'
 import moderatorRequestsRoute from './api/moderator_requests.js'
 import announcementsRequestsRoute from './api/announcements.js'
+import { updateLastOpenedChatByUser } from './db/watch_groups_chats.js'
 
 
 const app = express();
@@ -78,12 +79,15 @@ const io = new Server(server, {
 
 io.on('connection', (socket) => {
 
-  socket.on('join_room', (roomKey) => {
+  socket.on('join_room', (joinInformation) => {
     // console.log(`User with id ${socket.id} joined room ${roomKey}`);
-    socket.join(roomKey);
-    findWatchGroupChatByWGKey(roomKey)
+    socket.join(joinInformation.roomKey);
+    findWatchGroupChatByWGKey(joinInformation.roomKey)
       .then((watchGroupChats) => {
         socket.emit('message_history', watchGroupChats);
+      })
+      .then(() => {
+        updateLastOpenedChatByUser(joinInformation.userId, joinInformation.userName, joinInformation.roomKey);
       })
       .catch((err) => {
         console.log(err);
@@ -102,9 +106,14 @@ io.on('connection', (socket) => {
       });
   });
 
-  socket.on('leave_room', (roomKey) => {
-    socket.leave(roomKey);
-    // console.log(`User with id ${socket.id} left room ${roomKey}`);
+  socket.on('updateOpenedTime', (joinInformation) => {
+    updateLastOpenedChatByUser(joinInformation.userId, joinInformation.userName, joinInformation.roomKey);
+  });
+
+  socket.on('leave_room', (joinInformation) => {
+    updateLastOpenedChatByUser(joinInformation.userId, joinInformation.userName, joinInformation.roomKey);
+    socket.leave(joinInformation.roomKey);
+    console.log(`User with id ${socket.id} left room ${joinInformation.roomKey}`);
   });
 
 });

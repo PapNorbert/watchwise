@@ -17,6 +17,7 @@ export default function SideBar({ children }) {
   const { socket, selectedGroupChat, setSelectedGroupChat, setDisplayChatWindow } = useSocket();
   const { data: watch_group_names, refetch } =
     useGetAxios(`/api/watch_groups/names?userId=${auth.userID}`);
+  const [openedChat, setopenedChat] = useState([]);
 
   function handleSideBarOpened() {
     if (collapsed) {
@@ -29,15 +30,17 @@ export default function SideBar({ children }) {
     if (auth.logged_in) {
       if (selectedGroupChat === null) {
         setSelectedGroupChat(watchGroupShort)
-        socket.emit('join_room', watchGroupShort.wg_id);
+        socket.emit('join_room', { roomKey: watchGroupShort.wg_id, userId: auth.userID, userName: auth.username });
         setDisplayChatWindow(true);
+        setopenedChat([...openedChat, watchGroupShort.wg_id]);
       } else {
         // not null
         if (selectedGroupChat.wg_id !== watchGroupShort.wg_id) {
-          socket.emit('leave_room', selectedGroupChat.wg_id);
+          socket.emit('leave_room', { roomKey: watchGroupShort.wg_id, userId: auth.userID, userName: auth.username });
           setSelectedGroupChat(watchGroupShort)
-          socket.emit('join_room', watchGroupShort.wg_id);
+          socket.emit('join_room', { roomKey: watchGroupShort.wg_id, userId: auth.userID, userName: auth.username  });
           setDisplayChatWindow(true);
+          setopenedChat([...openedChat, watchGroupShort.wg_id])
         }
       }
     }
@@ -76,6 +79,11 @@ export default function SideBar({ children }) {
                             onClick={() => handleWatchGroupChatClicked(watchGroupShort)}
                           >
                             {watchGroupShort.name}
+                            {watchGroupShort.newMessages && !openedChat.includes(watchGroupShort.wg_id) &&
+                              <div className='bold ms-3'>
+                                {convertKeyToSelectedLanguage('new_msgs', i18nData)}
+                              </div>
+                            }
                           </MenuItem>
                         )
                       })
