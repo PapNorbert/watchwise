@@ -71,6 +71,7 @@ export default function Register() {
             registered = true;
             // Clear form inputs
             setForm(emptyForm);
+            navigate('/login');
           }
           setSubmitError(res.errorMessage);
         })

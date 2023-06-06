@@ -30,6 +30,9 @@ export default function OpinionsThreadsMy() {
   const [creatorSearch] =
     useSearchParamsState(querryParamNames.creator, querryParamDefaultValues.creator);
   const [currentCreatorSearch, setCurrentCreatorSearch] = useState(creatorSearch);
+  const [tagSearch] =
+    useSearchParamsState(querryParamNames.tags, querryParamDefaultValues.tags);
+  const [currentTagSearch, setCurrentTagSearch] = useState(tagSearch);
   const [sortBy, setSortBy] =
     useSearchParamsState(querryParamNames.sortBy, querryParamDefaultValues.OTsortBy);
   const [currentSortBy, setCurrentSortBy] = useState(sortBy);
@@ -37,37 +40,40 @@ export default function OpinionsThreadsMy() {
   const location = useLocation();
 
   useEffect(() => {
+    // eslint-disable-next-line eqeqeq
+    if (parseInt(limit) != limit) {
+      setLimit(querryParamDefaultValues.limit);
       // eslint-disable-next-line eqeqeq
-      if (parseInt(limit) != limit) {
-        setLimit(querryParamDefaultValues.limit);
-        // eslint-disable-next-line eqeqeq
-      } else if (parseInt(page) != page) {
-        setPage(querryParamDefaultValues.page);
-      } else if (!limitValues.includes(parseInt(limit))) {
-        setLimit(querryParamDefaultValues.limit);
-      } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
-        setPage(opinion_threads?.pagination.totalPages);
-      } else if (!sortByValuesOT.includes(sortBy)) {
-        setSortBy(querryParamDefaultValues.OTsortBy);
-      } else {
-        // limit and page have correct values
-        let newUrl = `/api/opinion_threads/?creator=${auth?.username}&page=${page}&limit=${limit}`;
-        if (nameSearch) {
-          newUrl += `&titleSearch=${nameSearch}`
-        }
-        if (showSearch) {
-          newUrl += `&showSearch=${showSearch}`
-        }
-        if (creatorSearch) {
-          newUrl += `&creatorSearch=${creatorSearch}`
-        }
-        if (sortBy !== querryParamDefaultValues.sortBy) {
-          newUrl += `&sortBy=${sortBy}`
-        }
-        setUrl(newUrl);
+    } else if (parseInt(page) != page) {
+      setPage(querryParamDefaultValues.page);
+    } else if (!limitValues.includes(parseInt(limit))) {
+      setLimit(querryParamDefaultValues.limit);
+    } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
+      setPage(opinion_threads?.pagination.totalPages);
+    } else if (!sortByValuesOT.includes(sortBy)) {
+      setSortBy(querryParamDefaultValues.OTsortBy);
+    } else {
+      // limit and page have correct values
+      let newUrl = `/api/opinion_threads/?creator=${auth?.username}&page=${page}&limit=${limit}`;
+      if (nameSearch) {
+        newUrl += `&titleSearch=${nameSearch}`
       }
+      if (showSearch) {
+        newUrl += `&showSearch=${showSearch}`
+      }
+      if (creatorSearch) {
+        newUrl += `&creatorSearch=${creatorSearch}`
+      }
+      if (tagSearch) {
+        newUrl += `&tags=${tagSearch}`
+      }
+      if (sortBy !== querryParamDefaultValues.sortBy) {
+        newUrl += `&sortBy=${sortBy}`
+      }
+      setUrl(newUrl);
+    }
   }, [limit, page, auth?.username, opinion_threads?.pagination.totalPages, setLimit,
-    setPage, sortBy, setSortBy, nameSearch, showSearch, creatorSearch])
+    setPage, sortBy, setSortBy, nameSearch, showSearch, tagSearch, creatorSearch])
 
 
   if (statusCode === 401) {
@@ -98,6 +104,7 @@ export default function OpinionsThreadsMy() {
       <OpinionThreadSearchSort currentNameSearch={currentNameSearch} setCurrentNameSearch={setCurrentNameSearch}
         currentShowSearch={currentShowSearch} setCurrentShowSearch={setCurrentShowSearch}
         currentCreatorSearch={currentCreatorSearch} setCurrentCreatorSearch={setCurrentCreatorSearch}
+        currentTagSearch={currentTagSearch} setCurrentTagSearch={setCurrentTagSearch}
         currentSortBy={currentSortBy} setCurrentSortBy={setCurrentSortBy} withCreator={false} />
       <Limit limit={limit} />
       {opinion_threads?.data.length > 0 ?

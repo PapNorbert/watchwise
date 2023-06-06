@@ -36,6 +36,9 @@ export async function createCollections() {
   if (! await pool.collection('watch_group_chats').exists()) {
     await pool.collection('watch_group_chats').create();
   }
+  if (! await pool.collection('tags').exists()) {
+    await pool.collection('tags').create();
+  }
 }
 
 export async function createEdgeCollections() {

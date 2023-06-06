@@ -33,6 +33,9 @@ export default function OpinionThreadsFollowed() {
   const [creatorSearch] =
     useSearchParamsState(querryParamNames.creator, querryParamDefaultValues.creator);
   const [currentCreatorSearch, setCurrentCreatorSearch] = useState(creatorSearch);
+  const [tagSearch] =
+    useSearchParamsState(querryParamNames.tags, querryParamDefaultValues.tags);
+  const [currentTagSearch, setCurrentTagSearch] = useState(tagSearch);
   const [sortBy, setSortBy] =
     useSearchParamsState(querryParamNames.sortBy, querryParamDefaultValues.OTsortBy);
   const [currentSortBy, setCurrentSortBy] = useState(sortBy);
@@ -40,37 +43,40 @@ export default function OpinionThreadsFollowed() {
   const { i18nData } = useLanguage();
 
   useEffect(() => {
+    // eslint-disable-next-line eqeqeq
+    if (parseInt(limit) != limit) {
+      setLimit(querryParamDefaultValues.limit);
       // eslint-disable-next-line eqeqeq
-      if (parseInt(limit) != limit) {
-        setLimit(querryParamDefaultValues.limit);
-        // eslint-disable-next-line eqeqeq
-      } else if (parseInt(page) != page) {
-        setPage(querryParamDefaultValues.page);
-      } else if (!limitValues.includes(parseInt(limit))) {
-        setLimit(querryParamDefaultValues.limit);
-      } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
-        setPage(opinion_threads?.pagination.totalPages);
-      } else if (!sortByValuesOT.includes(sortBy)) {
-        setSortBy(querryParamDefaultValues.OTsortBy);
-      } else {
-        // limit and page have correct values
-        let newUrl = `/api/opinion_threads/?userId=${userID}&followed=true&page=${page}&limit=${limit}`;
-        if (nameSearch) {
-          newUrl += `&titleSearch=${nameSearch}`
-        }
-        if (showSearch) {
-          newUrl += `&showSearch=${showSearch}`
-        }
-        if (creatorSearch) {
-          newUrl += `&creatorSearch=${creatorSearch}`
-        }
-        if (sortBy !== querryParamDefaultValues.sortBy) {
-          newUrl += `&sortBy=${sortBy}`
-        }
-        setUrl(newUrl);
+    } else if (parseInt(page) != page) {
+      setPage(querryParamDefaultValues.page);
+    } else if (!limitValues.includes(parseInt(limit))) {
+      setLimit(querryParamDefaultValues.limit);
+    } else if (page > opinion_threads?.pagination.totalPages && page > 1) {
+      setPage(opinion_threads?.pagination.totalPages);
+    } else if (!sortByValuesOT.includes(sortBy)) {
+      setSortBy(querryParamDefaultValues.OTsortBy);
+    } else {
+      // limit and page have correct values
+      let newUrl = `/api/opinion_threads/?userId=${userID}&followed=true&page=${page}&limit=${limit}`;
+      if (nameSearch) {
+        newUrl += `&titleSearch=${nameSearch}`
       }
+      if (showSearch) {
+        newUrl += `&showSearch=${showSearch}`
+      }
+      if (creatorSearch) {
+        newUrl += `&creatorSearch=${creatorSearch}`
+      }
+      if (tagSearch) {
+        newUrl += `&tags=${tagSearch}`
+      }
+      if (sortBy !== querryParamDefaultValues.sortBy) {
+        newUrl += `&sortBy=${sortBy}`
+      }
+      setUrl(newUrl);
+    }
   }, [creatorSearch, limit, nameSearch, opinion_threads?.pagination.totalPages, page,
-    setLimit, setPage, setSortBy, showSearch, sortBy, userID])
+    setLimit, setPage, setSortBy, showSearch, tagSearch, sortBy, userID])
 
 
   if (statusCode === 401) {
@@ -101,6 +107,7 @@ export default function OpinionThreadsFollowed() {
       <OpinionThreadSearchSort currentNameSearch={currentNameSearch} setCurrentNameSearch={setCurrentNameSearch}
         currentShowSearch={currentShowSearch} setCurrentShowSearch={setCurrentShowSearch}
         currentCreatorSearch={currentCreatorSearch} setCurrentCreatorSearch={setCurrentCreatorSearch}
+        currentTagSearch={currentTagSearch} setCurrentTagSearch={setCurrentTagSearch}
         currentSortBy={currentSortBy} setCurrentSortBy={setCurrentSortBy} />
       <Limit limit={limit} />
       {opinion_threads?.data.length > 0 ?

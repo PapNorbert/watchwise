@@ -197,13 +197,16 @@ router.get('', async (request, response) => {
   response.status(200);
   try {
     let {
-      page = 1, limit = 5, creator, followed = false, userId,
+      page = 1, limit = 5, creator, followed = false, userId, tags = null,
       titleSearch = null, showSearch = null, creatorSearch = null, sortBy = 'newest'
     } = request.query;
     if (parseInt(page) == page && parseInt(limit) == limit
       && parseInt(page) > 0 && parseInt(limit) > 0) { // correct paging information
       page = parseInt(page);
       limit = parseInt(limit);
+      if (tags) {
+        tags = tags.split(',');
+      }
       if (creator) {
         // searching for opinion threads that the user created
         if (creator !== response.locals.payload.username) {
@@ -211,8 +214,8 @@ router.get('', async (request, response) => {
           return
         }
         const [opinion_threads, count] = await Promise.all([
-          findOpinionThreadsByCreator(creator, page, limit, titleSearch, showSearch, sortBy),
-          getOpinionThreadCountByCreator(creator, titleSearch, showSearch),
+          findOpinionThreadsByCreator(creator, page, limit, titleSearch, showSearch, tags, sortBy),
+          getOpinionThreadCountByCreator(creator, titleSearch, showSearch, tags),
         ]);
         response.json({
           'data': createResponseDtos(opinion_threads),
@@ -225,9 +228,9 @@ router.get('', async (request, response) => {
           return
         }
         const [opinion_threads, count] = await Promise.all([
-          findOpinionThreadsByUserFollowed(`users/${response.locals.payload.userID}`, 
-          page, limit, titleSearch, showSearch, creatorSearch, sortBy),
-          getOpinionThreadCountByUserFollowed(`users/${response.locals.payload.userID}`, titleSearch, showSearch, creatorSearch),
+          findOpinionThreadsByUserFollowed(`users/${response.locals.payload.userID}`,
+            page, limit, titleSearch, showSearch, creatorSearch, tags, sortBy),
+          getOpinionThreadCountByUserFollowed(`users/${response.locals.payload.userID}`, titleSearch, showSearch, creatorSearch, tags),
         ]);
         response.json({
           'data': createResponseDtos(opinion_threads),
@@ -238,9 +241,9 @@ router.get('', async (request, response) => {
         if (response.locals?.payload?.userID) {
           // logged in
           const [opinion_threads, count] = await Promise.all([
-            findOpinionThreadsWithFollowedInformation(`users/${response.locals.payload.userID}`, 
-            page, limit, titleSearch, showSearch, creatorSearch, sortBy),
-            getOpinionThreadCount(titleSearch, showSearch, creatorSearch),
+            findOpinionThreadsWithFollowedInformation(`users/${response.locals.payload.userID}`,
+              page, limit, titleSearch, showSearch, creatorSearch, tags, sortBy),
+            getOpinionThreadCount(titleSearch, showSearch, creatorSearch, tags),
           ]);
           response.json({
             'data': createResponseDtosLoggedIn(opinion_threads),
@@ -249,8 +252,8 @@ router.get('', async (request, response) => {
         } else {
           // not logged in
           const [opinion_threads, count] = await Promise.all([
-            findOpinionThreads(page, limit, titleSearch, showSearch, creatorSearch, sortBy),
-            getOpinionThreadCount(titleSearch, showSearch, creatorSearch),
+            findOpinionThreads(page, limit, titleSearch, showSearch, creatorSearch, tags, sortBy),
+            getOpinionThreadCount(titleSearch, showSearch, creatorSearch, tags),
           ]);
           response.json({
             'data': createResponseDtos(opinion_threads),
@@ -338,6 +341,7 @@ router.post('', authorize(), async (request, response) => {
     const { correct, error } = await validateOpinionTreadCreation(opinionThreadJson);
     if (correct) {
       opinionThreadJson.creation_date = new Date(Date.now());
+      opinionThreadJson.tags = opinionThreadJson.tags.split(',');
       opinionThreadJson.comments = [];
       const movieKey = await getMovieKeyByName(opinionThreadJson.show);
       if (movieKey) {

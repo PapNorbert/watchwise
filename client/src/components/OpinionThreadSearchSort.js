@@ -13,17 +13,16 @@ import { getAxios } from '../axiosRequests/GetAxios'
 
 export default function OpinionThreadSearchSort({ currentNameSearch, setCurrentNameSearch, currentShowSearch,
   setCurrentShowSearch, currentCreatorSearch, setCurrentCreatorSearch, currentSortBy, setCurrentSortBy,
-  withCreator = true }) {
+  currentTagSearch, setCurrentTagSearch, withCreator = true }) {
 
   const { i18nData } = useLanguage();
   const [setMultipleSearchParams] = useSetMultipleSearchParams();
   const [submitError, setSubmitError] = useState(null);
   const showSelectRef = useRef();
+  const tagselectRef = useRef();
   const [visible, setVisible] = useState(false);
 
-  console.log(visible)
 
-  
   function handleSearchButton() {
     const paramNamesToUpdate = []
     const paramValuesToUpdate = []
@@ -46,6 +45,12 @@ export default function OpinionThreadSearchSort({ currentNameSearch, setCurrentN
       paramValuesToUpdate.push(currentCreatorSearch);
     } else {
       paramNamesToDelete.push(querryParamNames.creator);
+    }
+    if (currentTagSearch) {
+      paramNamesToUpdate.push(querryParamNames.tags);
+      paramValuesToUpdate.push(currentTagSearch);
+    } else {
+      paramNamesToDelete.push(querryParamNames.tags);
     }
     if (currentSortBy) {
       paramNamesToUpdate.push(querryParamNames.sortBy);
@@ -80,6 +85,23 @@ export default function OpinionThreadSearchSort({ currentNameSearch, setCurrentN
     }
   }
 
+  async function loadTagOptions(inputValue) {
+    let url = '/api/tags';
+    if (inputValue !== '') {
+      url = `/api/tags?nameFilter=${inputValue}`
+    }
+    const { data, errorMessage, statusCode } = await getAxios(url);
+    if (statusCode === 200) {
+      const values = []
+      data?.tags.forEach(currentTag => {
+        values.push({ value: currentTag, label: currentTag })
+      });
+      return values;
+    } else {
+      setSubmitError(errorMessage);
+    }
+  }
+
   function handleSortByRadioClicked({ target: { value } }) {
     setCurrentSortBy(value);
   }
@@ -89,12 +111,14 @@ export default function OpinionThreadSearchSort({ currentNameSearch, setCurrentN
       [],
       [],
       [querryParamNames.name, querryParamNames.page, querryParamNames.show,
-      querryParamNames.creator, querryParamNames.sortBy]
+      querryParamNames.creator, querryParamNames.sortBy, querryParamNames.tags]
     )
     setCurrentCreatorSearch(querryParamDefaultValues.creator);
     setCurrentNameSearch(querryParamDefaultValues.name);
     setCurrentShowSearch(querryParamDefaultValues.show);
+    setCurrentTagSearch(querryParamDefaultValues.tags);
     setCurrentSortBy(querryParamDefaultValues.OTsortBy);
+    tagselectRef.current.clearValue();
     showSelectRef.current.clearValue();
   }
 
@@ -116,7 +140,7 @@ export default function OpinionThreadSearchSort({ currentNameSearch, setCurrentN
         {visible &&
           <Card.Body>
             <Row className='mx-5 search-row'>
-              <Col xs lg={{ span: 4, offset: 0 }} >
+              <Col xs lg={{ span: withCreator ? 4 : 3, offset: 0 }} >
                 <Form.Text>
                   {convertKeyToSelectedLanguage('search_ot_title', i18nData)}
                 </Form.Text>
@@ -134,7 +158,7 @@ export default function OpinionThreadSearchSort({ currentNameSearch, setCurrentN
                   placeholder={convertKeyToSelectedLanguage('show', i18nData)}
                 />
               </Col>
-              {withCreator &&
+              {withCreator ?
                 <Col xs lg={{ span: 3, offset: 0 }} >
                   <Form.Text>
                     {convertKeyToSelectedLanguage('search_creator', i18nData)}
@@ -142,14 +166,55 @@ export default function OpinionThreadSearchSort({ currentNameSearch, setCurrentN
                   <Form.Control type='text' value={currentCreatorSearch} onChange={e => setCurrentCreatorSearch(e.target.value)}
                     placeholder={convertKeyToSelectedLanguage('creator', i18nData)} />
                 </Col>
+                :
+                <Col xs lg={{ span: 4, offset: 0 }} >
+                  <Form.Text>
+                    {convertKeyToSelectedLanguage('search_ot_tags', i18nData)}
+                  </Form.Text>
+                  <AsyncSelect cacheOptions loadOptions={loadTagOptions} defaultOptions ref={tagselectRef}
+                    isSearchable={true} isClearable={true} isMulti
+                    defaultInputValue={
+                      currentTagSearch && !Array.isArray(currentTagSearch) ? currentTagSearch.replaceAll(',', ', ') : ''
+                    }
+                    onChange={(newValue) => {
+                      setCurrentTagSearch(newValue.map(selectedTag => { return selectedTag.value }).join(',')
+                        || [])
+                    }}
+                    noOptionsMessage={() => convertKeyToSelectedLanguage('no_tags_found', i18nData)}
+                    placeholder={convertKeyToSelectedLanguage('tags', i18nData)}
+                  />
+                </Col>
               }
 
-              <Col xs lg={{ offset: withCreator ? 0 : 3 }} className='mt-4'>
+              <Col xs lg={{ offset: 0 }} className='mt-4'>
                 <span onClick={handleSearchButton}>
                   <SearchIcon />
                 </span>
               </Col>
             </Row>
+
+            {withCreator &&
+              <Row className='search-tags-row'>
+                <Col xs lg={{ span: 4, offset: 4 }} >
+                  <Form.Text>
+                    {convertKeyToSelectedLanguage('search_ot_tags', i18nData)}
+                  </Form.Text>
+                  <AsyncSelect cacheOptions loadOptions={loadTagOptions} defaultOptions ref={tagselectRef}
+                    isSearchable={true} isClearable={true} isMulti
+                    defaultInputValue={
+                      currentTagSearch ? currentTagSearch.replaceAll(',', ', ') : ''
+                    }
+                    onChange={(newValue) => {
+                      setCurrentTagSearch(newValue.map(selectedTag => { return selectedTag.value }).join(',')
+                        || '')
+                    }}
+                    noOptionsMessage={() => convertKeyToSelectedLanguage('no_tags_found', i18nData)}
+                    placeholder={convertKeyToSelectedLanguage('tags', i18nData)}
+                  />
+                </Col>
+              </Row>
+            }
+
             <Row>
               <Col className='mt-3 mx-5 sortByRow'>
                 <Form.Check type='radio' label={convertKeyToSelectedLanguage('sort_newest', i18nData)}
@@ -175,7 +240,7 @@ export default function OpinionThreadSearchSort({ currentNameSearch, setCurrentN
                 }
               </Col>
             </Row>
-            <Row>
+            <Row className='row-clear'>
               <Col>
                 <Button className='btn btn-orange-dark float-end mx-5' onClick={handleClearButtonClicked} >
                   {convertKeyToSelectedLanguage('clear', i18nData)}

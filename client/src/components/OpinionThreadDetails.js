@@ -305,6 +305,15 @@ export default function OpinionThreadDetails({ opinion_thread, buttonType, setUr
             </Row>
           }
 
+          <Row key={`${opinion_thread._key}_tags`} className='justify-content-md-center'>
+            <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label_tags`} >
+              {convertKeyToSelectedLanguage('tags', i18nData)}
+            </Col>
+            <Col xs lg={7} key={`${opinion_thread._key}_value_tags`} className='fst-italic text-half-bold' >
+              {opinion_thread['tags'].join(', ')}
+            </Col>
+          </Row>
+
           {
             auth.logged_in && auth.username === opinion_thread.creator ?
               // creator of thread

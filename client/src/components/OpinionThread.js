@@ -71,6 +71,7 @@ export default function OpinionThread({ opinion_thread, buttonType, removeOnLeav
             if (key === 'show_type' || key === 'show_id' || key === 'title' || key === '_key') {
               return null;
             }
+
             if (key === 'show') {
               return (
                 <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center'>
@@ -87,6 +88,20 @@ export default function OpinionThread({ opinion_thread, buttonType, removeOnLeav
                 </Row>
               )
             }
+
+            if (key === 'tags') {
+              return (
+                <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center'>
+                  <Col xs lg={4} className='object-label' key={`${opinion_thread._key}_label${index}`} >
+                    {convertKeyToSelectedLanguage(key, i18nData)}
+                  </Col>
+                  <Col xs lg={7} key={`${opinion_thread._key}_value${index}`} className='fst-italic text-half-bold' >
+                    {opinion_thread['tags'].join(', ')}
+                  </Col>
+                </Row>
+              )
+            }
+
             if (key === 'description') {
               return (
                 <Row key={`${opinion_thread._key}_${index}`} className='justify-content-md-center mt-1'>

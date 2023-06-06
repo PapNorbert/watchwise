@@ -26,6 +26,7 @@ import authRoute from './api/authentication.js'
 import showsRoute from './api/shows.js'
 import moderatorRequestsRoute from './api/moderator_requests.js'
 import announcementsRequestsRoute from './api/announcements.js'
+import tagsRoute from './api/tags.js'
 import { updateLastOpenedChatByUser } from './db/watch_groups_chats.js'
 
 
@@ -65,6 +66,7 @@ app.use('/api/auth', authRoute);
 app.use('/api/shows', showsRoute);
 app.use('/api/moderator_requests', moderatorRequestsRoute);
 app.use('/api/announcements', announcementsRequestsRoute);
+app.use('/api/tags', tagsRoute);
 
 // read .env file
 dotenv.config()

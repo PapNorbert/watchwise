@@ -257,3 +257,7 @@ svg {
   padding-left: 10em;
   padding-right: 10em;
 }
+
+.text-half-bold {
+  font-weight: 500;
+}

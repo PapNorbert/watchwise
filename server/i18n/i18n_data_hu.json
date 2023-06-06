@@ -282,5 +282,10 @@
   "home_intro": "A WatchWise azért jött létre, hogy egy olyan helyet kínáljon számodra, ahol megoszthatod másokkal a filmek és sorozatok iránti szenvedélyedet!",
   "home_intro2": "Hozz létre vagy csatlakozz mások Megtekintési csoportjaihoz, hogy másokkal együtt nézhess meg egy filmet, utána beszélgessetek egyet róla, és eközben új barátokat szerezz. Ha csak egy olyan platformot keresel, ahol mások reakcióit és véleményét szeretnéd látni, akkor a Vélemény Folyamok neked lettek kitalálva. Amennyiben még nem döntöttél, hogy mit néznél legközelebb a filmjeink és sorozatain listája segíthet megtalálni a tökéletes választást.",
   "home_rules": "Kérünk, hogy legyél udvarias másokkal, használj megfelelő nyelvezetet és tartsd be az általános netikett szabályait! Ne sérts meg másokat, légy nyitott, fogadd el mások véleményét, ahelyett, hogy veszekednél velük a látásmódjukról, próbáld megérteni, honnan erednek azok!",
-  "new_msgs": "Új üzenetek!"
+  "new_msgs": "Új üzenetek!",
+  "tags": "Címkék",
+  "search_ot_tags": "Keresés címkék szerint",
+  "no_tags_found": "Nem találhatóak ilyen nevű címkék",
+  "empty_tags": "Kérem, válasszon legalább 2 címkét!"
+
 }

@@ -281,5 +281,9 @@
   "home_intro" :"WatchWise was created to offer you a place, where you can share your passion about movies and series with others!",
   "home_intro2" :"Create or joins other's Watch Groups to enjoy a show together with others, have a chat after it and make some new friends along the way. If you are looking only for a platform to see other's reaction and opinion about a show or character in it the Opinion Threads are made for you. In case you haven't decided yet on what to watch next you can search our list of movies and series to see if anything catches your attention.",
   "home_rules": "We ask you to be polite to others, use appropriate language and follow the rules of general netiquette! Do not offend others, be open, accept the opinions of others, instead of fighting with them about their view try to understand where they come from!",
-  "new_msgs": "New messages!"
+  "new_msgs": "New messages!",
+  "tags": "Tags",
+  "search_ot_tags": "Search by tags",
+  "no_tags_found": "No tags found with this name",
+  "empty_tags": "Please select at least 2 tags"
 }

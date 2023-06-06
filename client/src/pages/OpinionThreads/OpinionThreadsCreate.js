@@ -17,6 +17,7 @@ export default function OpinionThreadsCreate() {
     'title': '',
     'show': '',
     'description': '',
+    'tags': ''
   }
   const showSelectRef = useRef();
   const [createdId, setCreatedId] = useState(null);
@@ -38,6 +39,23 @@ export default function OpinionThreadsCreate() {
       const values = []
       data?.shows.forEach(currentShow => {
         values.push({ value: currentShow, label: currentShow })
+      });
+      return values;
+    } else {
+      setSubmitError(errorMessage);
+    }
+  }
+
+  async function loadTagOptions(inputValue) {
+    let url = '/api/tags';
+    if (inputValue !== '') {
+      url = `/api/tags?nameFilter=${inputValue}`
+    }
+    const { data, errorMessage, statusCode } = await getAxios(url);
+    if (statusCode === 200) {
+      const values = []
+      data?.tags.forEach(currentTag => {
+        values.push({ value: currentTag, label: currentTag })
       });
       return values;
     } else {
@@ -70,6 +88,10 @@ export default function OpinionThreadsCreate() {
         newErrors[key] = `empty_${key}`;
         noErrors = false;
       }
+    }
+    if (form.tags && form.tags.split(',').length < 2) {
+      newErrors['tags'] = `empty_tags`;
+      noErrors = false;
     }
     setErrors(newErrors);
     if (noErrors) {
@@ -129,6 +151,24 @@ export default function OpinionThreadsCreate() {
         {!!errors['show'] &&
           <div className='invalid-field' >
             {convertKeyToSelectedLanguage(errors['show'], i18nData)}
+          </div>
+        }
+
+        <Form.Label>
+          {convertKeyToSelectedLanguage('tags', i18nData)}
+        </Form.Label>
+        <AsyncSelect cacheOptions loadOptions={loadTagOptions} defaultOptions
+          isSearchable={true} isClearable={true} ref={showSelectRef} isMulti
+          onChange={(newValue) => {
+            setField('tags',
+              newValue.map(selectedTag => { return selectedTag.value }).join(',') || '')
+          }}
+          noOptionsMessage={() => convertKeyToSelectedLanguage('no_tags_found', i18nData)}
+          placeholder={convertKeyToSelectedLanguage('tags', i18nData)}
+        />
+        {!!errors['tags'] &&
+          <div className='invalid-field' >
+            {convertKeyToSelectedLanguage(errors['tags'], i18nData)}
           </div>
         }
 

@@ -30,6 +30,9 @@ export default function OpinionThreadsAll() {
   const [creatorSearch] =
     useSearchParamsState(querryParamNames.creator, querryParamDefaultValues.creator);
   const [currentCreatorSearch, setCurrentCreatorSearch] = useState(creatorSearch);
+  const [tagSearch] =
+    useSearchParamsState(querryParamNames.tags, querryParamDefaultValues.tags);
+  const [currentTagSearch, setCurrentTagSearch] = useState(tagSearch);
   const [sortBy, setSortBy] =
     useSearchParamsState(querryParamNames.sortBy, querryParamDefaultValues.OTsortBy);
   const [currentSortBy, setCurrentSortBy] = useState(sortBy);
@@ -58,6 +61,9 @@ export default function OpinionThreadsAll() {
       if (showSearch) {
         newUrl += `&showSearch=${showSearch}`
       }
+      if (tagSearch) {
+        newUrl += `&tags=${tagSearch}`
+      }
       if (creatorSearch) {
         newUrl += `&creatorSearch=${creatorSearch}`
       }
@@ -67,7 +73,7 @@ export default function OpinionThreadsAll() {
       setUrl(newUrl);
     }
   }, [creatorSearch, limit, nameSearch, opinion_threads?.pagination.totalPages,
-    page, setLimit, setPage, setSortBy, showSearch, sortBy])
+    page, setLimit, setPage, setSortBy, showSearch, tagSearch, sortBy])
 
 
   if (statusCode === 401) {
@@ -95,6 +101,7 @@ export default function OpinionThreadsAll() {
       <OpinionThreadSearchSort currentNameSearch={currentNameSearch} setCurrentNameSearch={setCurrentNameSearch}
         currentShowSearch={currentShowSearch} setCurrentShowSearch={setCurrentShowSearch}
         currentCreatorSearch={currentCreatorSearch} setCurrentCreatorSearch={setCurrentCreatorSearch}
+        currentTagSearch={currentTagSearch} setCurrentTagSearch={setCurrentTagSearch}
         currentSortBy={currentSortBy} setCurrentSortBy={setCurrentSortBy} />
       <Limit limit={limit} />
       {

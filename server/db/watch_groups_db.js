@@ -294,7 +294,6 @@ export async function findWatchGroupByKeyWithJoinedInformation(userId, key, page
       show_type: doc.show_type,
       comments: (
         FOR comment in doc.comments
-        SORT comment.creation_date DESC
         LIMIT @offset, @count
         RETURN comment
       )
@@ -329,7 +328,6 @@ export async function findWatchGroupByKey(key, page, limit) {
       show_type: doc.show_type,
       comments: (
         FOR comment in doc.comments
-        SORT comment.creation_date DESC
         LIMIT @offset, @count
         RETURN comment
       )
