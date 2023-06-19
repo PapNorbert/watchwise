@@ -7,6 +7,7 @@ import useAuth from '../hooks/useAuth'
 import { getAxios } from '../axiosRequests/GetAxios'
 import { convertKeyToSelectedLanguage } from '../i18n/conversion'
 import { adminRoleCode } from '../config/UserRoleCodes'
+import useSocket from '../hooks/useSocket'
 
 
 function Navigationbar() {
@@ -14,12 +15,15 @@ function Navigationbar() {
 
   const { language, setLanguage, i18nData } = useLanguage();
   const { auth, setAuth } = useAuth();
+  const { setSelectedGroupChat, setDisplayChatWindow} = useSocket();
 
   function logout() {
     getAxios('/api/auth/logout')
       .then((response) => {
         if (response.statusCode === 204) {
           setAuth({ logged_in: false });
+          setDisplayChatWindow(false);
+          setSelectedGroupChat(null);
           navigate('/');
         }
       })
