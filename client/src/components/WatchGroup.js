@@ -152,7 +152,7 @@ export default function WatchGroup({ watch_group, buttonType, removeOnLeave = fa
                   {convertKeyToSelectedLanguage(key, i18nData)}
                 </Col>
                 <Col xs lg={7} key={`${watch_group._key}_value${index}`} >
-                  {key === 'creation_date' ?
+                  {(key === 'creation_date' || key === 'watch_date') ?
                     convertDateAndTimeToLocale(watch_group[key], language)
                     :
                     watch_group[key]

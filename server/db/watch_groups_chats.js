@@ -10,7 +10,6 @@ export async function updateLastOpenedChatByUser(userId, userName, watchGroupId)
     const watchGroup = await findWatchGroupByKeyWithoutComments(watchGroupId.split('/')[1]);
     if (watchGroup) {
       if (watchGroup.creator === userName) {
-    console.log(watchGroupId.split('/')[1], { creatorLastOpenedDate: new Date(Date.now()) })
 
         await updateWatchGroup(watchGroupId.split('/')[1], { creatorLastOpenedDate: new Date(Date.now()) });
       } else {
@@ -59,7 +58,6 @@ export async function insertHisGroupChatEdge(wgId, whChatId) {
       _from: @from, _to: @to 
     } INTO his_group_chat
     RETURN NEW._key`;
-    console.log(aqlQuery, { from: wgId, to: whChatId })
     const cursor = await pool.query(aqlQuery, { from: wgId, to: whChatId });
     return (await cursor.all())[0];
   } catch (err) {
