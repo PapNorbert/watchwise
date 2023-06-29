@@ -166,7 +166,7 @@ export default function Comment({ comment, commentLocationType, commentLocationI
       </Row>
       <Row className='justify-content-md-center creation-date-and-text'>
         {/* comment creation date and text */}
-        <Col xs lg={3} >
+        <Col xs lg={3} className='ms-5'>
           {convertDateAndTimeToLocale(comment.creation_date, language)}
         </Col>
         {(editing && auth.logged_in) ?
