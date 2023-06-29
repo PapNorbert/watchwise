@@ -158,7 +158,7 @@ export default function Comment({ comment, commentLocationType, commentLocationI
         <Col xs lg={10} className='is_creator bold' >
           {
             commentLocationCreator &&
-            <span>
+            <span className='ms-4'>
               ( creator )
             </span>
           }
