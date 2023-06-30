@@ -52,7 +52,7 @@ export default function PaginationElements({currentPage, totalPages, onPageChang
     <Pagination className='d-flex align-items-center justify-content-center' key='paginationContainer'>
       {currentPage > 1 && 
         <>
-          <Pagination.Prev key='prev' onClick={() => onPageChange(currentPage-1)}/>
+          <Pagination.Prev key='prev' onClick={() => {onPageChange(currentPage-1);window.scrollTo(0, 0);}}/>
         </>
       }
       {currentButtons.map( currentNumber => {
@@ -60,7 +60,7 @@ export default function PaginationElements({currentPage, totalPages, onPageChang
           <span key={`pagination_span_${currentNumber}`}>
           { (currentNumber !== '...1' && currentNumber !== '...2')  &&
             <Pagination.Item key={currentNumber} data-page={currentNumber} 
-                active={currentNumber === currentPage} onClick={() => onPageChange(currentNumber)} >
+                active={currentNumber === currentPage} onClick={() => {onPageChange(currentNumber);window.scrollTo(0, 0);}} >
               {currentNumber}
             </Pagination.Item>
           }
@@ -73,7 +73,7 @@ export default function PaginationElements({currentPage, totalPages, onPageChang
 
       {currentPage < totalPages && 
         <>
-          <Pagination.Next key='next' onClick={() => onPageChange(currentPage+1)}/>
+          <Pagination.Next key='next' onClick={() => {onPageChange(currentPage+1);window.scrollTo(0, 0);}}/>
         </>
       }
     </Pagination>

@@ -23,6 +23,7 @@ import SocketContextProvider from './context/SocketContextProvider'
 import SideBar from './components/SideBar'
 import useAuth from './hooks/useAuth'
 import ChatBoxComponent from './components/ChatBoxComponent'
+import ScrollToTop from './components/ScrollToTop'
 
 function App() {
   const { auth } = useAuth();
@@ -32,6 +33,7 @@ function App() {
       <SocketContextProvider>
         <LanguageContextProvider>
           <Router>
+            <ScrollToTop />
             <Navigationbar />
             <LoginExpired />
             <SideBar>
