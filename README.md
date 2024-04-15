@@ -28,15 +28,39 @@ At its core, WatchWise is more than just a tool for organizing watch parties; it
 
 ## Features
 
+The application contains 4 different user roles: Guest, User, Moderator and Admin. They have access to different functionalities and privileges.
+
+1. Guest
+   - View guidelines and announcements.
+   - Search movies and series
+   - Search movie/series watching groups.
+   - Search threads created by users focusing on specific movies or series.
+   - Filtering and sorting at search.
+   - Access detailed pages for watch groups, opinion threads, movies, and series.
+2. User
+3. Moderator
+4. Admin
+
 ## Technologies Used 
 
 ### Frontend
 
+- **React**: A JavaScript library for building user interfaces, used for creating the interactive components and views of the application.
+- **Bootstrap**: A popular CSS framework for building responsive and mobile-first websites, utilized for styling and layout components of the application.
+- **Axios**: A promise-based HTTP client for making API requests, utilized for fetching and sending data to the backend server.
+- **Leaflet**: An open-source JavaScript library for interactive maps, employed for displaying and interacting with maps in the application.
+  
 ### Backend
+
+- **Node.js**: A JavaScript runtime environment that allows the execution of JavaScript code outside of a web browser, used as the server-side platform for running the backend logic and handling requests, including the implementation of a **RESTful API**.
+- **npm**: The default package manager for Node.js, used for installing and managing dependencies and packages required for the backend functionality.
+- **Socket.IO**: A JavaScript library for real-time web applications, enabling bidirectional communication between web clients and servers. Socket.IO is utilized for implementing real-time features such as chat functionality.
+- **JWT (JSON Web Tokens)**: A compact, URL-safe means of representing claims to be transferred between two parties. Used for authentication and authorization in the application, provides a secure way to transmit information between the client and server.
+- **CORS (Cross-Origin Resource Sharing)**: A mechanism that allows restricted resources on a web page to be requested from another domain outside the domain from which the first resource was served. CORS is used to enable secure cross-origin communication between the frontend and backend of the application, ensuring proper handling of requests and responses across different origins.
 
 ### Database
 
-Data management is handled by `ArangoDB`, a multi-model NoSQL database system. Its support for various data models – graphs, documents, and key-value pairs – managed through a unified query language (AQL), grants the flexibility to adapt data structures as needed. This capability ensures ease of database modification, allowing for swift iterations and testing of different approaches.
+Data management is handled by **ArangoDB**, a multi-model NoSQL database system. Its support for various data models – graphs, documents, and key-value pairs – managed through a unified query language (AQL), grants the flexibility to adapt data structures as needed. This capability ensures ease of database modification, allowing for swift iterations and testing of different approaches.
 
 ## Usage
 
