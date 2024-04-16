@@ -37,9 +37,21 @@ The application contains 4 different user roles: Guest, User, Moderator and Admi
    - Search threads created by users focusing on specific movies or series.
    - Filtering and sorting at search.
    - Access detailed pages for watch groups, opinion threads, movies, and series.
+   - Registration
 2. User
+   - Login
+   - Follow opinion threads
+   - Join watch groups
+   - Writing comments
+   - Create opinion threads or watch groups
+   - Editing of own groups and threads
+   - Use real-time chat for joined groups
 3. Moderator
+   - Delete groups, threads, comments that do not follow the guidelines
 4. Admin
+   - Create announcements
+   - Manage moderators and users
+   - Open and close moderator recruitement
 
 ## Technologies Used 
 
