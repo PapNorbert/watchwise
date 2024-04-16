@@ -1,92 +1,106 @@
-# Allamvizsga
+# WatchWise
 
+Welcome to WatchWise - a platform dedicated to sharing your enthusiasm for movies and series with like-minded individuals.
 
+## Index
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/papnorbi4/allamvizsga.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.com/papnorbi4/allamvizsga/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
+- [WatchWise](#watchwise)
+  - [Index](#index)
+  - [Description](#description)
+  - [Features](#features)
+  - [Technologies Used](#technologies-used)
+    - [Frontend](#frontend)
+    - [Backend](#backend)
+    - [Database](#database)
+  - [Usage](#usage)
+    - [Installation](#installation)
+    - [Commands](#commands)
 
 ## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+WatchWise is a web application designed to coordinate group movie or TV series viewing sessions in real-world settings, bringing together friends, family, or like-minded enthusiasts to share in the collective enjoyment of cinematic wonders, as well as to foster discussion and exchange of opinions on related topics. Going beyond mere coordination, WatchWise serves as a dynamic hub where users can engage in discussions, share their thoughts, and explore different perspectives on the shows and movies they love.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+In addition to facilitating group viewing sessions and discussions, WatchWise offers real-time chat functionality tailored to enhance the user experience. Each chat is dedicated to a specific watch group, providing a convenient platform for administrative discussions, coordinating schedules, getting to know each other, sharing post-watch party experiences, or exchanging recommendations for future viewing sessions.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Whether you're debating the plot twists of the latest episode or meticulously planning your next movie marathon, WatchWise ensures that the excitement of shared viewing comes to life, no matter your geographic location.
+
+At its core, WatchWise is more than just a tool for organizing watch parties; it's a community-driven platform designed to foster connections, spark conversations, and celebrate the magic of storytelling together.
+
+## Features
+
+The application contains 4 different user roles: Guest, User, Moderator and Admin. They have access to different functionalities and privileges.
+
+1. Guest
+   - View guidelines and announcements.
+   - Search movies and series
+   - Search movie/series watching groups.
+   - Search threads created by users focusing on specific movies or series.
+   - Filtering and sorting at search.
+   - Access detailed pages for watch groups, opinion threads, movies, and series.
+   - Registration
+2. User
+   - Login
+   - Follow opinion threads
+   - Join watch groups
+   - Writing comments
+   - Create opinion threads or watch groups
+   - Editing of own groups and threads
+   - Use real-time chat for joined groups
+3. Moderator
+   - Delete groups, threads, comments that do not follow the guidelines
+4. Admin
+   - Create announcements
+   - Manage moderators and users
+   - Open and close moderator recruitement
+
+## Technologies Used 
+
+### Frontend
+
+- **React**: A JavaScript library for building user interfaces, used for creating the interactive components and views of the application.
+- **Bootstrap**: A popular CSS framework for building responsive and mobile-first websites, utilized for styling and layout components of the application.
+- **Axios**: A promise-based HTTP client for making API requests, utilized for fetching and sending data to the backend server.
+- **Leaflet**: An open-source JavaScript library for interactive maps, employed for displaying and interacting with maps in the application.
+  
+### Backend
+
+- **Node.js**: A JavaScript runtime environment that allows the execution of JavaScript code outside of a web browser, used as the server-side platform for running the backend logic and handling requests, including the implementation of a **RESTful API**.
+- **npm**: The default package manager for Node.js, used for installing and managing dependencies and packages required for the backend functionality.
+- **Socket.IO**: A JavaScript library for real-time web applications, enabling bidirectional communication between web clients and servers. Socket.IO is utilized for implementing real-time features such as chat functionality.
+- **JWT (JSON Web Tokens)**: A compact, URL-safe means of representing claims to be transferred between two parties. Used for authentication and authorization in the application, provides a secure way to transmit information between the client and server.
+- **CORS (Cross-Origin Resource Sharing)**: A mechanism that allows restricted resources on a web page to be requested from another domain outside the domain from which the first resource was served. CORS is used to enable secure cross-origin communication between the frontend and backend of the application, ensuring proper handling of requests and responses across different origins.
+
+### Database
+
+Data management is handled by **ArangoDB**, a multi-model NoSQL database system. Its support for various data models – graphs, documents, and key-value pairs – managed through a unified query language (AQL), grants the flexibility to adapt data structures as needed. This capability ensures ease of database modification, allowing for swift iterations and testing of different approaches.
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Installation
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+1. Clone the repository
+```bash
+  git clone [repository-url]
+``` 
+1. Navigate to the project directory and install dependencies for both the client and server folder
+```bash
+  cd client
+  npm install
+  cd ../server
+  npm install
+``` 
+1. Make sure that you have an ArangoDB connection available to you.
+   
+### Commands
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+1. Start the server
+```bash
+npm run start
+``` 
+2. Start the client
+```bash
+npm start
+``` 
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+**Note**: Configuration files and environment variables (.env) are not included in the repository. 
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
