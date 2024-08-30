@@ -44,4 +44,4 @@ yarn-error.log*
 
 
 # config files
-config/
+server/config/

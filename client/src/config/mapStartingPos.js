@@ -1,0 +1,1 @@
+export const mapDefaultStartingPosition = [46.768977, 23.589748];
