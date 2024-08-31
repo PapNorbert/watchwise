@@ -57,7 +57,9 @@ export async function createEdgeCollections() {
   if (! await pool.collection('his_type').exists()) {
     await pool.createEdgeCollection('his_type');
   }
-
+  if (! await pool.collection('is_about_show').exists()) {
+    await pool.createEdgeCollection('is_about_show');
+  }
 }
 
 export async function insertAdminUser() {
