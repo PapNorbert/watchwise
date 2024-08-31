@@ -23,6 +23,7 @@ import { validateOpinionTreadCreation } from '../util/opinionThreadValidation.js
 import { validateCommentCreation } from '../util/commentValidation.js'
 import { authorize } from '../middlewares/auth.js'
 import { adminRoleCode, moderatorRoleCode } from '../config/userRoleCodes.js';
+import { insertIsAboutShowEdge, deleteIsAboutShowEdge } from '../db/is_about_show_edge_db.js'
 
 
 const router = express.Router();
@@ -348,6 +349,7 @@ router.post('', authorize(), async (request, response) => {
         opinionThreadJson['show_id'] = movieKey;
         opinionThreadJson['show_type'] = 'movie';
         const id = await insertOpinionThread(opinionThreadJson);
+        const isAboutShowId = await insertIsAboutShowEdge(`opinion_threads/${id}`, `movies/${movieKey}`);
         response.status(201).json({ id: id });
       } else {
         // movie not found, check series
@@ -356,6 +358,7 @@ router.post('', authorize(), async (request, response) => {
           opinionThreadJson['show_id'] = seriesKey;
           opinionThreadJson['show_type'] = 'serie';
           const id = await insertOpinionThread(opinionThreadJson);
+          const isAboutShowId = await insertIsAboutShowEdge(`opinion_threads/${id}`, `series/${seriesKey}`);
           response.status(201).json({ id: id });
         } else {
           // show not found
@@ -501,6 +504,7 @@ router.delete('/:id', authorize(), async (request, response) => {
       if (!succesfull) {
         response.status(404);
       }
+      await deleteIsAboutShowEdge(`opinion_threads/${id}`)
       response.end();
 
     } catch (err) {
