@@ -3,10 +3,12 @@ import morgan from 'morgan'
 import bodyParser from 'body-parser'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import dotenv from 'dotenv'
 import { Server } from 'socket.io'
 import http from 'http'
 import { v4 as uuidv4 } from 'uuid'
+
+// load environment variables first
+import './config.js';
 
 import allowedOrigin from './config/allowedOrigin.js'
 import { createCollections, createEdgeCollections, insertAdminUser, insertModeratorEmploymentFile } from './db/setup_db.js'
@@ -67,9 +69,6 @@ app.use('/api/shows', showsRoute);
 app.use('/api/moderator_requests', moderatorRequestsRoute);
 app.use('/api/announcements', announcementsRequestsRoute);
 app.use('/api/tags', tagsRoute);
-
-// read .env file
-dotenv.config()
 
 
 const io = new Server(server, {

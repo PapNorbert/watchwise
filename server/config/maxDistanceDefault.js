@@ -1,0 +1,1 @@
+export const maxDistanceDefaultValue = parseInt(process.env.MAX_DISTANCE_DEFAULT_VALUE, 10);
