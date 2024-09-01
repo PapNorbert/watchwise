@@ -285,5 +285,10 @@
   "tags": "Tags",
   "search_ot_tags": "Search by tags",
   "no_tags_found": "No tags found with this name",
-  "empty_tags": "Please select at least 2 tags"
+  "empty_tags": "Please select at least 2 tags",
+  "your_rating": "Your rating",
+  "ww_rating": "WatchWise rating",
+  "rating": "rating",
+  "based_on_ratings": "Based on",
+  "ratings": "ratings"
 }

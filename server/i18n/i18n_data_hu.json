@@ -286,6 +286,11 @@
   "tags": "Címkék",
   "search_ot_tags": "Keresés címkék szerint",
   "no_tags_found": "Nem találhatóak ilyen nevű címkék",
-  "empty_tags": "Kérem, válasszon legalább 2 címkét!"
+  "empty_tags": "Kérem, válasszon legalább 2 címkét!",
+  "your_rating": "Az értékelésed",
+  "ww_rating": "WatchWise értékelés",
+  "rating": "értékelés",
+  "based_on_ratings": "értékelés alapján",
+  "ratings": "értékelések"
 
 }
