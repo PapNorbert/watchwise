@@ -8,12 +8,13 @@ import pool from './connection_db.js'
   @param {string} showType - movie / series
   @param {string} showKey - A unique identifier for the show.
   @param {string} jwtUsername - The username of the user changing rating
-  @param {number} newRating - The new rating to be assigned to the show.
+  @param {float} newRating - The new rating to be assigned to the show.
 
   @returns {Promise<{ 
     error: boolean; 
     errorMessage?: string; 
     actionPerformed?: string; 
+    key?: string;
   }
 */
 export async function handleShowRatedTransaction(showType, showKey, jwtUsername, newRating) {
@@ -57,6 +58,7 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
       }
     }
 
+    const ratingDate = new Date(Date.now());
     const ratingEdge = await transaction.step(async () => {
       // check user already joined
       const aqlQuery = `FOR edge IN has_rated
@@ -73,10 +75,10 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
       await transaction.step(async () => {
         const aqlQuery = `FOR edge IN has_rated
               FILTER edge._from == @from AND edge._to == @to
-              UPDATE edge WITH { rating: @newRating } IN has_rated
+              UPDATE edge WITH { rating: @newRating, date: @ratingDate } IN has_rated
             RETURN NEW`;
         const cursor = await pool.query(aqlQuery, {
-          from: user._id, to: show._id, rating: newRating
+          from: user._id, to: show._id, rating: newRating, ratingDate: ratingDate
         });
         return (await cursor.all())[0];
       });
@@ -108,14 +110,14 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
       };
     } else { // new rating
       // save rating edge
-      await transaction.step(async () => {
+      const ratingEdgeKey = await transaction.step(async () => {
         const aqlQuery =
           `INSERT { 
-                _from: @from, _to: @to, rating: @rating
-              } INTO has_rated
-            RETURN NEW._key`;
+              _from: @from, _to: @to, rating: @rating, date: @ratingDate
+            } INTO has_rated
+          RETURN NEW._key`;
         const cursor = await pool.query(aqlQuery, {
-          from: user._id, to: show._id, rating: newRating
+          from: user._id, to: show._id, rating: newRating, ratingDate: ratingDate
         });
         return (await cursor.all())[0];
       });
@@ -143,7 +145,8 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
         '. New rating added');
       return {
         error: false,
-        actionPerformed: 'rating_saved'
+        actionPerformed: 'rating_saved',
+        key: ratingEdgeKey
       };
     }
 
