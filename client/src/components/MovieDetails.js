@@ -1,24 +1,22 @@
-import { React, useState } from 'react'
+import { React } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Row, Col, Stack, Container } from 'react-bootstrap'
-import { Rating } from 'react-simple-star-rating'
 
 import useLanguage from '../hooks/useLanguage'
-import { convertKeyToSelectedLanguage, convertBasedOnRatingsToLanguage } from '../i18n/conversion'
-import useAuth from '../hooks/useAuth'
+import { convertKeyToSelectedLanguage } from '../i18n/conversion'
+import Ratings from './Ratings'
 
 
 export default function MovieDetails({ movie, genres }) {
-  const { i18nData, language } = useLanguage();
+  const { i18nData } = useLanguage();
   const navigate = useNavigate();
-  const { auth } = useAuth();
-  const [rating, setRating] = useState(4);
+  const keysToIgnore = [
+    '_key', 'img_name', 'trailer_link', 'storyline', 'name',
+    'average_rating', 'sum_of_ratings', 'total_ratings'
+  ]
 
-  const avgRatingMock = 4.89;
-  const nrOfRatingsMock = 5326;
-
-  function handleRating(rate) {
-    setRating(rate);
+  function handleRating(rating) {
+    console.log(rating)
   }
 
   return (
@@ -29,21 +27,7 @@ export default function MovieDetails({ movie, genres }) {
         <Stack direction='vertical' className='me-4'>
           <img className='cover_img_details corner-borders'
             src={`${process.env.PUBLIC_URL}/covers/${movie.img_name}`} alt={`${movie.name}_cover`} />
-          {auth.logged_in &&
-            <div className='d-flex justify-content-center your-rating mt-1'>
-              <span className='mt-1 fw-bold'>{convertKeyToSelectedLanguage('your_rating', i18nData)}: </span>
-              <span className='ms-1'>
-                <Rating onClick={handleRating} initialValue={rating} allowFraction transition />
-              </span>
-            </div>
-          }
-          <div className='d-flex justify-content-center watchwise-rating mt-2'>
-            <span className='fw-bold'>{convertKeyToSelectedLanguage('ww_rating', i18nData)}: </span>
-            <span className='ms-2'>{avgRatingMock} / 5</span>
-          </div>
-          <div className='d-flex justify-content-center watchwise-rating'>
-            <span>{convertBasedOnRatingsToLanguage(language, nrOfRatingsMock, i18nData)}</span>
-          </div>
+          <Ratings handleRating={handleRating} />
         </Stack>
         <Stack direction='vertical' className='mt-5'>
           <Row className='justify-content-md-center'>
@@ -99,8 +83,7 @@ export default function MovieDetails({ movie, genres }) {
 
       {
         Object.keys(movie).map((key, index) => {
-          if (key === '_key' || key === 'img_name' || key === 'trailer_link'
-            || key === 'name' || key === 'storyline') {
+          if (keysToIgnore.includes(key)) {
             return null;
           }
           if (Array.isArray(movie[key])) {

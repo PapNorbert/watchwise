@@ -4,18 +4,31 @@ import { Row, Col, Stack, Container } from 'react-bootstrap'
 
 import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../i18n/conversion'
+import Ratings from './Ratings'
 
 
 export default function SerieDetails({ serie, genres }) {
   const { i18nData } = useLanguage();
   const navigate = useNavigate();
+  const keysToIgnore = [
+    '_key', 'img_name', 'trailer_link', 'storyline', 'name',
+    'average_rating', 'sum_of_ratings', 'total_ratings'
+  ]
+
+  function handleRating(rating) {
+    console.log(rating)
+  }
 
   return (
     <>
       <h1>{serie.name}</h1>
 
       <Stack direction='horizontal' className='mb-5'>
-        <img className='cover_img_details corner-borders' src={`${process.env.PUBLIC_URL}/covers/${serie.img_name}`} alt={`${serie.title}_cover`} />
+        <Stack direction='vertical' className='me-4'>
+          <img className='cover_img_details corner-borders'
+            src={`${process.env.PUBLIC_URL}/covers/${serie.img_name}`} alt={`${serie.title}_cover`} />
+          <Ratings handleRating={handleRating} />
+        </Stack>
         <Stack direction='vertical' className='mt-5'>
           <Row className='justify-content-md-center'>
             <Col xs lg={8} className='storyline'>
@@ -68,8 +81,7 @@ export default function SerieDetails({ serie, genres }) {
       }
 
       {Object.keys(serie).map((key, index) => {
-        if (key === '_key' || key === 'img_name' || key === 'trailer_link'
-          || key === 'name' || key === 'storyline') {
+        if (keysToIgnore.includes(key)) {
           return null;
         }
         if (Array.isArray(serie[key])) {
