@@ -296,5 +296,6 @@
   "wrong_show_type": "Nem elfogadott TV-műsor típus",
   "empty_showKey": "Kérem, adjon meg egy műsort",
   "empty_rating": "Kérem, adjon meg egy értékelést",
-  "not_accepted_rating": "A értékelésnek 0-5 között kell lennie, 0,5-tel növekedve."
+  "not_accepted_rating": "A értékelésnek 0-5 között kell lennie, 0,5-tel növekedve.",
+  "500": "Elnézést, egy hiba lépett fel"
 }

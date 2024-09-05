@@ -1,10 +1,29 @@
 import express from 'express';
 
 import { authorize } from '../middlewares/auth.js'
-import { handleShowRatedTransaction } from '../db/rating_edge_db.js';
+import { getRating, handleShowRatedTransaction } from '../db/rating_edge_db.js';
 import { validateRatingData } from '../util/ratingValidation.js';
 
 const router = express.Router();
+
+router.get('', async (request, response) => {
+  response.set('Content-Type', 'application/json');
+  response.status(200);
+  try {
+    let { show } = request.query;
+    if (response.locals?.payload?.userID && show) {
+      const rating = await getRating(response.locals.payload.userID, show);
+      return response.json(rating);
+    }
+    return response.end();
+  } catch (err) {
+    console.log(err);
+    response.status(400).json({
+      error: "error"
+    });
+  }
+
+});
 
 router.post('', authorize(), async (request, response) => {
   response.set('Content-Type', 'application/json');

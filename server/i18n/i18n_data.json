@@ -295,5 +295,6 @@
   "wrong_show_type": "Not supported show type",
   "empty_showKey": "Please specifie a show",
   "empty_rating": "Please specifie a rating",
-  "not_accepted_rating": "Rating must be between 0-5 increasing by 0.5"
+  "not_accepted_rating": "Rating must be between 0-5 increasing by 0.5",
+  "500": "Sorry, there was an error processing you request"
 }

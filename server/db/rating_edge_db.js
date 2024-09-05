@@ -1,5 +1,21 @@
 import pool from './connection_db.js'
 
+
+export async function getRating(userID, show) {
+  try {
+    const aqlQuery = `FOR edge IN has_rated
+    FILTER edge._from == @from
+    FILTER edge._to == @to
+    LIMIT 1
+    RETURN edge.rating`;
+    const cursor = await pool.query(aqlQuery, { from: `users/${userID}`, to: show });
+    return (await cursor.all())[0];
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
+
 /** 
   Handle a user trying to rate a movie/serie
   
@@ -29,12 +45,12 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
       break;
   }
 
+  const transaction = await pool.beginTransaction({
+    write: writeCollections,
+    read: [],
+    allowImplicit: false
+  });
   try {
-    const transaction = await pool.beginTransaction({
-      write: writeCollections,
-      read: [],
-      allowImplicit: false
-    });
     const show = await transaction.step(async () => {
       const aqlQuery = `FOR doc IN ${showType}s
         FILTER doc._key == @key
@@ -48,10 +64,10 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
       return await usersCollection.firstExample({ username: jwtUsername });
     })
 
-    if (show !== null && user !== null) {
+    if (!show && !user) {
       // show or user not found
       const transactionResult = await transaction.abort();
-      console.log('Transaction for rating show: ', transactionResult.status, '. No group or user');
+      console.log('Transaction for rating show: ', transactionResult.status, '. No show or user');
       return {
         error: true,
         errorMessage: '404'
@@ -78,7 +94,7 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
               UPDATE edge WITH { rating: @newRating, date: @ratingDate } IN has_rated
             RETURN NEW`;
         const cursor = await pool.query(aqlQuery, {
-          from: user._id, to: show._id, rating: newRating, ratingDate: ratingDate
+          from: user._id, to: show._id, newRating: newRating, ratingDate: ratingDate
         });
         return (await cursor.all())[0];
       });

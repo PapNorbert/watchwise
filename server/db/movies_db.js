@@ -6,6 +6,7 @@ const moviesCollection = pool.collection("movies");
 export async function findMovies(page, limit) {
   try {
     const aqlQuery = `FOR doc IN movies
+    SORT doc.name
     LIMIT @offset, @count
     RETURN doc`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
@@ -19,6 +20,7 @@ export async function findMovies(page, limit) {
 export async function findMoviesShort(page, limit) {
   try {
     const aqlQuery = `FOR doc IN movies
+    SORT doc.name
     LIMIT @offset, @count
     LET genres = (
       FOR edge in his_type
@@ -49,6 +51,7 @@ export async function findMoviesShortByGenreType(page, limit, genreId) {
     const aqlQuery = `FOR doc IN INBOUND
     @genreId his_type
     FILTER CONTAINS(doc._id, "movies")
+    SORT doc.name
     LIMIT @offset, @count
     LET genres = (
       FOR edge in his_type
@@ -78,6 +81,7 @@ export async function findMoviesShortByNameContains(page, limit, name) {
   try {
     const aqlQuery = `FOR doc IN movies
     FILTER CONTAINS(UPPER(doc.name), @nameFilter)
+    SORT doc.name
     LIMIT @offset, @count
     LET genres = (
       FOR edge in his_type

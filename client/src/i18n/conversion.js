@@ -40,7 +40,7 @@ export function convertDateToLocale(date, language) {
 }
 
 export function convertBasedOnRatingsToLanguage(language, ratingCount, i18nData) {
-  if (i18nData && language && ratingCount) {
+  if (i18nData && language && ratingCount !== undefined) {
     switch (language) {
       case 'eng':
         return `${convertKeyToSelectedLanguage('based_on_ratings', i18nData)} ${ratingCount} ratings`
