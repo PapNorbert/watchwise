@@ -9,7 +9,7 @@ import { postRequest } from '../axiosRequests/PostAxios'
 import { getAxios } from '../axiosRequests/GetAxios'
 import useAuth from '../hooks/useAuth'
 
-export default function MovieDetails({ movie, genres }) {
+export default function MovieDetails({ movie, genres, refetch }) {
   const { auth, setAuth } = useAuth();
   const { i18nData } = useLanguage();
   const navigate = useNavigate();
@@ -46,8 +46,10 @@ export default function MovieDetails({ movie, genres }) {
     const { errorMessage, statusCode } = await postRequest(`/api/ratings`, body);
     if (statusCode === 201) {
       // rating saved
+      refetch();
     } else if (statusCode === 204) {
       // rating updated
+      refetch();
     } else if (statusCode === 401) {
       setAuth({ logged_in: false });
     } else if (statusCode === 403) {
