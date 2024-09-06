@@ -9,7 +9,7 @@ import useGetAxios from '../../hooks/useGetAxios'
 export default function MoviesDetailed() {
   const { movieId } = useParams();
   const { i18nData } = useLanguage();
-  const { data: movie, error, loading } = useGetAxios(`/api/movies/${movieId}`);
+  const { data: movie, error, loading, refetch } = useGetAxios(`/api/movies/${movieId}`);
   const { data: genres, error: genreError } = useGetAxios(`/api/movies/${movieId}/genres`);
 
   if (loading) {
@@ -25,7 +25,7 @@ export default function MoviesDetailed() {
   }
 
   return ( movie &&
-    <MovieDetails movie={movie} genres={genres} key={movie._key} />
+    <MovieDetails movie={movie} genres={genres} key={movie._key} refetch={refetch} />
   );
 
 }

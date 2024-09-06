@@ -1,21 +1,82 @@
-import React from 'react'
+import { React, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Row, Col, Stack, Container } from 'react-bootstrap'
+import { Row, Col, Stack, Container, Alert } from 'react-bootstrap'
 
+import Ratings from './Ratings'
 import useLanguage from '../hooks/useLanguage'
 import { convertKeyToSelectedLanguage } from '../i18n/conversion'
+import { postRequest } from '../axiosRequests/PostAxios'
+import { getAxios } from '../axiosRequests/GetAxios'
+import useAuth from '../hooks/useAuth'
 
-
-export default function SerieDetails({ serie, genres }) {
+export default function SerieDetails({ serie, genres, refetch }) {
+  const { auth, setAuth } = useAuth();
   const { i18nData } = useLanguage();
   const navigate = useNavigate();
+  const [ratingRequestError, setRatingRequestError] = useState(null);
+  const keysToIgnore = [
+    '_key', 'img_name', 'trailer_link', 'storyline', 'name',
+    'average_rating', 'sum_of_ratings', 'total_ratings'
+  ]
+  const [rating, setRating] = useState(0);
+  const [finishedRatingRequest, setFinishedRatingRequest] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      const { data, statusCode } = await getAxios(`/api/ratings?show=series/${serie._key}`);
+      if (statusCode === 200 && data) {
+        setRating(data);
+      }
+      setFinishedRatingRequest(true);
+    }
+    fetchData();
+  }, [serie._key]);
+
+  async function handleRating(rating) {
+    if (!auth.logged_in) {
+      navigate('/login');
+      return
+    }
+    const body = {
+      showType: 'serie',
+      showKey: serie._key,
+      newRating: rating
+    }
+    const { errorMessage, statusCode } = await postRequest(`/api/ratings`, body);
+    if (statusCode === 201) {
+      // rating saved
+      refetch();
+    } else if (statusCode === 204) {
+      // rating updated
+      refetch();
+    } else if (statusCode === 401) {
+      setAuth({ logged_in: false });
+    } else if (statusCode === 403) {
+      navigate('/unauthorized');
+    } else if (statusCode === 404) {
+      setRatingRequestError('404_rating');
+    } else {
+      setRatingRequestError(errorMessage);
+    }
+  }
 
   return (
     <>
       <h1>{serie.name}</h1>
 
       <Stack direction='horizontal' className='mb-5'>
-        <img className='cover_img_details corner-borders' src={`${process.env.PUBLIC_URL}/covers/${serie.img_name}`} alt={`${serie.title}_cover`} />
+        <Stack direction='vertical' className='me-4'>
+          <img className='cover_img_details corner-borders'
+            src={`${process.env.PUBLIC_URL}/covers/${serie.img_name}`} alt={`${serie.title}_cover`} />
+          {finishedRatingRequest &&
+            <Ratings handleRating={handleRating} avgRating={serie.average_rating}
+              initialRating={rating} nrOfRatings={serie.total_ratings} />
+          }
+          <Alert key='danger' variant='danger' show={ratingRequestError !== null}
+            onClose={() => setRatingRequestError(null)} dismissible className='mt-1'>
+            {convertKeyToSelectedLanguage(ratingRequestError, i18nData)}
+          </Alert>
+        </Stack>
         <Stack direction='vertical' className='mt-5'>
           <Row className='justify-content-md-center'>
             <Col xs lg={8} className='storyline'>
@@ -68,8 +129,7 @@ export default function SerieDetails({ serie, genres }) {
       }
 
       {Object.keys(serie).map((key, index) => {
-        if (key === '_key' || key === 'img_name' || key === 'trailer_link'
-          || key === 'name' || key === 'storyline') {
+        if (keysToIgnore.includes(key)) {
           return null;
         }
         if (Array.isArray(serie[key])) {

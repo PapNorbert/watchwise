@@ -286,6 +286,16 @@
   "tags": "Címkék",
   "search_ot_tags": "Keresés címkék szerint",
   "no_tags_found": "Nem találhatóak ilyen nevű címkék",
-  "empty_tags": "Kérem, válasszon legalább 2 címkét!"
-
+  "empty_tags": "Kérem, válasszon legalább 2 címkét!",
+  "your_rating": "Az értékelésed",
+  "ww_rating": "WatchWise értékelés",
+  "rating": "értékelés",
+  "based_on_ratings": "értékelés alapján",
+  "ratings": "értékelések",
+  "404_rating": "Az értékelést nem lehetett elmenteni",
+  "wrong_show_type": "Nem elfogadott TV-műsor típus",
+  "empty_showKey": "Kérem, adjon meg egy műsort",
+  "empty_rating": "Kérem, adjon meg egy értékelést",
+  "not_accepted_rating": "A értékelésnek 0-5 között kell lennie, 0,5-tel növekedve.",
+  "500": "Elnézést, egy hiba lépett fel"
 }

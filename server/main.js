@@ -3,10 +3,12 @@ import morgan from 'morgan'
 import bodyParser from 'body-parser'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import dotenv from 'dotenv'
 import { Server } from 'socket.io'
 import http from 'http'
 import { v4 as uuidv4 } from 'uuid'
+
+// load environment variables first
+import './config.js';
 
 import allowedOrigin from './config/allowedOrigin.js'
 import { createCollections, createEdgeCollections, insertAdminUser, insertModeratorEmploymentFile } from './db/setup_db.js'
@@ -14,6 +16,7 @@ import { insertWatchGroupChatComment, findWatchGroupChatByWGKey } from './db/wat
 import { readLanguageDataFiles } from './i18n/i18n_files.js'
 import { credentialsAllow } from './middlewares/credentialsAllow.js'
 import { addJwtCookie } from './middlewares/auth.js'
+import { updateLastOpenedChatByUser } from './db/watch_groups_chats.js'
 
 import moviesApiRoute from './api/movies.js'
 import seriesApiRoute from './api/series.js'
@@ -27,8 +30,7 @@ import showsRoute from './api/shows.js'
 import moderatorRequestsRoute from './api/moderator_requests.js'
 import announcementsRequestsRoute from './api/announcements.js'
 import tagsRoute from './api/tags.js'
-import { updateLastOpenedChatByUser } from './db/watch_groups_chats.js'
-
+import ratingsRoute from './api/ratings.js'
 
 const app = express();
 
@@ -67,9 +69,7 @@ app.use('/api/shows', showsRoute);
 app.use('/api/moderator_requests', moderatorRequestsRoute);
 app.use('/api/announcements', announcementsRequestsRoute);
 app.use('/api/tags', tagsRoute);
-
-// read .env file
-dotenv.config()
+app.use('/api/ratings', ratingsRoute);
 
 
 const io = new Server(server, {

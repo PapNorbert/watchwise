@@ -29,6 +29,7 @@ import { authorize } from '../middlewares/auth.js'
 import { maxDistanceDefaultValue } from '../config/maxDistanceDefault.js'
 import { adminRoleCode, moderatorRoleCode } from '../config/userRoleCodes.js';
 import { insertHisGroupChatEdge, insertWatchGroupChat } from '../db/watch_groups_chats.js';
+import { insertIsAboutShowEdge, deleteIsAboutShowEdge } from '../db/is_about_show_edge_db.js'
 
 const router = express.Router();
 
@@ -470,6 +471,7 @@ router.post('', authorize(), async (request, response) => {
         watchGroupJson['show_id'] = movieKey;
         watchGroupJson['show_type'] = 'movie';
         const wgId = await insertWatchGroup(watchGroupJson);
+        const isAboutShowId = await insertIsAboutShowEdge(`watch_groups/${wgId}`, `movies/${movieKey}`);
         const wgChatId = await insertWatchGroupChat({ "chat_comments": [] });
         const hisGroupChatEdge = await insertHisGroupChatEdge(`watch_groups/${wgId}`, `watch_group_chats/${wgChatId}`);
         response.status(201).json({ id: wgId });
@@ -480,6 +482,7 @@ router.post('', authorize(), async (request, response) => {
           watchGroupJson['show_id'] = seriesKey;
           watchGroupJson['show_type'] = 'serie';
           const wgId = await insertWatchGroup(watchGroupJson);
+          const isAboutShowId = await insertIsAboutShowEdge(`watch_groups/${wgId}`, `series/${seriesKey}`);
           const wgChatId = await insertWatchGroupChat({ "chat_comments": [] });
           const hisGroupChatEdge = await insertHisGroupChatEdge(`watch_groups/${wgId}`, `watch_group_chats/${wgChatId}`);
           response.status(201).json({ id: wgId });
@@ -738,6 +741,7 @@ router.delete('/:id', authorize(), async (request, response) => {
       if (!succesfull) {
         response.status(404);
       }
+      await deleteIsAboutShowEdge(`watch_groups/${id}`)
       await deleteJoinRequestEdgeByTo(`watch_groups/${id}`)
       await deleteJoinedGroupEdgeByTo(`watch_groups/${id}`)
       response.end();

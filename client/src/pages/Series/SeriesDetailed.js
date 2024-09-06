@@ -9,7 +9,7 @@ import useGetAxios from '../../hooks/useGetAxios'
 export default function SeriesDetailed() {
   const { serieId } = useParams();
   const { i18nData } = useLanguage();
-  const { data: serie, error, loading } = useGetAxios(`/api/series/${serieId}`);
+  const { data: serie, error, loading , refetch} = useGetAxios(`/api/series/${serieId}`);
   const { data: genres, error: genreError } = useGetAxios(`/api/series/${serieId}/genres`);
 
   if (loading) {
@@ -25,7 +25,7 @@ export default function SeriesDetailed() {
   }
   
   return ( serie &&
-    <SerieDetails serie={serie} genres={genres} key={serie?._key} />
+    <SerieDetails serie={serie} genres={genres} key={serie?._key} refetch={refetch} />
   );
 
 }

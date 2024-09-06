@@ -285,5 +285,16 @@
   "tags": "Tags",
   "search_ot_tags": "Search by tags",
   "no_tags_found": "No tags found with this name",
-  "empty_tags": "Please select at least 2 tags"
+  "empty_tags": "Please select at least 2 tags",
+  "your_rating": "Your rating",
+  "ww_rating": "WatchWise rating",
+  "rating": "rating",
+  "based_on_ratings": "Based on",
+  "ratings": "ratings",
+  "404_rating": "Rating could not be saved",
+  "wrong_show_type": "Not supported show type",
+  "empty_showKey": "Please specifie a show",
+  "empty_rating": "Please specifie a rating",
+  "not_accepted_rating": "Rating must be between 0-5 increasing by 0.5",
+  "500": "Sorry, there was an error processing you request"
 }
