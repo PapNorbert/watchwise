@@ -36,5 +36,3 @@ def initialize_collections():
         print(e)
         return False
 
-
-initialize_collections()
