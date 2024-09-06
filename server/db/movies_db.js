@@ -36,7 +36,9 @@ export async function findMoviesShort(page, limit) {
       runtime: doc.runtime, 
       release_date: doc.release_date,
       img_name: doc.img_name,
-      genres: genres
+      genres: genres,
+      average_rating: doc.average_rating,
+      total_ratings: doc.total_ratings
     }`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
     return await cursor.all();

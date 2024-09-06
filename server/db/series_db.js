@@ -36,7 +36,9 @@ export async function findSeriesShort(page, limit) {
       nr_episodes: doc.nr_episodes, 
       release_date: doc.original_release,
       img_name: doc.img_name,
-      genres: genres
+      genres: genres,
+      average_rating: doc.average_rating,
+      total_ratings: doc.total_ratings
     }`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
     return await cursor.all();

@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Button, Stack } from 'react-bootstrap'
 
 import useLanguage from '../hooks/useLanguage'
-import { convertKeyToSelectedLanguage } from '../i18n/conversion'
+import { convertKeyToSelectedLanguage, convertBasedOnRatingsToLanguage } from '../i18n/conversion'
 
 export default function Movie({ movie }) {
   const navigate = useNavigate();
-  const { i18nData } = useLanguage();
+  const { i18nData, language } = useLanguage();
+  const keysToIgnore = [
+    '_key', 'title', 'img_name', 'average_rating', 'total_ratings'
+  ]
 
   return (
     <Card key={`container_${movie._key}`} className='mt-4 mb-3'>
@@ -22,8 +25,18 @@ export default function Movie({ movie }) {
           <img className='cover_img' src={`${process.env.PUBLIC_URL}/covers/${movie.img_name}`} alt={`${movie.title}_cover`} />
           <Stack direction='vertical' className='mt-5'>
 
+            <Row key={`${movie._key}_rating_row`} className='justify-content-md-center mb-1'>
+              <Col xs lg={4} className='object-label' key={`${movie._key}_label_rating`} >
+                {convertKeyToSelectedLanguage('ww_rating', i18nData)}:
+              </Col>
+              <Col xs lg={7} key={`${movie._key}_value_rating`} >
+                <span>{movie.average_rating} / 5</span>
+                <span className='ms-2'>({convertBasedOnRatingsToLanguage(language, movie.total_ratings, i18nData)})</span>
+              </Col>
+            </Row>
+            
             {Object.keys(movie).map((key, index) => {
-              if (key === '_key' || key === 'title' || key === 'img_name') {
+              if (keysToIgnore.includes(key)) {
                 return null;
               }
               if (key === 'release_date' || key === 'distributed_by') {
@@ -65,7 +78,6 @@ export default function Movie({ movie }) {
                   <Col xs lg={7} key={`${movie._key}_value${index}`} >
                     {movie[key]}
                   </Col>
-
                 </Row>
               );
             })}
