@@ -16,13 +16,14 @@ def read_movies_and_genres(file_path):
             # only keep movies with genres
             if row[2] == '(no genres listed)':
                 continue
+            row_genres = [genre for genre in row[2].split('|') if genre != 'IMAX'] if row[2] else []
             movies.append({
                 'movieId': row[0],
                 'title': row[1],
-                'genres': row[2].split('|') if row[2] else []
+                'genres': row_genres
             })
-            genres.update(row[2].split('|'))
-        return movies, genres
+            genres.update(row_genres)
+        return movies, list(genres)
 
 
 def read_links(file_path):
