@@ -46,6 +46,7 @@ The application contains 4 different user roles: Guest, User, Moderator and Admi
    - Create opinion threads or watch groups
    - Editing of own groups and threads
    - Use real-time chat for joined groups
+   - Rate movies and series
 3. Moderator
    - Delete groups, threads, comments that do not follow the guidelines
 4. Admin
