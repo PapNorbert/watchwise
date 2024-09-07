@@ -1,10 +1,6 @@
 import csv
 from datetime import datetime, timezone
 
-movies_file_path = './data/movies.csv'
-links_file_path = './data/movie_links.csv'
-tags_file_path = './data/movie_tags.csv'
-ratings_file_path = './data/movie_ratings.csv'
 
 def read_movies_and_genres(file_path):
     with open(file_path, mode='r', encoding='utf-8') as file:
@@ -46,7 +42,7 @@ def read_tags(file_path):
         return tags
 
 
-def get_movies_with_links_and_genres():
+def get_movies_with_links_and_genres(movies_file_path, links_file_path):
     # merge movies with links
     movies, genres = read_movies_and_genres(movies_file_path)
     links = read_links(links_file_path)
