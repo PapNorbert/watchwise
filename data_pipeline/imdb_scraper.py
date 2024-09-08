@@ -108,6 +108,6 @@ class ImdbSpider(scrapy.Spider):
         return self.results
 
 
-results = scrape_imdb('https://www.imdb.com/title/tt0031210/')
-for key, value in results.items():
-    print(f"{key}: {value}")
+# results = scrape_imdb('https://www.imdb.com/title/tt0031210/')
+# for key, value in results.items():
+#     print(f"{key}: {value}")
