@@ -74,3 +74,24 @@ def read_ratings_and_users(file_path):
             users.add(row[0])
         return ratings, users
 
+
+def read_tv_series(file_path):
+    with open(file_path, mode='r', encoding='utf-8') as file:
+        csv_reader = csv.reader(file)
+        header = next(csv_reader)
+        tv_series = []
+        for row in csv_reader:
+            if row[6]:
+                formatted_date = ''
+                if row[3]:
+                    date_obj = datetime.strptime(row[3], "%Y-%m-%d")
+                    formatted_date = date_obj.strftime('%B %d, %Y')
+                tv_series.append({
+                    'series_id': row[1],
+                    'title': row[2],
+                    'release_date': formatted_date,
+                    'country_of_origin': row[4],
+                    'original_language': row[5],
+                    'overview': row[6],
+                })
+        return tv_series
