@@ -1,30 +1,96 @@
 import csv
-from imdb_scraper import scrape_imdb
+import os
+from read_functions import get_movies_with_links_and_genres, read_tv_series
+from omdb_show_date_requester import get_show_details_by_title, get_show_details_by_id
 
 
-scraped_imdb_movies_data_file_path = './data/scraped_imdb_movies_data.csv'
+movies_data_file_path = './data/movies_collected_data.csv'
+series_data_file_path = './data/series_collected_data.csv'
 
-def save_scraped_movies_to_csv(movies_data):
-  print(f'Saving {len(movies_data)} movies to {scraped_imdb_movies_data_file_path}')
-  scraped_imdb_movies_data = []
+def save_movies_data_to_csv(movies_data, day):
   header = [
-    'movieId', 'plot_summary', 'show_name', 'release_date', 'runtime', 'directors', 'writers',
-    'production_companies', 'actors', 'aka_name', 'country_of_origin', 'filming_locations', 'color', 
-    'budget', 'box_office_opening_weekend_label', 'box_office_opening_weekend_value', 
-    'gross_worldwide', 'cover_image', 'trailer'
+    'movieId', 'title', 'genres', 'imdb_link', 'name', 'director', 'writer', 'actors', 'plot', 
+    'language', 'country_of_origin', 'awards', 'poster', 'ratings'
   ]
+  file_exists = os.path.isfile(movies_data_file_path)
+  # limit the number of movies to 950 per day
+  start_index = day * 950
+  end_index = start_index + 950
+  movies_data_to_process = movies_data[start_index:end_index]
 
-  with open(scraped_imdb_movies_data_file_path, 'w', newline='') as f:
+  with open(movies_data_file_path, 'a', newline='', encoding='utf-8') as f:
     writer = csv.DictWriter(f, fieldnames=header)
-    writer.writeheader()
-    for nr, movie in enumerate(movies_data):
-      print(f'Saving movie {movie["movieId"]}, nr {nr}')
-      if movie['imdb_link']:
-        scraped_imdb_data = scrape_imdb(movie['imdb_link'])
-        scraped_imdb_data['movieId'] = movie['movieId']
+    if not file_exists:
+      writer.writeheader()
+    for movie in movies_data_to_process:
+      result = get_show_details_by_id(movie['imdb_link'].split('/')[-2])
+      try:
+        movie.update({
+          'name': result['Title'],
+          'director': result['Director'],
+          'writer': result['Writer'],
+          'actors': result['Actors'],
+          'plot': result['Plot'],
+          'language': result['Language'], 
+          'country_of_origin': result['Country'],
+          'awards': result['Awards'],
+          'poster': result['Poster'],
+          'ratings': result['Ratings'],
+        })
         ordered_movie = {key: movie.get(key, '') for key in header}
         writer.writerow(ordered_movie)
-        scraped_imdb_movies_data.append(scraped_imdb_data)
+      except Exception as e:
+        print(f"Error processing movie {movie['title']}: {e}")
+        print(result)
 
-  return scraped_imdb_movies_data
-  
+
+def save_series_data_to_csv(series_data, day):
+  header = [
+    'series_id', 'name', 'year', 'release_date', 'genres', 'director', 'writer', 'actors', 'plot', 
+    'language', 'country_of_origin', 'awards', 'poster', 'ratings', 'imdb_link', 'total_seasons'
+  ]
+  file_exists = os.path.isfile(series_data_file_path)
+  # limit the number of series to 950 per day
+  start_index = day * 950
+  end_index = start_index + 950
+  series_data_to_process = series_data[start_index:end_index]
+
+  with open(series_data_file_path, 'a', newline='', encoding='utf-8') as f:
+    writer = csv.DictWriter(f, fieldnames=header)
+    if not file_exists:
+      writer.writeheader()
+    for series in series_data_to_process:
+      result = get_show_details_by_title(series['title'])
+      try:
+        series.update({
+          'name': result['Title'],
+          'year': result['Year'],
+          'release_date': result['Released'],
+          'genres': result['Genre'],
+          'director': result['Director'],
+          'writer': result['Writer'],
+          'actors': result['Actors'],
+          'plot': result['Plot'],
+          'language': result['Language'], 
+          'country_of_origin': result['Country'],
+          'awards': result['Awards'],
+          'poster': result['Poster'],
+          'ratings': result['Ratings'],
+          'imdb_link': f'https://www.imdb.com/title/{result["imdbID"]}/',
+          'total_seasons': result['totalSeasons'],
+        })
+        ordered_series = {key: series.get(key, '') for key in header}
+        writer.writerow(ordered_series)
+      except Exception as e:
+        print(f"Error processing series {series['title']}: {e}")
+        print(result)
+
+
+
+# movies_file_path = './data/movies.csv'
+# links_file_path = './data/movie_links.csv'
+# movies, genres = get_movies_with_links_and_genres(movies_file_path, links_file_path)
+# save_movies_data_to_csv(movies, 3)
+
+# series_file_path = './data/tv_series.csv'
+# series = read_tv_series(series_file_path)

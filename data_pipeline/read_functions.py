@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime, timezone
+import ast
 
 
 def read_movies_and_genres(file_path):
@@ -95,3 +96,33 @@ def read_tv_series(file_path):
                     'overview': row[6],
                 })
         return tv_series
+
+
+def read_collected_movies(file_path):
+    with open(file_path, mode='r', encoding='utf-8') as file:
+        csv_reader = csv.reader(file)
+        header = next(csv_reader)
+        movies_collected = []
+        genres_collected = set()
+        for row in csv_reader:
+            row_genres = ast.literal_eval(row[2]) if row[2] else []
+            row_ratings = ast.literal_eval(row[13]) if row[13] else []
+
+            movies_collected.append({
+                'movieId': row[0],
+                'title': row[1],
+                'genres': row_genres,
+                'imdb_link': row[3],
+                'name': row[4],
+                'director': row[5],
+                'writer': row[6],
+                'actors': row[7],
+                'plot': row[8],
+                'language': row[9],
+                'country_of_origin': row[10],
+                'awards': row[11],
+                'poster': row[12],
+                'ratings': row_ratings,
+            })
+            genres_collected.update(row_genres) 
+        return movies_collected, genres_collected
