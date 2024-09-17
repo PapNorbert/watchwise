@@ -1,4 +1,4 @@
-from db_connection import get_db
+from .db_connection import get_db
 
 
 def initialize_collections():
