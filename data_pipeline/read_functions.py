@@ -94,6 +94,8 @@ def read_tv_series(file_path):
                     'country_of_origin': row[4],
                     'original_language': row[5],
                     'overview': row[6],
+                    'vote_average': row[8],
+                    'vote_count': row[9],
                 })
         return tv_series
 
@@ -105,8 +107,13 @@ def read_collected_movies(file_path):
         movies_collected = []
         genres_collected = set()
         for row in csv_reader:
+            # arrays
             row_genres = ast.literal_eval(row[2]) if row[2] else []
             row_ratings = ast.literal_eval(row[13]) if row[13] else []
+            row_directors = row[5].split(', ') if row[5] else []
+            row_writers = row[6].split(', ') if row[6] else []
+            row_actors = row[7].split(', ') if row[7] else []
+            row_languages = row[9].split(', ') if row[9] else []
 
             movies_collected.append({
                 'movieId': row[0],
@@ -114,11 +121,11 @@ def read_collected_movies(file_path):
                 'genres': row_genres,
                 'imdb_link': row[3],
                 'name': row[4],
-                'director': row[5],
-                'writer': row[6],
-                'actors': row[7],
+                'directors': row_directors,
+                'writers': row_writers,
+                'actors': row_actors,
                 'plot': row[8],
-                'language': row[9],
+                'languages': row_languages,
                 'country_of_origin': row[10],
                 'awards': row[11],
                 'poster': row[12],
@@ -126,3 +133,44 @@ def read_collected_movies(file_path):
             })
             genres_collected.update(row_genres) 
         return movies_collected, genres_collected
+    
+
+def read_collected_series(file_path):
+    with open(file_path, mode='r', encoding='utf-8') as file:
+        csv_reader = csv.reader(file)
+        header = next(csv_reader)
+        series_collected = []
+        genres_collected = set()
+        for row in csv_reader:
+            # arrays
+            row_genres = [genre.strip() for genre in row[6].split(', ') if genre.strip() and genre.strip() != 'N/A'] if row[6] else []
+            ratings_row = ast.literal_eval(row[15]) if row[15] else []
+            vote_average = (float(row[1]) / 2) if row[1] else 0.0
+            vote_count = int(row[2]) if row[2] else 0
+            directors_row = [director.strip() for director in row[7].split(', ') if director.strip() and director.strip() != 'N/A'] if row[7] else []
+            writers_row = [writer.strip() for writer in row[8].split(', ') if writer.strip() and writer.strip() != 'N/A'] if row[8] else []
+            actors_row = [actor.strip() for actor in row[9].split(', ') if actor.strip() and actor.strip() != 'N/A'] if row[9] else []
+            row_languages = [language.strip() for language in row[11].split(', ') if language.strip() and language.strip() != 'N/A'] if row[11] else []
+
+            series_collected.append({
+                'series_id': row[0],
+                'vote_average': vote_average,
+                'vote_count': vote_count,
+                'name': row[3],
+                'year': row[4],
+                'release_date': row[5],
+                'genres': row_genres,
+                'director': directors_row,
+                'writer': writers_row,
+                'actors': actors_row,
+                'plot': row[10],
+                'language': row_languages,
+                'country_of_origin': row[12],
+                'awards': row[13],
+                'poster': row[14],
+                'ratings': ratings_row,
+                'imdb_link': row[16],
+                'total_seasons': row[17]
+            })
+            genres_collected.update(row_genres) 
+        return series_collected, genres_collected

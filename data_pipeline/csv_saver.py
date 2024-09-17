@@ -46,7 +46,7 @@ def save_movies_data_to_csv(movies_data, day):
 
 def save_series_data_to_csv(series_data, day):
   header = [
-    'series_id', 'name', 'year', 'release_date', 'genres', 'director', 'writer', 'actors', 'plot', 
+    'series_id', 'vote_average', 'vote_count', 'name', 'year', 'release_date', 'genres', 'director', 'writer', 'actors', 'plot', 
     'language', 'country_of_origin', 'awards', 'poster', 'ratings', 'imdb_link', 'total_seasons'
   ]
   file_exists = os.path.isfile(series_data_file_path)
@@ -60,37 +60,45 @@ def save_series_data_to_csv(series_data, day):
     if not file_exists:
       writer.writeheader()
     for series in series_data_to_process:
-      result = get_show_details_by_title(series['title'])
+      search_title = series['title']
+      if search_title.startswith("DC's "):
+        search_title = search_title.replace("DC's ", "")
+      if search_title.startswith("Marvel's "):
+        search_title = search_title.replace("Marvel's ", "")
+      result = get_show_details_by_title(search_title)
       try:
-        series.update({
-          'name': result['Title'],
-          'year': result['Year'],
-          'release_date': result['Released'],
-          'genres': result['Genre'],
-          'director': result['Director'],
-          'writer': result['Writer'],
-          'actors': result['Actors'],
-          'plot': result['Plot'],
-          'language': result['Language'], 
-          'country_of_origin': result['Country'],
-          'awards': result['Awards'],
-          'poster': result['Poster'],
-          'ratings': result['Ratings'],
-          'imdb_link': f'https://www.imdb.com/title/{result["imdbID"]}/',
-          'total_seasons': result['totalSeasons'],
-        })
-        ordered_series = {key: series.get(key, '') for key in header}
-        writer.writerow(ordered_series)
+        if result['Type'] == 'series':
+          series.update({
+            'name': result['Title'],
+            'year': result['Year'],
+            'release_date': result['Released'],
+            'genres': result['Genre'],
+            'director': result['Director'],
+            'writer': result['Writer'],
+            'actors': result['Actors'],
+            'plot': result['Plot'],
+            'language': result['Language'], 
+            'country_of_origin': result['Country'],
+            'awards': result['Awards'],
+            'poster': result['Poster'],
+            'ratings': result['Ratings'],
+            'imdb_link': f'https://www.imdb.com/title/{result["imdbID"]}/',
+            'total_seasons': result['totalSeasons'],
+          })
+          ordered_series = {key: series.get(key, '') for key in header}
+          writer.writerow(ordered_series)
       except Exception as e:
-        print(f"Error processing series {series['title']}: {e}")
-        print(result)
+        print(f"Error processing series '{series['title']}', id: '{series['series_id']}', vote_average: '{series['vote_average']}', vote_count: '{series['vote_count']}'")
+        if result['Error'] != 'Movie not found!':
+          print(result)
 
 
 
 # movies_file_path = './data/movies.csv'
 # links_file_path = './data/movie_links.csv'
 # movies, genres = get_movies_with_links_and_genres(movies_file_path, links_file_path)
-# save_movies_data_to_csv(movies, 3)
+# save_movies_data_to_csv(movies, 10)
 
 # series_file_path = './data/tv_series.csv'
 # series = read_tv_series(series_file_path)
+# save_series_data_to_csv(series, 10)
