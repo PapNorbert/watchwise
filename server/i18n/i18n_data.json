@@ -3,6 +3,7 @@
   "_key": "ID",
   "name": "Title",
   "director": "Director",
+  "directors": "Directors",
   "story_by": "Story written by",
   "based_on": "Based on",
   "producers": "Producers",
@@ -14,6 +15,7 @@
   "box_office": "Box office hit",
   "distributed_by": "Distributed by",
   "writer": "Writer",
+  "writers": "Writers",
   "created_by": "Created by",
   "nr_seasons": "Number of seasons",
   "nr_episodes": "Number of episodes",
@@ -296,5 +298,9 @@
   "empty_showKey": "Please specifie a show",
   "empty_rating": "Please specifie a rating",
   "not_accepted_rating": "Rating must be between 0-5 increasing by 0.5",
-  "500": "Sorry, there was an error processing you request"
+  "500": "Sorry, there was an error processing you request",
+  "languages": "Original languages",
+  "country_of_origin": "Country of origin",
+  "awards": "Awards",
+  "year": "Year"
 }
