@@ -118,7 +118,7 @@ router.get('/:id/genres', async (request, response) => {
       const movie = await findMovieByKey(id);
       if (movie != null) {
         const genres = await findGenreByHisTypeEdgeFrom(movie._id);
-        response.json(createResponseDto(genres));
+        response.json(createResponseDtos(genres));
       } else { // no entity found with id
         response.status(404).end();
       }

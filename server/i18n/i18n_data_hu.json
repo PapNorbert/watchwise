@@ -303,6 +303,19 @@
   "languages": "Eredeti nyelvek",
   "country_of_origin": "Származási ország",
   "awards": "Díjak",
-  "year": "Év"
-
+  "year": "Év",
+  "Talk-Show": "Talk-Show",
+  "Mystery": "Rejtély",
+  "News": "Hír",
+  "Film-Noir": "Film-Noir",
+  "Adult": "Felnőtt",
+  "Short": "Rövid",
+  "Sport": "Sport",
+  "Game-Show": "Game-Show",
+  "War": "Háború",
+  "Reality-TV": "Valóság-TV",
+  "Music": "Zene",
+  "Children": "Gyermek",
+  "Documentary": "Dokumentum",
+  "Family": "Család"
 }

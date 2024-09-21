@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-  findGenres, findGenreByKey, insertGenre, updateGenre, deleteGenreAndEdges,
+  findGenreByKey, insertGenre, updateGenre, deleteGenreAndEdges,
   getGenreCount, findAllGenres
 } from '../db/genres_db.js'
 import { createPaginationInfo } from '../util/paginationInfo.js'

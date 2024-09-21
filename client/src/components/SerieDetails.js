@@ -20,7 +20,7 @@ export default function SerieDetails({ serie, genres, refetch }) {
   ]
   const [rating, setRating] = useState(0);
   const [finishedRatingRequest, setFinishedRatingRequest] = useState(false);
-
+console.log(genres)
   useEffect(() => {
     async function fetchData() {
       const { data, statusCode } = await getAxios(`/api/ratings?show=series/${serie._key}`);
@@ -66,8 +66,13 @@ export default function SerieDetails({ serie, genres, refetch }) {
 
       <Stack direction='horizontal' className='mb-5'>
         <Stack direction='vertical' className='me-4'>
-          <img className='cover_img_details corner-borders'
-            src={`${process.env.PUBLIC_URL}/covers/${serie.img_name}`} alt={`${serie.title}_cover`} />
+          {serie.img_name.includes("http") ?
+            <img className='cover_img_details corner-borders'
+              src={serie.img_name} alt={`${serie.name}_cover`} />
+            :
+            <img className='cover_img_details corner-borders'
+              src={`${process.env.PUBLIC_URL}/covers/${serie.img_name}`} alt={`${serie.name}_cover`} />
+          }
           {finishedRatingRequest &&
             <Ratings handleRating={handleRating} avgRating={serie.average_rating}
               initialRating={rating} nrOfRatings={serie.total_ratings} />
@@ -88,12 +93,14 @@ export default function SerieDetails({ serie, genres, refetch }) {
         </Stack>
       </Stack>
 
-      <Container >
-        <Row className='ratio ratio-16x9 trailer' >
-          <iframe src={serie.trailer_link} title="YouTube video player"
-            allowFullScreen></iframe>
-        </Row>
-      </Container>
+      {serie.trailer_link &&
+        <Container >
+          <Row className='ratio ratio-16x9 trailer' >
+            <iframe src={serie.trailer_link} title="YouTube video player"
+              allowFullScreen></iframe>
+          </Row>
+        </Container>
+      }
 
       <Container className='mb-3' >
         <span className='btn-link p-0 link-dark clickable h4' key={`${serie._key}_watch_groups`}

@@ -302,5 +302,19 @@
   "languages": "Original languages",
   "country_of_origin": "Country of origin",
   "awards": "Awards",
-  "year": "Year"
+  "year": "Year",
+  "Talk-Show": "Talk-Show",
+  "Mystery": "Mystery",
+  "News": "News",
+  "Film-Noir": "Film-Noir",
+  "Adult": "Adult",
+  "Short": "Short",
+  "Sport": "Sport",
+  "Game-Show": "Game-Show",
+  "War": "War",
+  "Reality-TV": "Reality-TV",
+  "Music": "Music",
+  "Children": "Children",
+  "Documentary": "Documentary",
+  "Family": "Family"
 }

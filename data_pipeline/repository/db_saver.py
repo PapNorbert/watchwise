@@ -1,5 +1,6 @@
 import hashlib
 import random
+import re
 from datetime import datetime, timedelta
 from .db_connection import get_db
 
@@ -24,13 +25,13 @@ def save_series_and_ratings_to_database(series, genre_ids, users):
                     })
             # create ratings
             vote_count = serie['vote_count']
-            if vote_count > 500:
-                vote_count = vote_count % 500 + 293
             current_serie.update({
                 'total_ratings': vote_count,
                 'average_rating': serie['vote_average'],
                 'sum_of_ratings': serie['vote_average'] * vote_count,
             })
+            if vote_count > 100:
+                vote_count = vote_count % 100 + 93
             rating_users = random.choices(users, k=vote_count)
             for user_id in rating_users:
                 rating_edges.append({
@@ -43,14 +44,14 @@ def save_series_and_ratings_to_database(series, genre_ids, users):
             series_list.append(current_serie)
 
         # save series to db
+        print('Saving', len(series_list), 'series')
         save_many_to_database('series', series_list)
         # save the genres of series
+        print('Saving', len(genre_edges), 'his_type edges - genres of series')
         save_many_to_database('his_type', genre_edges)
         # save ratings of series
-        save_many_to_database('has_rated', rating_edges)
-        print('Saving', len(series_list), 'series')
-        print('Saving', len(genre_edges), 'his_type edges - genres of series')
         print('Saving', len(rating_edges), 'rating edges')
+        save_many_to_database('has_rated', rating_edges)
 
     except Exception as e:
         print(e)
@@ -138,14 +139,14 @@ def save_movies_and_ratings_to_database(movies, genre_ids, ratings):
             movie_list.append(current_movie)
 
         # save movies to db
+        print('Saving', len(movie_list), 'movies')
         save_many_to_database('movies', movie_list)
         # save the genres of movies
+        print('Saving', len(genre_edges), 'his_type edges - genres of movies')
         save_many_to_database('his_type', genre_edges)
         # save ratings of movies
-        save_many_to_database('has_rated', rating_edges)
-        print('Saving', len(movie_list), 'movies')
-        print('Saving', len(genre_edges), 'his_type edges - genres of movies')
         print('Saving', len(rating_edges), 'rating edges')
+        save_many_to_database('has_rated', rating_edges)
 
     except Exception as e:
         print(e)
@@ -174,6 +175,13 @@ def create_rating_edges(ratings):
     return rating_edges, movie_rating_values
 
 
+def extract_year_from_title(title):
+    match = re.search(r'\(([^()]+)\)\s*$', title)
+    if match:
+        return match.group(1)
+    return None
+
+
 def set_movie_values(current_movie, movie):
     if movie['name'] and movie['name'] != 'N/A':
         current_movie.update({'name': movie['name']})
@@ -186,6 +194,9 @@ def set_movie_values(current_movie, movie):
     if (movie['actors'] and movie['actors'] != 'N/A' and movie['actors'] != ['N/A']
             and movie['actors'] != []):
         current_movie.update({'actors': movie['actors']})
+    movie_year = extract_year_from_title(movie['title'])
+    if movie_year:
+        current_movie.update({'year': movie_year})
     if (movie['plot'] and movie['plot'] != 'N/A' and movie['plot'] != ['N/A']
             and movie['plot'] != []):
         current_movie.update({'storyline': movie['plot']})
@@ -213,16 +224,16 @@ def save_tags_to_database(tags):
                 '_key': string_to_5_digit_number(tag),
                 'name': tag
             })
-        save_many_to_database('tags', tags_list)
         print('Saving', len(tags_list), 'tags')
+        save_many_to_database('tags', tags_list)
     except Exception as e:
         print(e)
 
 
 def save_users_to_database(users):
     try:
-        save_many_to_database('users', users)
         print('Saving', len(users), 'users')
+        save_many_to_database('users', users)
     except Exception as e:
         print(e)
 
@@ -238,8 +249,8 @@ def save_genres_to_database(genres):
                 'name': genre
             })
             genre_ids.update({genre: f'genres/{genre_key}'})
-        save_many_to_database('genres', genres_list)
         print('Saving', len(genres_list), 'genres')
+        save_many_to_database('genres', genres_list)
         return genre_ids
     except Exception as e:
         print(e)

@@ -21,11 +21,12 @@ def load_data_to_database():
 
     initialize_collections()
 
+    # some new documents will be generated !!! 
+    # for example new series rating edges because of random users 
     save_tags_to_database(tags)
     save_users_to_database(users_to_save)
     genre_ids = save_genres_to_database(genres_total)
     save_movies_and_ratings_to_database(movies_collected, genre_ids, ratings)
-    # new rating edges will be generated for series because of random users !!!
     save_series_and_ratings_to_database(series_collected, genre_ids, list(users))
 
 
