@@ -1,12 +1,173 @@
 import hashlib
 import random
 import re
+import uuid
 from datetime import datetime, timedelta
 from .db_connection import get_db
 
 
+def save_op_threads_and_groups(movies_for_groups, series_for_groups, users):
+    current = None
+    try:
+        op_threads = []
+        watch_groups = []
+        watch_group_chats = []
+        his_group_chats = []
+        is_about_show_edges = []
+        for movie in movies_for_groups:
+            current = movie
+            movie_key = movie['_key']
+            thread_key = generate_key()
+            group_key = generate_key()
+            creator_user = random.choice(users)
+            creator_user2 = random.choice(users)
+
+            # create opinion threads
+            op_threads.append({
+                '_key': thread_key,
+                'title': f'{movie['name']} opinion thread',
+                'creator': creator_user['username'],
+                'show': movie['name'],
+                'description': f'Opinion thread about {movie['name']}',
+                'creation_date': generate_random_date(2023),
+                'show_id': movie_key,
+                'show_type': 'movie',
+                'tags': ['movie', 'spoilers', 'opinions'],
+                'comments': []
+            })
+            # edge for op thread
+            is_about_show_edges.append({
+                '_key': f'{movie_key}73{thread_key}',
+                '_from': f'opinion_threads/{thread_key}',
+                '_to': f'movies/{movie_key}'
+            })
+
+            # create watch group
+            create_date, watch_date = generate_random_2_dates(2024)
+            person_limit = random.randint(4, 16)
+            current_nr_persons = random.randint(1, person_limit)
+            watch_groups.append({
+                '_key': group_key,
+                'title': f'{movie['name']} watch group',
+                'creator': creator_user2['username'],
+                'show': movie['name'],
+                'description': f'Watch group for {movie['name']}',
+                'watch_date': watch_date,
+                'location': [46.768977, 23.589748],
+                'creation_date': create_date,
+                'show_id': movie_key,
+                'show_type': 'movie',
+                'comments': [],
+                'locationName': 'Parcare de biciclete Piața Unirii, Piața Unirii, Center, Cluj-Napoca, '
+                                'Cluj Metropolitan Area, Kolozs, 400113, Romania',
+                'personLimit': person_limit,
+                'currentNrOfPersons': current_nr_persons
+            })
+            # create watch group chat
+            wg_chat_key = f'{movie_key}9311{group_key}'
+            watch_group_chats.append({
+                '_key': wg_chat_key,
+                'chat_comments': []
+            })
+            # his_group_chat edge for watchgroup
+            his_group_chats.append({
+                '_key': f'{movie_key}9312{group_key}',
+                '_from': f'watch_groups/{group_key}',
+                '_to': f'watch_group_chats/{wg_chat_key}'
+            })
+            # is_about_show_edges edge for watchgroup
+            is_about_show_edges.append({
+                '_key': f'{movie_key}93{group_key}',
+                '_from': f'watch_groups/{group_key}',
+                '_to': f'movies/{movie_key}'
+            })
+
+        for serie in series_for_groups:
+            current = serie
+            serie_key = serie['_key']
+            thread_key = generate_key()
+            group_key = generate_key()
+            creator_user = random.choice(users)
+            creator_user2 = random.choice(users)
+
+            # create opinion threads
+            op_threads.append({
+                '_key': thread_key,
+                'title': f'{serie['name']} opinion thread',
+                'creator': creator_user['username'],
+                'show': serie['name'],
+                'description': f'Opinion thread about {serie['name']}',
+                'creation_date': generate_random_date(2023),
+                'show_id': serie_key,
+                'show_type': 'serie',
+                'tags': ['serie', 'spoilers', 'opinions'],
+                'comments': []
+            })
+            is_about_show_edges.append({
+                '_key': f'{serie_key}75{thread_key}',
+                '_from': f'opinion_threads/{thread_key}',
+                '_to': f'series/{serie_key}'
+            })
+
+            # create watch group
+            create_date, watch_date = generate_random_2_dates(2024)
+            person_limit = random.randint(4, 16)
+            current_nr_persons = random.randint(1, person_limit)
+            watch_groups.append({
+                '_key': group_key,
+                'title': f'{serie['name']} watch group',
+                'creator': creator_user2['username'],
+                'show': serie['name'],
+                'description': f'Watch group for {serie['name']}',
+                'watch_date': watch_date,
+                'location': [46.768977, 23.589748],
+                'creation_date': create_date,
+                'show_id': serie_key,
+                'show_type': 'serie',
+                'comments': [],
+                'locationName': 'Parcare de biciclete Piața Unirii, Piața Unirii, Center, Cluj-Napoca, '
+                                'Cluj Metropolitan Area, Kolozs, 400113, Romania',
+                'personLimit': person_limit,
+                'currentNrOfPersons': current_nr_persons
+            })
+            # create watch group chat
+            wg_chat_key = f'{serie_key}9321{group_key}'
+            watch_group_chats.append({
+                '_key': wg_chat_key,
+                'chat_comments': []
+            })
+            # his_group_chat edge for watchgroup
+            his_group_chats.append({
+                '_key': f'{serie_key}9322{group_key}',
+                '_from': f'watch_groups/{group_key}',
+                '_to': f'watch_group_chats/{wg_chat_key}'
+            })
+            # is_about_show_edges edge for watchgroup
+            is_about_show_edges.append({
+                '_key': f'{serie_key}95{group_key}',
+                '_from': f'watch_groups/{group_key}',
+                '_to': f'series/{serie_key}'
+            })
+
+        print('Saving', len(op_threads), 'opinion threads')
+        save_many_to_database('opinion_threads', op_threads)
+        print('Saving', len(is_about_show_edges), 'is_about_show edges - threads and groups')
+        save_many_to_database('is_about_show', is_about_show_edges)
+        print('Saving', len(watch_groups), 'watch groups')
+        save_many_to_database('watch_groups', watch_groups)
+        print('Saving', len(watch_group_chats), 'watch group chats')
+        save_many_to_database('watch_group_chats', watch_group_chats)
+        print('Saving', len(his_group_chats), 'his_group_chats edges - threads and groups')
+        save_many_to_database('his_group_chat', his_group_chats)
+
+    except Exception as e:
+        print(current)
+        print(e)
+
+
 def save_series_and_ratings_to_database(series, genre_ids, users):
     try:
+        series_for_groups = []
         series_list = []
         genre_edges = []
         rating_edges = []
@@ -30,6 +191,9 @@ def save_series_and_ratings_to_database(series, genre_ids, users):
                 'average_rating': serie['vote_average'],
                 'sum_of_ratings': serie['vote_average'] * vote_count,
             })
+            # add serie to create an opinion thread/watchgroup for it
+            if vote_count > 100:
+                series_for_groups.append(current_serie)
             if vote_count > 100:
                 vote_count = vote_count % 100 + 93
             rating_users = random.choices(users, k=vote_count)
@@ -53,8 +217,30 @@ def save_series_and_ratings_to_database(series, genre_ids, users):
         print('Saving', len(rating_edges), 'rating edges')
         save_many_to_database('has_rated', rating_edges)
 
+        return series_for_groups
     except Exception as e:
         print(e)
+
+
+def generate_random_2_dates(start_year=2010):
+    start_date = datetime(start_year, 1, 1)
+    end_date = datetime.now()
+    random_seconds = random.randint(0, int((end_date - start_date).total_seconds()))
+    first_date = start_date + timedelta(seconds=random_seconds)
+
+    min_distance_seconds = 30 * 24 * 60 * 60  # 30 days
+    max_distance_seconds = 365 * 24 * 60 * 60  # 1 year
+
+    if max_distance_seconds <= min_distance_seconds:
+        # if no valid time span, just add 30 days to the first date
+        second_date = first_date + timedelta(seconds=min_distance_seconds)
+    else:
+        random_additional_seconds = random.randint(min_distance_seconds, max_distance_seconds)
+        second_date = first_date + timedelta(seconds=random_additional_seconds)
+
+    first_date_str = first_date.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+    second_date_str = second_date.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+    return first_date_str, second_date_str
 
 
 def generate_random_date(start_year=2010):
@@ -104,6 +290,7 @@ def set_series_values(current_serie, serie):
 
 def save_movies_and_ratings_to_database(movies, genre_ids, ratings):
     try:
+        movies_for_groups = []
         movie_list = []
         genre_edges = []
         rating_edges, movie_rating_values = create_rating_edges(ratings)
@@ -121,6 +308,9 @@ def save_movies_and_ratings_to_database(movies, genre_ids, ratings):
                     'total_ratings': total_ratings,
                     'average_rating': round(average_rating, 2)
                 })
+                # add movie to create an opinion thread/watchgroup for it
+                if total_ratings > 30:
+                    movies_for_groups.append(current_movie)
             else:
                 current_movie.update({
                     'sum_of_ratings': 0,
@@ -133,7 +323,7 @@ def save_movies_and_ratings_to_database(movies, genre_ids, ratings):
                     genre_key = genre_ids[genre].split('/')[1]
                     genre_edges.append({
                         '_key': f'33{movie_id}{genre_key}{genre_key}{movie_id}',
-                        '_from': f'movies/{movie["movieId"]}',
+                        '_from': f'movies/{movie['movieId']}',
                         '_to': genre_ids[genre]
                     })
             movie_list.append(current_movie)
@@ -148,6 +338,7 @@ def save_movies_and_ratings_to_database(movies, genre_ids, ratings):
         print('Saving', len(rating_edges), 'rating edges')
         save_many_to_database('has_rated', rating_edges)
 
+        return movies_for_groups
     except Exception as e:
         print(e)
 
@@ -257,10 +448,22 @@ def save_genres_to_database(genres):
 
 
 def string_to_5_digit_number(s: str) -> str:
-    hash_object = hashlib.md5(s.encode())
-    hash_hex = hash_object.hexdigest()
-    unique_number = int(hash_hex[:8], 16) % 100000
-    return str(unique_number)
+    try:
+        hash_object = hashlib.md5(s.encode())
+        hash_hex = hash_object.hexdigest()
+        unique_number = int(hash_hex[:8], 16) % 100000
+        return str(unique_number)
+    except Exception as e:
+        print(e)
+
+
+def generate_key() -> str:
+    try:
+        unique_id = uuid.uuid4()
+        numeric_key = unique_id.int
+        return str(numeric_key)
+    except Exception as e:
+        print(e)
 
 
 # Saves documents to the database

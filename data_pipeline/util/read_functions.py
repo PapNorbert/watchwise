@@ -40,6 +40,11 @@ def read_tags(file_path):
         tags = set()
         for row in csv_reader:
             tags.add(row[2])
+        tags.add('spoilers')
+        tags.add('no spoilers')
+        tags.add('movie')
+        tags.add('serie')
+        tags.add('opinions')
         return tags
 
 
