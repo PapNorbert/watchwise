@@ -1,9 +1,14 @@
 
 
 export function createResponseDto(databaseObject) {
-  delete databaseObject['_id']
-  delete databaseObject['_rev']
-  return databaseObject;
+  const { _id, _rev, ...rest } = databaseObject;
+  // remove null values
+  Object.keys(rest).forEach(key => {
+    if (rest[key] === null || rest[key] === '') {
+      delete rest[key];
+    }
+  });
+  return rest;
 }
 
 export function createResponseDtos(databaseObjectArray) {

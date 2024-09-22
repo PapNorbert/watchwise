@@ -22,7 +22,15 @@ export default function Movie({ movie }) {
       </Card.Header>
       <Card.Body>
         <Stack direction='horizontal'>
-          <img className='cover_img' src={`${process.env.PUBLIC_URL}/covers/${movie.img_name}`} alt={`${movie.title}_cover`} />
+          {movie.img_name &&
+            (movie.img_name.includes("http") ?
+              <img className='cover_img'
+                src={movie.img_name} alt={`${movie.name}_cover`} />
+              :
+              <img className='cover_img'
+                src={`${process.env.PUBLIC_URL}/covers/${movie.img_name}`} alt={`${movie.name}_cover`} />
+            )
+          }
           <Stack direction='vertical' className='mt-5'>
 
             <Row key={`${movie._key}_rating_row`} className='justify-content-md-center mb-1'>
@@ -34,7 +42,7 @@ export default function Movie({ movie }) {
                 <span className='ms-2'>({convertBasedOnRatingsToLanguage(language, movie.total_ratings, i18nData)})</span>
               </Col>
             </Row>
-            
+
             {Object.keys(movie).map((key, index) => {
               if (keysToIgnore.includes(key)) {
                 return null;

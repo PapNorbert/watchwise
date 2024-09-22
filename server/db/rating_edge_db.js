@@ -101,7 +101,7 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
       // update show data
       const new_total_rating = show.total_ratings;
       const new_sum_ratings = show.sum_of_ratings - ratingEdge.rating + newRating;
-      const new_average = new_sum_ratings / new_total_rating;
+      const new_average = parseFloat((new_sum_ratings / new_total_rating).toFixed(2));
       await transaction.step(async () => {
         const aqlQuery = `FOR doc IN ${showType}s
             FILTER doc._key == @key
@@ -140,7 +140,7 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
       // update show data
       const new_total_rating = show.total_ratings + 1;
       const new_sum_ratings = show.sum_of_ratings + newRating;
-      const new_average = new_sum_ratings / new_total_rating;
+      const new_average = parseFloat((new_sum_ratings / new_total_rating).toFixed(2));
       await transaction.step(async () => {
         const aqlQuery = `FOR doc IN ${showType}s
             FILTER doc._key == @key

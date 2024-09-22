@@ -5,7 +5,11 @@ const genresCollection = pool.collection("genres");
 
 export async function findAllGenres() {
   try {
-    const cursor = await genresCollection.all();
+    const cursor = await pool.query(`
+      FOR genre IN genres
+      SORT genre.name ASC
+      RETURN genre
+    `);
     return await cursor.all();
   } catch (err) {
     console.log(err);

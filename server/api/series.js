@@ -117,7 +117,7 @@ router.get('/:id/genres', async (request, response) => {
       const series = await findSeriesByKey(id);
       if (series != null) {
         const genres = await findGenreByHisTypeEdgeFrom(series._id);
-        response.json(createResponseDto(genres));
+        response.json(createResponseDtos(genres));
       } else { // no entity found with id
         response.status(404).end();
       }

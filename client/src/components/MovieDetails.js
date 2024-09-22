@@ -67,8 +67,13 @@ export default function MovieDetails({ movie, genres, refetch }) {
 
       <Stack direction='horizontal' className='mb-5'>
         <Stack direction='vertical' className='me-4'>
-          <img className='cover_img_details corner-borders'
-            src={`${process.env.PUBLIC_URL}/covers/${movie.img_name}`} alt={`${movie.name}_cover`} />
+          {movie.img_name.includes("http") ?
+            <img className='cover_img_details corner-borders'
+              src={movie.img_name} alt={`${movie.name}_cover`} />
+            :
+            <img className='cover_img_details corner-borders'
+              src={`${process.env.PUBLIC_URL}/covers/${movie.img_name}`} alt={`${movie.name}_cover`} />
+          }
           {finishedRatingRequest &&
             <Ratings handleRating={handleRating} avgRating={movie.average_rating}
               initialRating={rating} nrOfRatings={movie.total_ratings} />
@@ -89,12 +94,14 @@ export default function MovieDetails({ movie, genres, refetch }) {
         </Stack>
       </Stack >
 
-      <Container >
-        <Row className='ratio ratio-16x9 trailer' >
-          <iframe src={movie.trailer_link} title="YouTube video player"
-            allowFullScreen></iframe>
-        </Row>
-      </Container>
+      {movie.trailer_link &&
+        <Container >
+          <Row className='ratio ratio-16x9 trailer' >
+            <iframe src={movie.trailer_link} title="YouTube video player"
+              allowFullScreen></iframe>
+          </Row>
+        </Container>
+      }
 
       <Container className='mb-3' >
         <span className='btn-link p-0 link-dark clickable h4' key={`${movie._key}_watch_groups`}

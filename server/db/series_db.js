@@ -6,7 +6,7 @@ const seriesCollection = pool.collection("series");
 export async function findSeries(page, limit) {
   try {
     const aqlQuery = `FOR doc IN series
-    SORT doc.name
+    SORT doc.total_ratings DESC
     LIMIT @offset, @count
     RETURN doc`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
@@ -20,7 +20,7 @@ export async function findSeries(page, limit) {
 export async function findSeriesShort(page, limit) {
   try {
     const aqlQuery = `FOR doc IN series
-    SORT doc.name
+    SORT doc.total_ratings DESC
     LIMIT @offset, @count
     LET genres = (
       FOR edge in his_type
@@ -32,11 +32,12 @@ export async function findSeriesShort(page, limit) {
     RETURN { 
       _key: doc._key,
       title: doc.name, 
+      genres: genres,
       nr_seasons: doc.nr_seasons, 
       nr_episodes: doc.nr_episodes, 
       release_date: doc.original_release,
       img_name: doc.img_name,
-      genres: genres,
+      awards: doc.awards,
       average_rating: doc.average_rating,
       total_ratings: doc.total_ratings
     }`;
@@ -53,7 +54,7 @@ export async function findSeriesShortByGenreType(page, limit, genreId) {
     const aqlQuery = `FOR doc IN INBOUND
     @genreId his_type
     FILTER CONTAINS(doc._id, "series")
-    SORT doc.name
+    SORT doc.total_ratings DESC
     LIMIT @offset, @count
     LET genres = (
       FOR edge in his_type
@@ -65,11 +66,14 @@ export async function findSeriesShortByGenreType(page, limit, genreId) {
     RETURN { 
       _key: doc._key,
       title: doc.name, 
+      genres: genres,
       nr_seasons: doc.nr_seasons, 
       nr_episodes: doc.nr_episodes, 
       release_date: doc.original_release,
       img_name: doc.img_name,
-      genres: genres
+      awards: doc.awards,
+      average_rating: doc.average_rating,
+      total_ratings: doc.total_ratings
     }`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, genreId: genreId });
     return await cursor.all();
@@ -83,7 +87,7 @@ export async function findSeriesShortByNameContains(page, limit, name) {
   try {
     const aqlQuery = `FOR doc IN series
     FILTER CONTAINS(UPPER(doc.name), @nameFilter)
-    SORT doc.name
+    SORT doc.total_ratings DESC
     LIMIT @offset, @count
     LET genres = (
       FOR edge in his_type
@@ -95,11 +99,14 @@ export async function findSeriesShortByNameContains(page, limit, name) {
     RETURN { 
       _key: doc._key,
       title: doc.name, 
+      genres: genres,
       nr_seasons: doc.nr_seasons, 
       nr_episodes: doc.nr_episodes, 
       release_date: doc.original_release,
       img_name: doc.img_name,
-      genres: genres
+      awards: doc.awards,
+      average_rating: doc.average_rating,
+      total_ratings: doc.total_ratings
     }`;
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, nameFilter: name });
     return await cursor.all();
