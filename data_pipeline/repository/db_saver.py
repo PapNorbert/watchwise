@@ -187,7 +187,7 @@ def save_series_and_ratings_to_database(series, genre_ids, users):
             # create ratings
             vote_count = serie['vote_count']
             current_serie.update({
-                'total_ratings': vote_count,
+                'total_ratings': vote_count % 6000,
                 'average_rating': serie['vote_average'],
                 'sum_of_ratings': serie['vote_average'] * vote_count,
             })
