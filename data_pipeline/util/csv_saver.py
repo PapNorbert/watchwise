@@ -7,6 +7,7 @@ from .omdb_show_date_requester import get_show_details_by_title, get_show_detail
 movies_data_file_path = './data/movies_collected_data.csv'
 series_data_file_path = './data/series_collected_data.csv'
 
+
 def save_movies_data_to_csv(movies_data, day):
     header = [
         'movieId', 'title', 'genres', 'imdb_link', 'name', 'director', 'writer', 'actors', 'plot',
@@ -91,6 +92,23 @@ def save_series_data_to_csv(series_data, day):
                 print(f"Error processing series '{series['title']}', id: '{series['series_id']}', vote_average: '{series['vote_average']}', vote_count: '{series['vote_count']}'")
                 if result['Error'] != 'Movie not found!':
                     print(result)
+
+
+def save_movies_with_embedding_to_csv(movies_data, filename):
+    header = [
+        'movieId', 'title', 'genres', 'imdb_link', 'name', 'directors', 'writers', 'actors', 'plot',
+        'languages', 'country_of_origin', 'awards', 'poster', 'ratings', 'embedding'
+    ]
+
+    with open(filename, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=header)
+        writer.writeheader()
+        for movie in movies_data:
+            try:
+                ordered_movie = {key: movie.get(key, '') for key in header}
+                writer.writerow(ordered_movie)
+            except Exception as e:
+                print(f"Error processing movie {movie['title']}: {e}")
 
 
 

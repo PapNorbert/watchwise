@@ -3,3 +3,5 @@ python-dotenv==1.0.0
 scrapy==2.11.2
 faker==28.4.1
 bcrypt==4.2.0
+nomic==3.1.2
+nomic[local]==3.1.2
