@@ -1,13 +1,18 @@
-from util.read_functions import read_tags, read_ratings_and_users, read_collected_movies, read_collected_series
+from util.read_functions import read_tags, read_ratings_and_users, read_collected_movies, read_collected_series, \
+    read_movie_embeddings
 from util.data_generator import generate_users
 from repository.db_setup import initialize_collections
 from repository.db_saver import save_tags_to_database, save_users_to_database, save_genres_to_database, \
-    save_movies_and_ratings_to_database, save_series_and_ratings_to_database, save_op_threads_and_groups
+    save_movies_and_ratings_to_database, save_series_and_ratings_to_database, save_op_threads_and_groups, \
+    save_embeddings_to_database
 
 tags_file_path = './data/movie_tags.csv'
 ratings_file_path = './data/movie_ratings.csv'
 collected_movies_file_path = './data/movies_collected_data.csv'
 collected_series_file_path = './data/series_collected_data.csv'
+
+# movie_embeddings_file_path = './data/movies_w_embedding_pgda_data.csv'
+movie_embeddings_file_path = './data/movies_w_embedding_pg_data.csv'
 
 
 def load_data_to_database():
@@ -18,6 +23,7 @@ def load_data_to_database():
     series_collected, genres_collected_series_set = read_collected_series(collected_series_file_path)
     genres_total = genres_collected_movies_set.union(genres_collected_series_set)
     users_to_save = generate_users(users)
+    movie_embeddings = read_movie_embeddings(movie_embeddings_file_path)
 
     initialize_collections()
     # some new documents will be generated !!!
@@ -28,6 +34,7 @@ def load_data_to_database():
     movies_for_groups = save_movies_and_ratings_to_database(movies_collected, genre_ids, ratings)
     series_for_groups = save_series_and_ratings_to_database(series_collected, genre_ids, user_ids_list)
     save_op_threads_and_groups(movies_for_groups, series_for_groups, users_to_save)
+    save_embeddings_to_database(movie_embeddings, [])
 
 
 if __name__ == "__main__":

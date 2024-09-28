@@ -66,12 +66,15 @@ def create_embeddings_for_movies_nomic(movies, fields_to_use):
     for i, movie in enumerate(movies):
         movie['embedding'] = embeddings[i].tolist()
 
-    # Upload embeddings and metadata to Atlas for visualization
-    metadata = [
-        {'movieId': movie['movieId'], 'title': movie['title'], 'genres': ', '.join(movie['genres'])}
-        for movie in movies
-    ]
-    field_names = ','.join(fields_to_use)
-    atlas.map_embeddings(embeddings=embeddings, data=metadata, name=f'Movies {field_names}')
+    try:
+        # Upload embeddings and metadata to Atlas for visualization
+        metadata = [
+            {'movieId': movie['movieId'], 'title': movie['title'], 'genres': ', '.join(movie['genres'])}
+            for movie in movies
+        ]
+        field_names = ','.join(fields_to_use)
+        atlas.map_data(embeddings=embeddings, data=metadata, identifier=f'Movies {field_names}')
+    except Exception as e:
+        print(e)
 
     return movies
