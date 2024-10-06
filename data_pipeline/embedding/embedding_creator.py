@@ -7,9 +7,9 @@ def create_embeddings_for_movies_nomic(movies, fields_to_use):
     """
         Generates embeddings for movies using selected fields.
 
-        :param movies: List of movie dictionaries.
-        :param fields_to_use: List of keys from the movie dictionaries to be used for embedding (e.g., ['plot', 'genres', 'actors', 'directors']).
-        :return: The movie list with embeddings added for each movie.
+        :param movies: List of movie dictionaries. :param fields_to_use: List of keys from the movie dictionaries to
+        be used for embedding (e.g., ['plot', 'genres', 'actors', 'directors']). :return: The movie list with
+        embeddings added for each movie.
     """
     texts_to_embed = []
     for movie in movies:
@@ -24,38 +24,39 @@ def create_embeddings_for_movies_nomic(movies, fields_to_use):
         texts_to_embed.append(' '.join(combined_text))
     start_time = time.time()
 
-    # # generate all embeddings
-    # output = embed.text(
-    #     texts=texts_to_embed,
-    #     model='nomic-embed-text-v1.5',
-    #     task_type='search_document',
-    #     inference_mode='local'  # Enable local inference
-    # )
+    # generate all embeddings
+    output = embed.text(
+        texts=texts_to_embed,
+        model='nomic-embed-text-v1.5',
+        task_type='search_document',
+        inference_mode='local'  # Enable local inference
+    )
+
+    embeddings = np.array(output['embeddings'])
+
+    # # generate embeddings in batches
+    # embeddings = []
+    # batch_size = 200
+    # print(f'Generating embeddings in batches, batch size: {batch_size}')
+    # batch_start_time = time.time()
+    # batch_end_time = time.time()
+    # for i in range(0, len(texts_to_embed), batch_size):
+    #     batch_start_time = time.time()
+    #     batch_texts = texts_to_embed[i:i + batch_size]
+    #     output = embed.text(
+    #         texts=batch_texts,
+    #         model='nomic-embed-text-v1.5',
+    #         task_type='search_document',
+    #         inference_mode='local'  # Enable local inference
+    #     )
+    #     embeddings.extend(output['embeddings'])
+    #     batch_end_time = time.time()
+    #     elapsed_time = batch_end_time - batch_start_time
+    #     print(f"Processed batch {i // batch_size + 1}/{(len(texts_to_embed) + batch_size - 1) // batch_size}")
+    #     print(f"Time taken: {elapsed_time:.2f} seconds")
     #
-    # embeddings = np.array(output['embeddings'])
+    # embeddings = np.array(embeddings)
 
-    # generate embeddings in batches
-    embeddings = []
-    batch_size = 200
-    print(f'Generating embeddings in batches, batch size: {batch_size}')
-    batch_start_time = time.time()
-    batch_end_time = time.time()
-    for i in range(0, len(texts_to_embed), batch_size):
-        batch_start_time = time.time()
-        batch_texts = texts_to_embed[i:i + batch_size]
-        output = embed.text(
-            texts=batch_texts,
-            model='nomic-embed-text-v1.5',
-            task_type='search_document',
-            inference_mode='local'  # Enable local inference
-        )
-        embeddings.extend(output['embeddings'])
-        batch_end_time = time.time()
-        elapsed_time = batch_end_time - batch_start_time
-        print(f"Processed batch {i // batch_size + 1}/{(len(texts_to_embed) + batch_size - 1) // batch_size}")
-        print(f"Time taken: {elapsed_time:.2f} seconds")
-
-    embeddings = np.array(embeddings)
     print("All embeddings generated successfully!")
     end_time = time.time()
     elapsed_time_seconds = end_time - start_time
