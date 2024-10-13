@@ -195,3 +195,19 @@ def read_movie_embeddings(file_path):
                 'embedding': row_embedding,
             })
         return movies_w_embeddings
+
+
+def read_serie_embeddings(file_path):
+    with open(file_path, mode='r', encoding='utf-8') as file:
+        csv_reader = csv.reader(file)
+        _header = next(csv_reader)
+        movies_w_embeddings = []
+        for row in csv_reader:
+            row_embedding = ast.literal_eval(row[18]) if row[18] else []
+            movies_w_embeddings.append({
+                'series_id': row[0],
+                'name': row[3],
+                'poster': row[14],
+                'embedding': row_embedding,
+            })
+        return movies_w_embeddings

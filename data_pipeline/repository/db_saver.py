@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from .db_connection import get_db
 
 
-def save_embeddings_to_database(movie_embeddings, serie_embeddings):
+def save_embeddings_to_database(movie_embeddings, series_embeddings):
     try:
         embeddings = []
         has_embedding_edges = []
@@ -26,7 +26,22 @@ def save_embeddings_to_database(movie_embeddings, serie_embeddings):
                 '_from': f'movies/{movie_key}',
                 '_to': f'embeddings/{embedding_key}'
             })
-        # TODO series saving
+        for serie_embeddings in series_embeddings:
+            embedding_key = generate_key()
+            serie_key = serie_embeddings['series_id']
+            embeddings.append({
+                '_key': embedding_key,
+                'show_key': serie_key,
+                'show_type': 'serie',
+                'show_name': serie_embeddings['name'],
+                'img_name': serie_embeddings['poster'],
+                'embedding_vector': serie_embeddings['embedding']
+            })
+            has_embedding_edges.append({
+                '_key': embedding_key,
+                '_from': f'series/{serie_key}',
+                '_to': f'embeddings/{embedding_key}'
+            })
 
         print('Saving', len(embeddings), 'embeddings')
         save_many_to_database('embeddings', embeddings)

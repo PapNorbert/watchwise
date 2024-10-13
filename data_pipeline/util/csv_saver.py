@@ -111,6 +111,23 @@ def save_movies_with_embedding_to_csv(movies_data, filename):
                 print(f"Error processing movie {movie['title']}: {e}")
 
 
+def save_series_with_embedding_to_csv(series_data, filename):
+    header = [
+        'series_id', 'vote_average', 'vote_count', 'name', 'year', 'release_date', 'genres', 'directors',
+        'writers', 'actors', 'plot', 'languages', 'country_of_origin', 'awards', 'poster',
+        'ratings', 'imdb_link', 'total_seasons', 'embedding'
+    ]
+
+    with open(filename, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=header)
+        writer.writeheader()
+        for serie in series_data:
+            try:
+                ordered_serie = {key: serie.get(key, '') for key in header}
+                writer.writerow(ordered_serie)
+            except Exception as e:
+                print(f"Error processing serie {serie['name']}: {e}")
+
 
 # movies_file_path = './data/movies.csv'
 # links_file_path = './data/movie_links.csv'
