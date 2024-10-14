@@ -21,9 +21,9 @@ def create_embeddings():
     # save_movies_with_embedding_to_csv(movies_with_embeddings, './data/movies_w_embedding_pg_data.csv')
 
     series_with_embeddings = create_embeddings_for_series_nomic(
-        series=series_collected, fields_to_use=['plot', 'genres']
+        series=series_collected, fields_to_use=['plot', 'genres', 'directors', 'actors']
     )
-    save_series_with_embedding_to_csv(series_with_embeddings, './data/series_w_embedding_pg_data.csv')
+    save_series_with_embedding_to_csv(series_with_embeddings, './data/series_w_embedding_pgda_data.csv')
 
 
 if __name__ == "__main__":

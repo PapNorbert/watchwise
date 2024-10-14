@@ -129,7 +129,7 @@ def create_embeddings_for_series_nomic(series, fields_to_use):
     try:
         # Upload embeddings and metadata to Atlas for visualization
         metadata = [
-            {'serieId': serie['series_id'], 'title': serie['title'], 'genres': ', '.join(serie['genres'])}
+            {'serieId': serie['series_id'], 'title': serie['name'], 'genres': ', '.join(serie['genres'])}
             for serie in series
         ]
         field_names = ','.join(fields_to_use)
