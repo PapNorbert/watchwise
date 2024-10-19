@@ -18,7 +18,8 @@ def save_embeddings_to_database(movie_embeddings, series_embeddings):
                 'show_key': movie_key,
                 'show_type': 'movie',
                 'show_name': movie_embedding['name'],
-                'img_name': movie_embedding['poster'],
+                **({'img_name': movie_embedding['poster']} if
+                   'poster' in movie_embedding and movie_embedding['poster'] != 'N/A' else {}),
                 'embedding_vector': movie_embedding['embedding']
             })
             has_embedding_edges.append({
@@ -34,7 +35,8 @@ def save_embeddings_to_database(movie_embeddings, series_embeddings):
                 'show_key': serie_key,
                 'show_type': 'serie',
                 'show_name': serie_embeddings['name'],
-                'img_name': serie_embeddings['poster'],
+                **({'img_name': serie_embeddings['poster']} if
+                   'poster' in serie_embeddings and serie_embeddings['poster'] != 'N/A' else {}),
                 'embedding_vector': serie_embeddings['embedding']
             })
             has_embedding_edges.append({

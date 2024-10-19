@@ -1,0 +1,39 @@
+.recommendation-container {
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 10px;
+}
+
+.flex-nowrap {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.recommendation-item {
+  margin-right: 10px;
+  text-align: center;
+  height: 260px;
+  width: 180px;
+}
+
+.recommendation-image {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  object-fit: contain;
+}
+
+.recommendation-name {
+  font-size: 14px;
+  text-align: center;
+  overflow: hidden;
+  white-space: normal;
+  box-orient: vertical;
+  display: -webkit-box;
+  display: flex;
+  flex-direction: column;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  margin: 0; 
+}

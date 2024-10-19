@@ -102,6 +102,7 @@ h2 {
 
 .storyline {
   text-indent: 2em;
+  width: 80%;
 }
 
 .corner-borders {
@@ -260,4 +261,18 @@ svg {
 
 .text-half-bold {
   font-weight: 500;
+}
+
+.section-name {
+  padding: 10px;
+}
+
+.section-name::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  background-color: #f76f00;     
+  margin-right: 15px;
+  vertical-align: middle;
+  border-radius: 5px;
 }

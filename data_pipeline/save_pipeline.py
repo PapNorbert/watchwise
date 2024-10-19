@@ -11,9 +11,9 @@ ratings_file_path = './data/movie_ratings.csv'
 collected_movies_file_path = './data/movies_collected_data.csv'
 collected_series_file_path = './data/series_collected_data.csv'
 
-# movie_embeddings_file_path = './data/movies_w_embedding_pgda_data.csv'
-movie_embeddings_file_path = './data/movies_w_embedding_pg_data.csv'
-series_embeddings_file_path = './data/series_w_embedding_pg_data.csv'
+movie_embeddings_file_path = './data/movies_w_embedding_pgda_data.csv'
+# movie_embeddings_file_path = './data/movies_w_embedding_pg_data.csv'
+series_embeddings_file_path = './data/series_w_embedding_pgda_data.csv'
 
 
 def load_data_to_database():

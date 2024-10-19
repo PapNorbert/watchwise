@@ -22,15 +22,17 @@ export default function Movie({ movie }) {
       </Card.Header>
       <Card.Body>
         <Stack direction='horizontal'>
-          {movie.img_name &&
-            (movie.img_name.includes("http") ?
-              <img className='cover_img'
-                src={movie.img_name} alt={`${movie.name}_cover`} />
-              :
-              <img className='cover_img'
-                src={`${process.env.PUBLIC_URL}/covers/${movie.img_name}`} alt={`${movie.name}_cover`} />
-            )
-          }
+          <img
+            className='cover_img'
+            src={
+              movie.img_name
+                ? movie.img_name.includes("http")
+                  ? movie.img_name
+                  : `${process.env.PUBLIC_URL}/covers/${movie.img_name}`
+                : `${process.env.PUBLIC_URL}/covers/cover-placeholder.png`
+            }
+            alt={`${movie.name}_cover`}
+          />
           <Stack direction='vertical' className='mt-5'>
 
             <Row key={`${movie._key}_rating_row`} className='justify-content-md-center mb-1'>

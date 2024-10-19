@@ -8,6 +8,9 @@ import { convertKeyToSelectedLanguage } from '../i18n/conversion'
 import { postRequest } from '../axiosRequests/PostAxios'
 import { getAxios } from '../axiosRequests/GetAxios'
 import useAuth from '../hooks/useAuth'
+import RecommendationCarousel from './recommendation/RecommendationCarousel'
+import SectionName from './SectionName'
+
 
 export default function MovieDetails({ movie, genres, refetch }) {
   const { auth, setAuth } = useAuth();
@@ -20,16 +23,28 @@ export default function MovieDetails({ movie, genres, refetch }) {
   ]
   const [rating, setRating] = useState(0);
   const [finishedRatingRequest, setFinishedRatingRequest] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
+  const [finishedRecommendationsRequest, setFinishedRecommendationsRequest] = useState(false);
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchRatingData() {
       const { data, statusCode } = await getAxios(`/api/ratings?show=movies/${movie._key}`);
       if (statusCode === 200 && data) {
         setRating(data);
       }
       setFinishedRatingRequest(true);
     }
-    fetchData();
+
+    async function fetchRecommendationData() {
+      const { data, statusCode } = await getAxios(`/api/recommendations/${movie._key}`);
+      if (statusCode === 200 && data) {
+        setRecommendations(data);
+      }
+      setFinishedRecommendationsRequest(true);
+    }
+
+    fetchRatingData();
+    fetchRecommendationData();
   }, [movie._key]);
 
 
@@ -66,14 +81,18 @@ export default function MovieDetails({ movie, genres, refetch }) {
       <h1>{movie.name}</h1>
 
       <Stack direction='horizontal' className='mb-5'>
-        <Stack direction='vertical' className='me-4'>
-          {movie.img_name.includes("http") ?
-            <img className='cover_img_details corner-borders'
-              src={movie.img_name} alt={`${movie.name}_cover`} />
-            :
-            <img className='cover_img_details corner-borders'
-              src={`${process.env.PUBLIC_URL}/covers/${movie.img_name}`} alt={`${movie.name}_cover`} />
-          }
+        <Stack direction='vertical image-stack' className='me-4'>
+          <img
+            className='cover_img_details corner-borders'
+            src={
+              movie.img_name
+                ? movie.img_name.includes("http")
+                  ? movie.img_name
+                  : `${process.env.PUBLIC_URL}/covers/${movie.img_name}`
+                : `${process.env.PUBLIC_URL}/covers/cover-placeholder.png`
+            }
+            alt={`${movie.name}_cover`}
+          />
           {finishedRatingRequest &&
             <Ratings handleRating={handleRating} avgRating={movie.average_rating}
               initialRating={rating} nrOfRatings={movie.total_ratings} />
@@ -103,84 +122,98 @@ export default function MovieDetails({ movie, genres, refetch }) {
         </Container>
       }
 
-      <Container className='mb-3' >
-        <span className='btn-link p-0 link-dark clickable h4' key={`${movie._key}_watch_groups`}
-          onClick={() => navigate(`/watch_groups?show=${movie.name}`)}>
-          {convertKeyToSelectedLanguage('wg_with_movie', i18nData)}
-        </span>
-      </Container>
-      <Container className='mb-3 mt-3 ' >
-        <span className='btn-link p-0 link-dark clickable h4' key={`${movie._key}_opinion_threads`}
-          onClick={() => navigate(`/opinion_threads?show=${movie.name}`)}>
-          {convertKeyToSelectedLanguage('ot_with_movie', i18nData)}
-        </span>
+      <Container className='mt-5 mb-5'>
+        <SectionName name={convertKeyToSelectedLanguage('links', i18nData)} />
+        <Container className='mb-3' >
+          <span className='btn-link p-0 link-dark clickable h4' key={`${movie._key}_watch_groups`}
+            onClick={() => navigate(`/watch_groups?show=${movie.name}`)}>
+            {convertKeyToSelectedLanguage('wg_with_movie', i18nData)}
+          </span>
+        </Container>
+        <Container className='mb-3 mt-3 ' >
+          <span className='btn-link p-0 link-dark clickable h4' key={`${movie._key}_opinion_threads`}
+            onClick={() => navigate(`/opinion_threads?show=${movie.name}`)}>
+            {convertKeyToSelectedLanguage('ot_with_movie', i18nData)}
+          </span>
+        </Container>
       </Container>
 
-      {
-        genres &&
-        genres.map((value, indexNr) => {
-          return (
-            <Container key={`container_${movie._key}_genre_${indexNr}`} >
-              <Row key={`row_${movie._key}_genre_${indexNr}`} className='mb-1'>
-                {indexNr === 0 &&
-                  <>
-                    <h4 className='mt-3'>{convertKeyToSelectedLanguage('genres', i18nData)}</h4>
-                    <hr className='short-hr'></hr>
-                  </>
-                }
-              </Row>
-              <Row className='big-margin-left'>
-                {value.name}
-              </Row>
-            </Container>
-          )
-        })
+      {finishedRecommendationsRequest && recommendations.length > 0 &&
+        <Container className='mt-5 mb-5'>
+          <SectionName name={convertKeyToSelectedLanguage('similar_shows', i18nData)} />
+          <RecommendationCarousel recommendations={recommendations} />
+        </Container>
       }
 
-      {
-        Object.keys(movie).map((key, index) => {
-          if (keysToIgnore.includes(key)) {
-            return null;
-          }
-          if (Array.isArray(movie[key])) {
-            // if value is an array show elements in different rows
+      <Container className='mt-5 mb-5'>
+        <SectionName name={convertKeyToSelectedLanguage('details', i18nData)} />
+        {
+          genres &&
+          genres.map((value, indexNr) => {
             return (
-              movie[key].map((value, indexNr) => {
-                return (
-                  <Container key={`container_${movie._key}_${index}_${indexNr}`} >
-                    <Row key={`row_${movie._key}_${index}_${indexNr}`} className='mb-1'>
-                      {indexNr === 0 &&
-                        <>
-                          <h4 className='mt-3'>{convertKeyToSelectedLanguage(key, i18nData)}</h4>
-                          <hr className='short-hr'></hr>
-                        </>
-                      }
-                    </Row>
-                    <Row className='big-margin-left'>
-                      {value}
-                    </Row>
-                  </Container>
-                )
-              })
-            );
-          }
+              <Container key={`container_${movie._key}_genre_${indexNr}`} >
+                <Row key={`row_${movie._key}_genre_${indexNr}`} className='mb-1'>
+                  {indexNr === 0 &&
+                    <>
+                      <h4 className='mt-3'>{convertKeyToSelectedLanguage('genres', i18nData)}</h4>
+                      <hr className='short-hr'></hr>
+                    </>
+                  }
+                </Row>
+                <Row className='big-margin-left'>
+                  {value.name}
+                </Row>
+              </Container>
+            )
+          })
+        }
 
-          return (
-            <Container key={`container_${movie._key}_${index}`} >
-              <Row key={`${movie._key}_${index}`} className='mb-2'>
-                <h4 className='mt-3'>{convertKeyToSelectedLanguage(key, i18nData)}</h4>
-                <hr className='short-hr'></hr>
-              </Row>
-              <Row>
-                {key === 'imdb_link' ?
-                  <a href={movie[key]} className='big-margin-left mb-5'>{movie[key]}</a>
-                  :
-                  <span className='big-margin-left'>{movie[key]}</span>}
-              </Row>
-            </Container>
-          );
-        })
-      }
+        {
+          Object.keys(movie).map((key, index) => {
+            if (keysToIgnore.includes(key)) {
+              return null;
+            }
+            if (Array.isArray(movie[key])) {
+              // if value is an array show elements in different rows
+              return (
+                movie[key].map((value, indexNr) => {
+                  return (
+                    <Container key={`container_${movie._key}_${index}_${indexNr}`} >
+                      <Row key={`row_${movie._key}_${index}_${indexNr}`} className='mb-1'>
+                        {indexNr === 0 &&
+                          <>
+                            <h4 className='mt-3'>{convertKeyToSelectedLanguage(key, i18nData)}</h4>
+                            <hr className='short-hr'></hr>
+                          </>
+                        }
+                      </Row>
+                      <Row className='big-margin-left'>
+                        {value}
+                      </Row>
+                    </Container>
+                  )
+                })
+              );
+            }
+
+            return (
+              <Container key={`container_${movie._key}_${index}`} >
+                <Row key={`${movie._key}_${index}`} className='mb-2'>
+                  <h4 className='mt-3'>{convertKeyToSelectedLanguage(key, i18nData)}</h4>
+                  <hr className='short-hr'></hr>
+                </Row>
+                <Row>
+                  {key === 'imdb_link' ?
+                    <a href={movie[key]} className='big-margin-left mb-5'>{movie[key]}</a>
+                    :
+                    <span className='big-margin-left'>{movie[key]}</span>}
+                </Row>
+              </Container>
+            );
+          })
+        }
+      </Container>
+
     </>
   )
 }
