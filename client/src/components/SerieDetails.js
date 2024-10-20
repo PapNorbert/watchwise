@@ -80,7 +80,7 @@ export default function SerieDetails({ serie, genres, refetch }) {
       <h1>{serie.name}</h1>
 
       <Stack direction='horizontal' className='mb-5'>
-        <Stack direction='vertical image-stack' className='me-4'>
+        <Stack direction='vertical' className='me-4 image-stack'>
           <img
             className='cover_img_details corner-borders'
             src={

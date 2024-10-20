@@ -276,3 +276,7 @@ svg {
   vertical-align: middle;
   border-radius: 5px;
 }
+
+.image-stack {
+  max-width: 300px;
+}
