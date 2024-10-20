@@ -5,3 +5,5 @@ faker==28.4.1
 bcrypt==4.2.0
 nomic==3.1.2
 nomic[local]==3.1.2
+gensim==4.3.1
+nltk==3.9.0

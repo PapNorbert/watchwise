@@ -1,6 +1,13 @@
 from nomic import embed, atlas
 import numpy as np
 import time
+from gensim.models import Word2Vec
+from gensim.models.phrases import Phrases, Phraser
+import nltk
+import re
+
+
+VECTOR_SIZE = 500
 
 
 def create_embeddings_for_movies_nomic(movies, fields_to_use):
@@ -90,8 +97,8 @@ def create_embeddings_for_series_nomic(series, fields_to_use):
 
         :param series: List of serie dictionaries.
         :param fields_to_use: List of keys from the serie dictionaries to
-        be used for embedding (e.g., ['plot', 'genres', 'actors', 'directors']). :return: The movie list with
-        embeddings added for each movie.
+        be used for embedding (e.g., ['plot', 'genres', 'actors', 'directors']). :return: The serie list with
+        embeddings added for each serie.
     """
     texts_to_embed = []
     for serie in series:
@@ -138,3 +145,82 @@ def create_embeddings_for_series_nomic(series, fields_to_use):
         print(e)
 
     return series
+
+
+nltk.download('punkt')
+nltk.download('punkt_tab')
+
+
+def preprocess_text_word2vec(text):
+    # Remove special characters and tokenize
+    text = re.sub(r'\W+', ' ', text.lower())
+    return nltk.word_tokenize(text)
+
+
+def detect_phrases(corpus):
+    # Phrases detects common bigrams (two-word phrases)
+    bigram = Phrases(corpus, min_count=10, threshold=10)
+    bigram_phraser = Phraser(bigram)
+
+    # Apply the bigram detector to the corpus
+    return [bigram_phraser[sentence] for sentence in corpus]
+
+
+def create_embeddings_word2vec(shows, fields_to_use):
+    """
+        Generates embeddings for shows using selected fields and adds 'embedding' value
+        to the dictionary for each element
+
+        :param shows: List of show dictionaries.
+        :param fields_to_use: List of keys from the serie dictionaries to
+        be used for embedding (e.g., ['plot', 'genres', 'actors', 'directors']).
+        :return: The shows list with embeddings added for each show.
+    """
+    texts_to_embed = []
+    for show in shows:
+        combined_text = []
+        for field in fields_to_use:
+            # if the field is a list join it with commas
+            if isinstance(show[field], list):
+                combined_text.append(', '.join(show[field]))
+            else:
+                combined_text.append(show[field])
+        texts_to_embed.append(preprocess_text_word2vec(' '.join(combined_text)))
+
+    texts_to_embed_with_phrases = detect_phrases(texts_to_embed)
+
+    print("Training Word2Vec model")
+    start_time = time.time()
+    model = Word2Vec(sentences=texts_to_embed_with_phrases, vector_size=VECTOR_SIZE, window=5,
+                     min_count=2, workers=4, epochs=5)
+    end_time = time.time()
+    elapsed_time_seconds = end_time - start_time
+    elapsed_time_minutes = elapsed_time_seconds / 60
+    print(f"Time taken: {elapsed_time_seconds:.2f} seconds")
+
+    print("Assigning embeddings to shows")
+    word_vectors = model.wv
+    del model
+
+    start_time = time.time()
+    for i, show in enumerate(shows):
+        # Average the word vectors for all words in the show's text
+        vectors = [word_vectors[word] for word in texts_to_embed_with_phrases[i] if word in word_vectors]
+        if vectors:
+            # average the vector
+            show_embedding = np.zeros(VECTOR_SIZE)
+            for vector in vectors:
+                show_embedding += vector
+            show_embedding /= len(vectors)
+            show['embedding'] = show_embedding.tolist()
+        else:
+            show['embedding'] = [0] * VECTOR_SIZE
+
+    end_time = time.time()
+    elapsed_time_seconds = end_time - start_time
+    elapsed_time_minutes = elapsed_time_seconds / 60
+    print(f"Time taken: {elapsed_time_seconds:.2f} seconds")
+
+    return shows
+
+
