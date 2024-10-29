@@ -5,7 +5,8 @@ from gensim.models import Word2Vec
 from gensim.models.phrases import Phrases, Phraser
 import nltk
 import re
-
+from sentence_transformers import SentenceTransformer, InputExample, losses
+from torch.utils.data import DataLoader
 
 VECTOR_SIZE = 500
 
@@ -147,10 +148,6 @@ def create_embeddings_for_series_nomic(series, fields_to_use):
     return series
 
 
-nltk.download('punkt')
-nltk.download('punkt_tab')
-
-
 def preprocess_text_word2vec(text):
     # Remove special characters and tokenize
     text = re.sub(r'\W+', ' ', text.lower())
@@ -176,6 +173,10 @@ def create_embeddings_word2vec(shows, fields_to_use):
         be used for embedding (e.g., ['plot', 'genres', 'actors', 'directors']).
         :return: The shows list with embeddings added for each show.
     """
+
+    nltk.download('punkt')
+    nltk.download('punkt_tab')
+
     texts_to_embed = []
     for show in shows:
         combined_text = []
@@ -222,5 +223,89 @@ def create_embeddings_word2vec(shows, fields_to_use):
     print(f"Time taken: {elapsed_time_seconds:.2f} seconds")
 
     return shows
+
+
+def create_embeddings_sentence_transformer(series, movies, fields_to_use):
+    print("Fine tuning model")
+    start_time = time.time()
+    # TODO train data
+    fine_tuned_model = fine_tune_model([], 3)
+    end_time = time.time()
+    elapsed_time_seconds = end_time - start_time
+    elapsed_time_minutes = elapsed_time_seconds / 60
+    print(f"Time taken: {elapsed_time_seconds:.2f} seconds")
+    print("Generating movie embeddings")
+    start_time = time.time()
+    movies_with_embeddings = generate_embeddings_sentence_transformer(movies, fields_to_use, fine_tuned_model)
+    end_time = time.time()
+    elapsed_time_seconds = end_time - start_time
+    elapsed_time_minutes = elapsed_time_seconds / 60
+    print(f"Time taken: {elapsed_time_minutes:.2f} minutes")
+    print("Generating series embeddings")
+    start_time = time.time()
+    series_with_embeddings = generate_embeddings_sentence_transformer(series, fields_to_use, fine_tuned_model)
+    end_time = time.time()
+    elapsed_time_seconds = end_time - start_time
+    elapsed_time_minutes = elapsed_time_seconds / 60
+    print(f"Time taken: {elapsed_time_minutes:.2f} minutes")
+    return movies_with_embeddings, series_with_embeddings
+
+
+def fine_tune_model(train_data, epochs=1, warmup_steps=None):
+    """
+    Fine-tune the SentenceTransformer model using the provided training data.
+
+    Args:
+        train_data (list): List of training examples with 'text1', 'text2', and 'label'.
+        epochs (int): Number of epochs for fine-tuning.
+        warmup_steps (int): Number of warmup steps for learning rate.
+
+    Returns:
+        model (SentenceTransformer): Fine-tuned SentenceTransformer model.
+    """
+    model = SentenceTransformer('all-mpnet-base-v2')
+    train_examples = [InputExample(texts=[d["text1"], d["text2"]], label=d["label"]) for d in train_data]
+    train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16)
+    train_loss = losses.CosineSimilarityLoss(model=model)
+    if warmup_steps is None:
+        total_steps = len(train_dataloader) * epochs
+        warmup_steps = max(1, int(0.1 * total_steps))
+    model.fit(train_objectives=[(train_dataloader, train_loss)], epochs=epochs, warmup_steps=warmup_steps)
+    return model
+
+
+def generate_embeddings_sentence_transformer(shows, fields_to_use, model):
+    """
+    Generate embeddings for a list of shows using specified fields.
+
+    Args:
+        shows (list): List of dictionaries, each representing a show.
+        fields_to_use (list): List of field names to concatenate for embeddings.
+        model (SentenceTransformer): SentenceTransformer model for generating embeddings.
+
+    Returns:
+        embeddings (np.array): Array of embeddings for each show.
+    """
+    show_texts = []
+    for shows in shows:
+        combined_text = []
+        for field in fields_to_use:
+            if isinstance(shows[field], list):
+                combined_text.append(', '.join(shows[field]))
+            else:
+                combined_text.append(shows[field])
+        show_texts.append(' '.join(combined_text))
+
+    embeddings = model.encode(show_texts, show_progress_bar=True)
+    for i, show in enumerate(shows):
+        show['embedding'] = embeddings[i].tolist()
+
+    return shows
+
+
+
+
+
+
 
 
