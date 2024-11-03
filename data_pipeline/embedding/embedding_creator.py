@@ -8,6 +8,8 @@ import re
 from sentence_transformers import SentenceTransformer, InputExample, losses
 from torch.utils.data import DataLoader
 
+from embedding.util.custom_dataset import CustomDataset
+
 VECTOR_SIZE = 500
 
 
@@ -196,7 +198,7 @@ def create_embeddings_word2vec(shows, fields_to_use):
                      min_count=2, workers=4, epochs=5)
     end_time = time.time()
     elapsed_time_seconds = end_time - start_time
-    elapsed_time_minutes = elapsed_time_seconds / 60
+    # elapsed_time_minutes = elapsed_time_seconds / 60
     print(f"Time taken: {elapsed_time_seconds:.2f} seconds")
 
     print("Assigning embeddings to shows")
@@ -219,20 +221,19 @@ def create_embeddings_word2vec(shows, fields_to_use):
 
     end_time = time.time()
     elapsed_time_seconds = end_time - start_time
-    elapsed_time_minutes = elapsed_time_seconds / 60
+    # elapsed_time_minutes = elapsed_time_seconds / 60
     print(f"Time taken: {elapsed_time_seconds:.2f} seconds")
 
     return shows
 
 
-def create_embeddings_sentence_transformer(series, movies, fields_to_use):
+def create_embeddings_sentence_transformer(series, movies, fields_to_use, train_data):
     print("Fine tuning model")
     start_time = time.time()
-    # TODO train data
-    fine_tuned_model = fine_tune_model([], 3)
+    fine_tuned_model = fine_tune_model(train_data, 3)
     end_time = time.time()
     elapsed_time_seconds = end_time - start_time
-    elapsed_time_minutes = elapsed_time_seconds / 60
+    # elapsed_time_minutes = elapsed_time_seconds / 60
     print(f"Time taken: {elapsed_time_seconds:.2f} seconds")
     print("Generating movie embeddings")
     start_time = time.time()
@@ -265,7 +266,8 @@ def fine_tune_model(train_data, epochs=1, warmup_steps=None):
     """
     model = SentenceTransformer('all-mpnet-base-v2')
     train_examples = [InputExample(texts=[d["text1"], d["text2"]], label=d["label"]) for d in train_data]
-    train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16)
+    train_dataset = CustomDataset(train_examples)
+    train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=16)
     train_loss = losses.CosineSimilarityLoss(model=model)
     if warmup_steps is None:
         total_steps = len(train_dataloader) * epochs
@@ -287,13 +289,13 @@ def generate_embeddings_sentence_transformer(shows, fields_to_use, model):
         embeddings (np.array): Array of embeddings for each show.
     """
     show_texts = []
-    for shows in shows:
+    for show in shows:
         combined_text = []
         for field in fields_to_use:
-            if isinstance(shows[field], list):
-                combined_text.append(', '.join(shows[field]))
+            if isinstance(show[field], list):
+                combined_text.append(', '.join(show[field]))
             else:
-                combined_text.append(shows[field])
+                combined_text.append(show[field])
         show_texts.append(' '.join(combined_text))
 
     embeddings = model.encode(show_texts, show_progress_bar=True)
