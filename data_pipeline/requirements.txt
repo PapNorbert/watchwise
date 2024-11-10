@@ -7,4 +7,6 @@ nomic==3.1.2
 nomic[local]==3.1.2
 gensim==4.3.1
 nltk==3.9.0
-sentence_transformers==3.2.1
+transformers==4.45.2
+sentence_transformers==3.1.1
+datasets==3.1.0

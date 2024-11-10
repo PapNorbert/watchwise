@@ -42,15 +42,15 @@ def create_embeddings():
 
     fields_to_use = ['name', 'plot', 'genres', 'directors', 'actors']
     save_filename = './data/st_npgda_train.json'
-    create_train_data(movies_collected, series_collected, fields_to_use, save_filename)
+    # create_train_data(movies_collected, series_collected, fields_to_use, save_filename)
     train_data = read_train_data(save_filename)
 
-    # movies_with_embeddings_st, series_with_embeddings_st = create_embeddings_sentence_transformer(
-    #     movies=movies_collected,  series=series_collected, train_data=train_data,
-    #     fields_to_use=fields_to_use
-    # )
-    # save_movies_with_embedding_to_csv(movies_with_embeddings_st, './data/movies_w_embedding_st_npgda_data.csv')
-    # save_series_with_embedding_to_csv(series_with_embeddings_st, './data/series_w_embedding_st_npgda_data.csv')
+    movies_with_embeddings_st, series_with_embeddings_st = create_embeddings_sentence_transformer(
+        movies=movies_collected,  series=series_collected, train_data=train_data,
+        fields_to_use=fields_to_use
+    )
+    save_movies_with_embedding_to_csv(movies_with_embeddings_st, './data/movies_w_embedding_st_npgda_data.csv')
+    save_series_with_embedding_to_csv(series_with_embeddings_st, './data/series_w_embedding_st_npgda_data.csv')
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+from datasets import Dataset
 from nomic import embed, atlas
 import numpy as np
 import time
@@ -5,10 +6,11 @@ from gensim.models import Word2Vec
 from gensim.models.phrases import Phrases, Phraser
 import nltk
 import re
-from sentence_transformers import SentenceTransformer, InputExample, losses
-from torch.utils.data import DataLoader
+from sentence_transformers import SentenceTransformer, losses, SentenceTransformerTrainingArguments, \
+    SentenceTransformerTrainer
+from sentence_transformers.training_args import BatchSamplers
+from sklearn.model_selection import train_test_split
 
-from embedding.util.custom_dataset import CustomDataset
 
 VECTOR_SIZE = 500
 
@@ -252,27 +254,56 @@ def create_embeddings_sentence_transformer(series, movies, fields_to_use, train_
     return movies_with_embeddings, series_with_embeddings
 
 
-def fine_tune_model(train_data, epochs=1, warmup_steps=None):
+def fine_tune_model(full_train_data, epochs=1):
     """
     Fine-tune the SentenceTransformer model using the provided training data.
 
     Args:
-        train_data (list): List of training examples with 'text1', 'text2', and 'label'.
+        full_train_data (list): List of training examples with 'text1', 'text2', and 'label'.
         epochs (int): Number of epochs for fine-tuning.
-        warmup_steps (int): Number of warmup steps for learning rate.
 
     Returns:
         model (SentenceTransformer): Fine-tuned SentenceTransformer model.
     """
     model = SentenceTransformer('all-mpnet-base-v2')
-    train_examples = [InputExample(texts=[d["text1"], d["text2"]], label=d["label"]) for d in train_data]
-    train_dataset = CustomDataset(train_examples)
-    train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=16)
+    train_data, eval_data = train_test_split(full_train_data, test_size=0.1, random_state=42)
+
+    train_dataset = Dataset.from_dict({
+        'sentence1': [item['text1'] for item in train_data],
+        'sentence2': [item['text2'] for item in train_data],
+        'score': [item['label'] for item in train_data],
+    })
+    eval_dataset = Dataset.from_dict({
+        'sentence1': [(item['text1']) for item in eval_data],
+        'sentence2': [item['text2'] for item in eval_data],
+        'score': [item['label'] for item in eval_data],
+    })
     train_loss = losses.CosineSimilarityLoss(model=model)
-    if warmup_steps is None:
-        total_steps = len(train_dataloader) * epochs
-        warmup_steps = max(1, int(0.1 * total_steps))
-    model.fit(train_objectives=[(train_dataloader, train_loss)], epochs=epochs, warmup_steps=warmup_steps)
+
+    args = SentenceTransformerTrainingArguments(
+        # Required parameter:
+        output_dir="models/watchswize-recom-model",
+        # Optional training parameters:
+        num_train_epochs=epochs,
+        warmup_ratio=0.1,
+        # Optional tracking/debugging parameters:
+        eval_strategy="steps",
+        eval_steps=300,
+        save_strategy="steps",
+        save_steps=300,
+        save_total_limit=2,
+        load_best_model_at_end=True,
+        logging_steps=100
+    )
+    trainer = SentenceTransformerTrainer(
+        model=model,
+        args=args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        loss=train_loss,
+    )
+    trainer.train()
+    model.save_pretrained("models/watchswize-recom-model/final")
     return model
 
 
