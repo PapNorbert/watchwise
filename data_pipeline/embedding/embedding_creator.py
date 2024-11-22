@@ -282,7 +282,7 @@ def fine_tune_model(full_train_data, epochs=1):
 
     args = SentenceTransformerTrainingArguments(
         # Required parameter:
-        output_dir="models/watchswize-recom-model",
+        output_dir="models/watchwise-recom-model",
         # Optional training parameters:
         num_train_epochs=epochs,
         warmup_ratio=0.1,
@@ -303,7 +303,7 @@ def fine_tune_model(full_train_data, epochs=1):
         loss=train_loss,
     )
     trainer.train()
-    model.save_pretrained("models/watchswize-recom-model/final")
+    model.save_pretrained("models/watchwise-recom-model/final")
     return model
 
 

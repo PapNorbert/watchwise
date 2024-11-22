@@ -44,3 +44,5 @@ yarn-error.log*
 
 .idea/
 .venv/
+
+data_pipeline/models/
