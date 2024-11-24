@@ -1,20 +1,25 @@
 import json
 
 
-def create_train_data(movies: list[dict], series: list[dict], fields_to_use: list[str], save_filename: str):
-    raw_train_data = read_raw_train_data('./data/raw_train_data.json')
+def create_train_data(movies: list[dict], series: list[dict], fields_to_use: list[str], save_filename: str,
+                      train_filename: str):
+    raw_train_data = read_raw_train_data(train_filename)
     train_data = []
     for data in raw_train_data:
+        print(data)
         current_show = get_show(data['type'], data['key'], movies, series)
-        similar_show = get_show(data['most_similar']['show_type'], data['most_similar']['show_key'], movies, series)
-        disimilar_show = get_show(data['least_similar']['show_type'], data['least_similar']['show_key'], movies, series)
         current_show_text = create_show_text(current_show, fields_to_use)
-        similar_show_text = create_show_text(similar_show, fields_to_use)
-        disimilar_show_text = create_show_text(disimilar_show, fields_to_use)
-        train_data.append({'text1': current_show_text, 'text2': similar_show_text,
-                           'label': round(data['most_similar']['similarity'], 2)})
-        train_data.append({'text1': current_show_text, 'text2': disimilar_show_text,
-                           'label': round(data['least_similar']['similarity'], 2)})
+        if data['most_similar']:
+            similar_show = get_show(data['most_similar']['show_type'], data['most_similar']['show_key'], movies, series)
+            similar_show_text = create_show_text(similar_show, fields_to_use)
+            train_data.append({'text1': current_show_text, 'text2': similar_show_text,
+                               'label': round(data['most_similar']['similarity'], 2)})
+        if data['least_similar']:
+            disimilar_show = get_show(data['least_similar']['show_type'], data['least_similar']['show_key'], movies,
+                                      series)
+            disimilar_show_text = create_show_text(disimilar_show, fields_to_use)
+            train_data.append({'text1': current_show_text, 'text2': disimilar_show_text,
+                               'label': round(data['least_similar']['similarity'], 2)})
     save_train_data(train_data, save_filename)
 
 

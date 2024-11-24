@@ -9,6 +9,9 @@ ratings_file_path = './data/movie_ratings.csv'
 collected_movies_file_path = './data/movies_collected_data.csv'
 collected_series_file_path = './data/series_collected_data.csv'
 
+train_data_file = './data/raw_train_data.json'
+train_data_file_ext = './data/raw_train_data_ext.json'
+
 
 def create_embeddings():
     movies_collected, genres_collected_movies_set = read_collected_movies(collected_movies_file_path)
@@ -41,16 +44,16 @@ def create_embeddings():
     # Sentence Transformers
 
     fields_to_use = ['name', 'plot', 'genres', 'directors', 'actors']
-    save_filename = './data/st_npgda_train.json'
-    # create_train_data(movies_collected, series_collected, fields_to_use, save_filename)
-    train_data = read_train_data(save_filename)
-
-    movies_with_embeddings_st, series_with_embeddings_st = create_embeddings_sentence_transformer(
-        movies=movies_collected,  series=series_collected, train_data=train_data,
-        fields_to_use=fields_to_use
-    )
-    save_movies_with_embedding_to_csv(movies_with_embeddings_st, './data/movies_w_embedding_st_npgda_data.csv')
-    save_series_with_embedding_to_csv(series_with_embeddings_st, './data/series_w_embedding_st_npgda_data.csv')
+    save_filename = './data/st_ext_npgda_train.json'
+    create_train_data(movies_collected, series_collected, fields_to_use, save_filename, train_data_file_ext)
+    # train_data = read_train_data(save_filename)
+    #
+    # movies_with_embeddings_st, series_with_embeddings_st = create_embeddings_sentence_transformer(
+    #     movies=movies_collected,  series=series_collected, train_data=train_data,
+    #     fields_to_use=fields_to_use
+    # )
+    # save_movies_with_embedding_to_csv(movies_with_embeddings_st, './data/movies_w_embedding_st_ext_npgda_data.csv')
+    # save_series_with_embedding_to_csv(series_with_embeddings_st, './data/series_w_embedding_st_ext_npgda_data.csv')
 
 
 if __name__ == "__main__":
