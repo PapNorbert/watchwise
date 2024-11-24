@@ -6,15 +6,14 @@ def create_train_data(movies: list[dict], series: list[dict], fields_to_use: lis
     raw_train_data = read_raw_train_data(train_filename)
     train_data = []
     for data in raw_train_data:
-        print(data)
         current_show = get_show(data['type'], data['key'], movies, series)
         current_show_text = create_show_text(current_show, fields_to_use)
-        if data['most_similar']:
+        if data.get('most_similar'):
             similar_show = get_show(data['most_similar']['show_type'], data['most_similar']['show_key'], movies, series)
             similar_show_text = create_show_text(similar_show, fields_to_use)
             train_data.append({'text1': current_show_text, 'text2': similar_show_text,
                                'label': round(data['most_similar']['similarity'], 2)})
-        if data['least_similar']:
+        if data.get('least_similar'):
             disimilar_show = get_show(data['least_similar']['show_type'], data['least_similar']['show_key'], movies,
                                       series)
             disimilar_show_text = create_show_text(disimilar_show, fields_to_use)
