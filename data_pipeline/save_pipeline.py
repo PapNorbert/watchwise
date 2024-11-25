@@ -20,6 +20,9 @@ series_embeddings_w2v_file_path = './data/series_w_embedding_w2v_pgda_data.csv'
 movie_embeddings_st_file_path = './data/movies_w_embedding_st_npgda_data.csv'
 series_embeddings_st_file_path = './data/series_w_embedding_st_npgda_data.csv'
 
+movie_embeddings_st_ext_file_path = './data/movies_w_embedding_st_ext_npgda_data.csv'
+series_embeddings_st_ext_file_path = './data/series_w_embedding_st_ext_npgda_data.csv'
+
 
 def load_data_to_database():
     movies_collected, genres_collected_movies_set = read_collected_movies(collected_movies_file_path)
@@ -29,8 +32,8 @@ def load_data_to_database():
     series_collected, genres_collected_series_set = read_collected_series(collected_series_file_path)
     genres_total = genres_collected_movies_set.union(genres_collected_series_set)
     users_to_save = generate_users(users)
-    movie_embeddings = read_movie_embeddings(movie_embeddings_st_file_path)
-    serie_embeddings = read_serie_embeddings(series_embeddings_st_file_path)
+    movie_embeddings = read_movie_embeddings(movie_embeddings_st_ext_file_path)
+    serie_embeddings = read_serie_embeddings(series_embeddings_st_ext_file_path)
 
     initialize_collections()
     # some new documents will be generated !!!

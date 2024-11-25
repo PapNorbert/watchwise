@@ -8,7 +8,6 @@ import nltk
 import re
 from sentence_transformers import SentenceTransformer, losses, SentenceTransformerTrainingArguments, \
     SentenceTransformerTrainer
-from sentence_transformers.training_args import BatchSamplers
 from sklearn.model_selection import train_test_split
 
 
@@ -231,12 +230,7 @@ def create_embeddings_word2vec(shows, fields_to_use):
 
 def create_embeddings_sentence_transformer(series, movies, fields_to_use, train_data):
     print("Fine tuning model")
-    start_time = time.time()
     fine_tuned_model = fine_tune_model(train_data, 3)
-    end_time = time.time()
-    elapsed_time_seconds = end_time - start_time
-    # elapsed_time_minutes = elapsed_time_seconds / 60
-    print(f"Time taken: {elapsed_time_seconds:.2f} seconds")
     print("Generating movie embeddings")
     start_time = time.time()
     movies_with_embeddings = generate_embeddings_sentence_transformer(movies, fields_to_use, fine_tuned_model)
@@ -334,11 +328,3 @@ def generate_embeddings_sentence_transformer(shows, fields_to_use, model):
         show['embedding'] = embeddings[i].tolist()
 
     return shows
-
-
-
-
-
-
-
-
