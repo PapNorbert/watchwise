@@ -2,11 +2,10 @@ from enum import Enum
 from embedding.embedding_creator import (create_embeddings_for_movies_nomic, create_embeddings_for_series_nomic,
                                          create_embeddings_word2vec, create_embeddings_sentence_transformer)
 from util.csv_saver import save_movies_with_embedding_to_csv, save_series_with_embedding_to_csv
-from util.read_functions import read_ratings_and_users, read_collected_movies, read_collected_series
+from util.read_functions import read_collected_movies, read_collected_series
 from util.train_data import create_train_data, read_train_data
 
 
-ratings_file_path = './data/movie_ratings.csv'
 collected_movies_file_path = './data/movies_collected_data.csv'
 collected_series_file_path = './data/series_collected_data.csv'
 
@@ -23,9 +22,7 @@ class EmbeddingType(Enum):
 
 def create_embeddings(embedding_type: EmbeddingType, generate_train_data: bool = False):
     movies_collected, genres_collected_movies_set = read_collected_movies(collected_movies_file_path)
-    # ratings, users = read_ratings_and_users(ratings_file_path)
     series_collected, genres_collected_series_set = read_collected_series(collected_series_file_path)
-    # genres_total = genres_collected_movies_set.union(genres_collected_series_set)
 
     if embedding_type == EmbeddingType.NOMIC:
         # nomic AI
