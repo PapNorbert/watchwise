@@ -1,3 +1,3 @@
 export const RECOMMEND_DEFAULTS = {
-  LIMIT: 20
+  LIMIT: 15
 }
