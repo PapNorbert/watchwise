@@ -12,6 +12,8 @@ collected_series_file_path = './data/series_collected_data.csv'
 train_data_file = './data/raw_train_data.json'
 train_data_file_ext = './data/raw_train_data_ext.json'
 
+model_name = "./models/watchwise-recom-model-20-epoch/final"
+
 
 class EmbeddingType(Enum):
     NOMIC = 1
@@ -57,7 +59,7 @@ def create_embeddings(embedding_type: EmbeddingType, generate_train_data: bool =
         train_data = read_train_data(save_filename)
         movies_with_embeddings_st, series_with_embeddings_st = create_embeddings_sentence_transformer(
             movies=movies_collected,  series=series_collected, train_data=train_data,
-            fields_to_use=fields_to_use
+            fields_to_use=fields_to_use, model_name=model_name, fine_tune=False
         )
         save_movies_with_embedding_to_csv(movies_with_embeddings_st, './data/movies_w_embedding_st_npgda_data.csv')
         save_series_with_embedding_to_csv(series_with_embeddings_st, './data/series_w_embedding_st_npgda_data.csv')
@@ -70,7 +72,7 @@ def create_embeddings(embedding_type: EmbeddingType, generate_train_data: bool =
         train_data = read_train_data(save_filename)
         movies_with_embeddings_st, series_with_embeddings_st = create_embeddings_sentence_transformer(
             movies=movies_collected,  series=series_collected, train_data=train_data,
-            fields_to_use=fields_to_use
+            fields_to_use=fields_to_use, model_name=model_name, fine_tune=False
         )
         save_movies_with_embedding_to_csv(movies_with_embeddings_st, './data/movies_w_embedding_st_ext_npgda_data.csv')
         save_series_with_embedding_to_csv(series_with_embeddings_st, './data/series_w_embedding_st_ext_npgda_data.csv')

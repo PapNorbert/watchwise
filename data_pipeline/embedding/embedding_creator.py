@@ -228,19 +228,24 @@ def create_embeddings_word2vec(shows, fields_to_use):
     return shows
 
 
-def create_embeddings_sentence_transformer(series, movies, fields_to_use, train_data):
-    print("Fine tuning model")
-    fine_tuned_model = fine_tune_model(train_data, 3)
+def create_embeddings_sentence_transformer(series, movies, fields_to_use, train_data, model_name, fine_tune=False):
+    model = None
+    if fine_tune:
+        print("Fine tuning model")
+        model = fine_tune_model(train_data, 3)
+    else:
+        print(f"Using trained model with name {model_name}")
+        model = SentenceTransformer(model_name)
     print("Generating movie embeddings")
     start_time = time.time()
-    movies_with_embeddings = generate_embeddings_sentence_transformer(movies, fields_to_use, fine_tuned_model)
+    movies_with_embeddings = generate_embeddings_sentence_transformer(movies, fields_to_use, model)
     end_time = time.time()
     elapsed_time_seconds = end_time - start_time
     elapsed_time_minutes = elapsed_time_seconds / 60
     print(f"Time taken: {elapsed_time_minutes:.2f} minutes")
     print("Generating series embeddings")
     start_time = time.time()
-    series_with_embeddings = generate_embeddings_sentence_transformer(series, fields_to_use, fine_tuned_model)
+    series_with_embeddings = generate_embeddings_sentence_transformer(series, fields_to_use, model)
     end_time = time.time()
     elapsed_time_seconds = end_time - start_time
     elapsed_time_minutes = elapsed_time_seconds / 60
