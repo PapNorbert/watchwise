@@ -17,6 +17,7 @@ Welcome to WatchWise - a platform dedicated to sharing your enthusiasm for movie
     - [Commands](#commands)
     - [Using Docker](#using-docker)
       - [Backend server](#backend-server)
+      - [Frontend](#frontend-1)
 
 ## Description
 
@@ -124,3 +125,19 @@ npm start
 
 For example if ArangoDB is running locally on your computer outside docker 
 your_pool_url should be 'http://host.docker.internal:8529'
+
+#### Frontend
+
+1. Build the image
+```bash
+  cd client
+  docker build . -t watchwise-client
+``` 
+
+2. Start the container setting server url and making it accessible on port 3800
+ ```bash
+  docker run -d --name watchwise-client -e PORT=3800 -e REACT_APP_SERVER_URL=<your_server_url> -p 3800:3800 watchwise-client
+``` 
+
+For example if server is running locally on your computer outside docker 
+your_server_url should be 'http://host.docker.internal:8529'

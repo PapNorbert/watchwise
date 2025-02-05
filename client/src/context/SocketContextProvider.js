@@ -1,7 +1,7 @@
 import React, { createContext, useState } from 'react'
 import io from 'socket.io-client'
 
-import { serverUrl } from '../axiosRequests/configuredAxios'
+import { serverUrl } from '../config/serverConfig.js'
 
 export const SocketContext = createContext(null);
 

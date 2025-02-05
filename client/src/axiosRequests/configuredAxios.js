@@ -1,6 +1,5 @@
 import axios from 'axios'
-
-export const serverUrl = 'http://localhost:3000';
+import {serverUrl} from '../config/serverConfig.js'
 
 export default axios.create({
   baseURL: serverUrl,
