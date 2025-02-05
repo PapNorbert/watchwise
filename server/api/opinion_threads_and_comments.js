@@ -22,7 +22,7 @@ import { createResponseDtos, createResponseDtosLoggedIn } from '../dto/outgoing_
 import { validateOpinionTreadCreation } from '../util/opinionThreadValidation.js'
 import { validateCommentCreation } from '../util/commentValidation.js'
 import { authorize } from '../middlewares/auth.js'
-import { adminRoleCode, moderatorRoleCode } from '../config/userRoleCodes.js';
+import { adminRoleCode, moderatorRoleCode } from '../config/UserRoleCodes.js';
 import { insertIsAboutShowEdge, deleteIsAboutShowEdge } from '../db/is_about_show_edge_db.js'
 
 

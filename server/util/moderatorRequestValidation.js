@@ -1,5 +1,5 @@
 import { findUserByKey } from '../db/users_db.js'
-import { userRoleCode } from '../config/userRoleCodes.js'
+import { userRoleCode } from '../config/UserRoleCodes.js'
 
 
 export async function validateModRequestCreation(modRequestJson) {

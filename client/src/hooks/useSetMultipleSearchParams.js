@@ -2,6 +2,7 @@ import { useSearchParams } from "react-router-dom";
 
 
 export default function useSetMultipleSearchParams() {
+  // eslint-disable-next-line
   const [searchParams, setSearchParams] = useSearchParams();
   
   function setMultipleSearchParams(paramNames, paramValues, toDeleteParams = []) {

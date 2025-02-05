@@ -23,15 +23,17 @@ export default function Serie({ serie }) {
 
       <Card.Body>
         <Stack direction='horizontal'>
-          {serie.img_name &&
-            (serie.img_name.includes("http") ?
-              <img className='cover_img'
-                src={serie.img_name} alt={`${serie.name}_cover`} />
-              :
-              <img className='cover_img'
-                src={`${process.env.PUBLIC_URL}/covers/${serie.img_name}`} alt={`${serie.name}_cover`} />
-            )
-          }
+          <img
+            className='cover_img'
+            src={
+              serie.img_name
+                ? serie.img_name.includes("http")
+                  ? serie.img_name
+                  : `${process.env.PUBLIC_URL}/covers/${serie.img_name}`
+                : `${process.env.PUBLIC_URL}/covers/cover-placeholder.png`
+            }
+            alt={`${serie.name}_cover`}
+          />
           <Stack direction='vertical' className='mt-5'>
 
             <Row key={`${serie._key}_rating_row`} className='justify-content-md-center mb-1'>

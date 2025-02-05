@@ -15,6 +15,9 @@ Welcome to WatchWise - a platform dedicated to sharing your enthusiasm for movie
   - [Usage](#usage)
     - [Installation](#installation)
     - [Commands](#commands)
+    - [Using Docker](#using-docker)
+      - [Backend server](#backend-server)
+      - [Frontend](#frontend-1)
 
 ## Description
 
@@ -83,14 +86,14 @@ Data management is handled by **ArangoDB**, a multi-model NoSQL database system.
 ```bash
   git clone [repository-url]
 ``` 
-1. Navigate to the project directory and install dependencies for both the client and server folder
+2. Navigate to the project directory and install dependencies for both the client and server folder
 ```bash
   cd client
   npm install
   cd ../server
   npm install
 ``` 
-1. Make sure that you have an ArangoDB connection available to you.
+3. Make sure that you have an ArangoDB connection available to you.
    
 ### Commands
 
@@ -105,3 +108,36 @@ npm start
 
 **Note**: Configuration files and environment variables (.env) are not included in the repository. 
 
+### Using Docker
+
+#### Backend server
+
+1. Build the image
+```bash
+  cd server
+  docker build . -t watchwise-server
+``` 
+
+2. Start the container setting ArangoDB url and making it accessible on port 3000
+ ```bash
+  docker run -d --name watchwise-server -e POOL_URL=<your_pool_url> -p 3000:3000 watchwise-server
+``` 
+
+For example if ArangoDB is running locally on your computer outside docker 
+your_pool_url should be 'http://host.docker.internal:8529'
+
+#### Frontend
+
+1. Build the image
+```bash
+  cd client
+  docker build . -t watchwise-client
+``` 
+
+2. Start the container setting server url and making it accessible on port 3800
+ ```bash
+  docker run -d --name watchwise-client -e PORT=3800 -e REACT_APP_SERVER_URL=<your_server_url> -p 3800:3800 watchwise-client
+``` 
+
+For example if server is running locally on your computer outside docker 
+your_server_url should be 'http://host.docker.internal:8529'

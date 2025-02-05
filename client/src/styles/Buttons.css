@@ -1,0 +1,114 @@
+.btn-orange { 
+  color: #ffffff; 
+  background-color: #F7B500; 
+  border-color: #F7B500; 
+} 
+ 
+.btn-orange:hover, 
+.btn-orange:focus, 
+.btn-orange:active, 
+.btn-orange.active, 
+.open .dropdown-toggle.btn-orange { 
+  color: #ffffff; 
+  background-color: #e89221 !important; 
+  border-color: #e89221 !important; 
+} 
+ 
+.btn-orange:active, 
+.btn-orange.active, 
+.open .dropdown-toggle.btn-orange { 
+  background-image: none; 
+} 
+ 
+.btn-orange.disabled, 
+.btn-orange[disabled], 
+fieldset[disabled] .btn-orange, 
+.btn-orange.disabled:hover, 
+.btn-orange[disabled]:hover, 
+fieldset[disabled] .btn-orange:hover, 
+.btn-orange.disabled:focus, 
+.btn-orange[disabled]:focus, 
+fieldset[disabled] .btn-orange:focus, 
+.btn-orange.disabled:active, 
+.btn-orange[disabled]:active, 
+fieldset[disabled] .btn-orange:active, 
+.btn-orange.disabled.active, 
+.btn-orange[disabled].active, 
+fieldset[disabled] .btn-orange.active { 
+  background-color: #e89221 !important; 
+  border-color: #e89221 !important; 
+} 
+ 
+.btn-orange .badge { 
+  color: #e89221; 
+  background-color: #ffffff; 
+}
+
+.btn-orange-dark { 
+  color: #ffffff; 
+  background-color: #f78800; 
+  border-color: #f78800; 
+}
+
+.btn-orange-dark:hover, 
+.btn-orange-dark:focus, 
+.btn-orange-dark:active, 
+.btn-orange-dark.active, 
+.open .dropdown-toggle.btn-orange-dark { 
+  color: #ffffff; 
+  background-color: #f78800 !important; 
+  border-color: #f78800 !important; 
+} 
+ 
+.btn-orange-dark:active, 
+.btn-orange-dark.active, 
+.open .dropdown-toggle.btn-orange-dark { 
+  background-image: none; 
+} 
+ 
+.btn-orange-dark.disabled, 
+.btn-orange-dark[disabled], 
+fieldset[disabled] .btn-orange-dark, 
+.btn-orange-dark.disabled:hover, 
+.btn-orange-dark[disabled]:hover, 
+fieldset[disabled] .btn-orange-dark:hover, 
+.btn-orange-dark.disabled:focus, 
+.btn-orange-dark[disabled]:focus, 
+fieldset[disabled] .btn-orange-dark:focus, 
+.btn-orange-dark.disabled:active, 
+.btn-orange-dark[disabled]:active, 
+fieldset[disabled] .btn-orange-dark:active, 
+.btn-orange-dark.disabled.active, 
+.btn-orange-dark[disabled].active, 
+fieldset[disabled] .btn-orange-dark.active { 
+  background-color: #f78800 !important; 
+  border-color: #f78800 !important; 
+} 
+ 
+.btn-orange-dark .badge { 
+  color: #f78800; 
+  background-color: #ffffff; 
+}
+
+
+.btn-filter {
+  margin-right: 2rem;
+  margin-bottom: 1rem;
+  min-width: 5rem;
+  background: white;
+  color: #e56700;
+  border-radius: 1rem;
+  border: 2px solid #e56700;
+  font-weight: bold;
+}
+
+.btn-filter-selected {
+  margin-right: 2rem;
+  margin-bottom: 1rem;
+  min-width: 5rem;
+  background: #e56700;
+  color: white;
+  border-radius: 1rem;
+  border: 2px solid #e56700;
+  font-weight: bold;
+}

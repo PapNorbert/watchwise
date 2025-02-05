@@ -27,7 +27,7 @@ import { validateCommentCreation } from '../util/commentValidation.js'
 import { locationsToCoordCache } from '../util/locationsCache.js'
 import { authorize } from '../middlewares/auth.js'
 import { maxDistanceDefaultValue } from '../config/maxDistanceDefault.js'
-import { adminRoleCode, moderatorRoleCode } from '../config/userRoleCodes.js';
+import { adminRoleCode, moderatorRoleCode } from '../config/UserRoleCodes.js';
 import { insertHisGroupChatEdge, insertWatchGroupChat } from '../db/watch_groups_chats.js';
 import { insertIsAboutShowEdge, deleteIsAboutShowEdge } from '../db/is_about_show_edge_db.js'
 

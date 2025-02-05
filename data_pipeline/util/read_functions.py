@@ -179,3 +179,35 @@ def read_collected_series(file_path):
             })
             genres_collected.update(row_genres) 
         return series_collected, genres_collected
+
+
+def read_movie_embeddings(file_path):
+    with open(file_path, mode='r', encoding='utf-8') as file:
+        csv_reader = csv.reader(file)
+        header = next(csv_reader)
+        movies_w_embeddings = []
+        for row in csv_reader:
+            row_embedding = ast.literal_eval(row[14]) if row[14] else []
+            movies_w_embeddings.append({
+                'movieId': row[0],
+                'name': row[4],
+                'poster': row[12],
+                'embedding': row_embedding,
+            })
+        return movies_w_embeddings
+
+
+def read_serie_embeddings(file_path):
+    with open(file_path, mode='r', encoding='utf-8') as file:
+        csv_reader = csv.reader(file)
+        _header = next(csv_reader)
+        movies_w_embeddings = []
+        for row in csv_reader:
+            row_embedding = ast.literal_eval(row[18]) if row[18] else []
+            movies_w_embeddings.append({
+                'series_id': row[0],
+                'name': row[3],
+                'poster': row[14],
+                'embedding': row_embedding,
+            })
+        return movies_w_embeddings

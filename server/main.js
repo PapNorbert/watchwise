@@ -31,6 +31,7 @@ import moderatorRequestsRoute from './api/moderator_requests.js'
 import announcementsRequestsRoute from './api/announcements.js'
 import tagsRoute from './api/tags.js'
 import ratingsRoute from './api/ratings.js'
+import recommendationRoute from './api/recommendations.js'
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use('/api/moderator_requests', moderatorRequestsRoute);
 app.use('/api/announcements', announcementsRequestsRoute);
 app.use('/api/tags', tagsRoute);
 app.use('/api/ratings', ratingsRoute);
+app.use('/api/recommendations', recommendationRoute);
 
 
 const io = new Server(server, {
@@ -120,12 +122,14 @@ io.on('connection', (socket) => {
 
 });
 
+const ipAddress = '0.0.0.0';
+
 createCollections()
   .then(createEdgeCollections)
   .then(insertAdminUser)
   .then(insertModeratorEmploymentFile)
   .then(() => {
-    server.listen(3000, () => { console.log('Server listening on http://localhost:3000/ ...'); });
+    server.listen(3000, ipAddress, () => { console.log('Server listening on http://localhost:3000/ ...'); });
     if (!readLanguageDataFiles('eng')) {
       console.log('Error reading i18n data files');
     }

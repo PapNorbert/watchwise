@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.css'
 
-import './App.css'
-import './Buttons.css'
+import './styles/App.css'
+import './styles/Buttons.css'
+import './styles/Recommendation.css';
+
 import WatchGroupsPage from './pages/WatchGroups/WatchGroupsPage'
 import Home from './pages/Home'
 import ErrorPage from './pages/ErrorPage'
