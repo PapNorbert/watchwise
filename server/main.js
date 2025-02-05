@@ -122,12 +122,14 @@ io.on('connection', (socket) => {
 
 });
 
+const ipAddress = '0.0.0.0';
+
 createCollections()
   .then(createEdgeCollections)
   .then(insertAdminUser)
   .then(insertModeratorEmploymentFile)
   .then(() => {
-    server.listen(3000, () => { console.log('Server listening on http://localhost:3000/ ...'); });
+    server.listen(3000, ipAddress, () => { console.log('Server listening on http://localhost:3000/ ...'); });
     if (!readLanguageDataFiles('eng')) {
       console.log('Error reading i18n data files');
     }

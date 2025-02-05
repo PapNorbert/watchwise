@@ -1,5 +1,5 @@
 import pool from './connection_db.js'
-import { userRoleCode, adminRoleCode, moderatorRoleCode } from '../config/userRoleCodes.js'
+import { userRoleCode, adminRoleCode, moderatorRoleCode } from '../config/UserRoleCodes.js'
 import { banSearchTypes } from '../config/userBanFilterTypes.js'
 
 const usersCollection = pool.collection("users");
