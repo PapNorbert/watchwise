@@ -34,12 +34,13 @@ At its core, WatchWise is more than just a tool for organizing watch parties; it
 The application contains 4 different user roles: Guest, User, Moderator and Admin. They have access to different functionalities and privileges.
 
 1. Guest
-   - View guidelines and announcements.
+   - View guidelines and announcements
    - Search movies and series
-   - Search movie/series watching groups.
-   - Search threads created by users focusing on specific movies or series.
-   - Filtering and sorting at search.
-   - Access detailed pages for watch groups, opinion threads, movies, and series.
+   - See movie and series recommendations at details page
+   - Search movie/series watching groups
+   - Search threads created by users focusing on specific movies or series
+   - Filtering and sorting at search
+   - Access detailed pages for watch groups, opinion threads, movies, and series
    - Registration
 2. User
    - Login
