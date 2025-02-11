@@ -1,15 +1,13 @@
 import kfp
 from kfp import dsl
 from typing import List
-import os
-import boto3
-import json
-import csv
-import ast
-import shutil
 
-@dsl.component(packages_to_install=['boto3==1.36.16', 'minio==7.2.15'])
+
+@dsl.component(packages_to_install=['boto3==1.36.16'])
 def download_csv_files():
+    import os
+    import boto3
+
     MINIO_ENDPOINT = "minio.local:9000"
     ACCESS_KEY = "minio"
     SECRET_KEY = "minio123"
@@ -22,22 +20,28 @@ def download_csv_files():
         aws_secret_access_key=SECRET_KEY
     )
     
-    output_dir = "/tmp/new_movies_data"
+    output_dir = "/tmp/new_csv_data"
     os.makedirs(output_dir, exist_ok=True)
 
     prefixes = ["new_movies/", "new_series/"]
     for prefix in prefixes:
+        output_folder = f'{output_dir}/{prefix}'
         objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET, Prefix=prefix)
         if "Contents" in objects:
             for obj in objects["Contents"]:
                 file_key = obj["Key"]
-                local_file_path = os.path.join(output_dir, os.path.basename(file_key))
+                local_file_path = os.path.join(output_folder, os.path.basename(file_key))
                 s3_client.download_file(DATA_BUCKET, file_key, local_file_path)
                 print(f"Downloaded: {file_key} → {local_file_path}")
 
 
 @dsl.component
-def process_csv_files(input_dir: str):
+def process_csv_files():
+    import os
+    import json
+    import csv
+    import ast
+
     def read_collected_movies(file_path):
         with open(file_path, mode="r", encoding="utf-8") as file:
             csv_reader = csv.reader(file)
@@ -109,37 +113,204 @@ def process_csv_files(input_dir: str):
                     }
                 )
         return series_collected
-
+    
+    input_dir = "/tmp/new_csv_data"
     processed_movies = []
     processed_series = []
-    for file_name in os.listdir(input_dir):
-        file_path = os.path.join(input_dir, file_name)
-        if "new_movies" in file_name:
-            processed_movies.extend(read_collected_movies(file_path))
-        elif "new_series" in file_name:
-            processed_series.extend(read_collected_series(file_path))
+    movies_dir = os.path.join(input_dir, "new_movies")
+    series_dir = os.path.join(input_dir, "new_series")
 
+    if os.path.exists(movies_dir):
+        for file_name in os.listdir(movies_dir):
+            file_path = os.path.join(movies_dir, file_name)
+            if file_name.endswith(".csv"):
+                processed_movies.extend(read_collected_movies(file_path))
+    if os.path.exists(series_dir):
+        for file_name in os.listdir(series_dir):
+            file_path = os.path.join(series_dir, file_name)
+            if file_name.endswith(".csv"):
+                processed_series.extend(read_collected_series(file_path))
     with open('/tmp/movies.json', "w", encoding="utf-8") as movies_file:
         json.dump(processed_movies, movies_file, indent=4)
     with open('/tmp/series.json', "w", encoding="utf-8") as series_file:
         json.dump(processed_series, series_file, indent=4)
 
 
-@dsl.component
-def cleanup_files(csv_dir: str, json_files: List[str]):
-    if os.path.exists(csv_dir):
-        shutil.rmtree(csv_dir)
-        print(f"Cleaned up the directory: {csv_dir}")
-    else:
-        print(f"No directory found to clean: {csv_dir}")
+@dsl.component(packages_to_install=['boto3==1.36.16'])
+def download_and_extract_model(model_name: str):
+    import boto3
+    import os
+    import zipfile
 
-    for json_file in json_files:
-        if os.path.exists(json_file):
-            os.remove(json_file)
-            print(f"Deleted JSON file: {json_file}")
+    MINIO_ENDPOINT = "minio.local:9000"
+    ACCESS_KEY = "minio"
+    SECRET_KEY = "minio123"
+    MODEL_BUCKET = "models"
+    TEMP_DIR = "/tmp/models"
+    MODEL_ZIP_PATH = os.path.join(TEMP_DIR, f"{model_name}.zip")
+    MODEL_DIR = os.path.join(TEMP_DIR, model_name)
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=MINIO_ENDPOINT,
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY
+    )
+
+    try:
+        s3_client.download_file(MODEL_BUCKET, f"{model_name}.zip", MODEL_ZIP_PATH)
+        print(f"Downloaded {model_name}.zip to {MODEL_ZIP_PATH}")
+    except Exception as e:
+        print(f"Error downloading {model_name}.zip: {e}")
+        return
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    try:
+        with zipfile.ZipFile(MODEL_ZIP_PATH, "r") as zip_ref:
+            zip_ref.extractall(MODEL_DIR)
+        print(f"Extracted {model_name}.zip to {MODEL_DIR}")
+    except zipfile.BadZipFile:
+        print(f"Error: {MODEL_ZIP_PATH} is not a valid zip file")
+        return
+    os.remove(MODEL_ZIP_PATH)
+    print(f"Deleted {MODEL_ZIP_PATH}, only keeping extracted files")
+
+
+@dsl.component(packages_to_install=['sentence-transformers==2.2.2', 'numpy==1.23.5'])
+def generate_and_save_embeddings(model_name: str, fields_to_use: list):
+    import os
+    import json
+    import csv
+    import numpy as np
+    from sentence_transformers import SentenceTransformer
+
+    movies_json_path = "/tmp/movies.json"
+    series_json_path = "/tmp/series.json"
+    output_movies_csv = "/tmp/movies_with_embeddings.csv"
+    output_series_csv = "/tmp/series_with_embeddings.csv"
+    
+    with open(movies_json_path, "r", encoding="utf-8") as file:
+        movies = json.load(file)
+    with open(series_json_path, "r", encoding="utf-8") as file:
+        series = json.load(file)
+
+    print(f"Loaded {len(movies)} movies and {len(series)} series.")
+
+    model_base_path = f"/tmp/models/{model_name}"
+    model_path = model_base_path
+    if os.path.exists(os.path.join(model_base_path, model_name)):
+        model_path = os.path.join(model_base_path, model_name)
+
+    model = SentenceTransformer(model_path)
+    print(f"Loaded model from {model_path}")
+
+    def generate_embeddings_sentence_transformer(shows, fields_to_use, model):
+        show_texts = []
+        for show in shows:
+            combined_text = []
+            for field in fields_to_use:
+                if isinstance(show[field], list):
+                    combined_text.append(', '.join(show[field]))
+                else:
+                    combined_text.append(show[field])
+            show_texts.append(' '.join(combined_text))
+        embeddings = model.encode(show_texts, show_progress_bar=True)
+        for i, show in enumerate(shows):
+            show['embedding'] = embeddings[i].tolist()
+        return shows
+
+    movies_with_embeddings = generate_embeddings_sentence_transformer(movies, fields_to_use, model)
+    series_with_embeddings = generate_embeddings_sentence_transformer(series, fields_to_use, model)
+
+    print("Embeddings generated successfully.")
+
+    # Save functions
+    def save_movies_with_embedding_to_csv(movies_data, filename):
+        header = [
+            'movieId', 'title', 'genres', 'imdb_link', 'name', 'directors', 'writers', 'actors', 'plot',
+            'languages', 'country_of_origin', 'awards', 'poster', 'ratings', 'embedding'
+        ]
+        with open(filename, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=header)
+            writer.writeheader()
+            for movie in movies_data:
+                try:
+                    ordered_movie = {key: movie.get(key, '') for key in header}
+                    writer.writerow(ordered_movie)
+                except Exception as e:
+                    print(f"Error processing movie {movie['title']}: {e}")
+
+    def save_series_with_embedding_to_csv(series_data, filename):
+        header = [
+            'series_id', 'vote_average', 'vote_count', 'name', 'year', 'release_date', 'genres', 'directors',
+            'writers', 'actors', 'plot', 'languages', 'country_of_origin', 'awards', 'poster',
+            'ratings', 'imdb_link', 'total_seasons', 'embedding'
+        ]
+        with open(filename, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=header)
+            writer.writeheader()
+            for serie in series_data:
+                try:
+                    ordered_serie = {key: serie.get(key, '') for key in header}
+                    writer.writerow(ordered_serie)
+                except Exception as e:
+                    print(f"Error processing series {serie['name']}: {e}")
+
+    save_movies_with_embedding_to_csv(movies_with_embeddings, output_movies_csv)
+    save_series_with_embedding_to_csv(series_with_embeddings, output_series_csv)
+    print(f"Saved movie embeddings to {output_movies_csv}")
+    print(f"Saved series embeddings to {output_series_csv}")
+
+
+@dsl.component(packages_to_install=['boto3==1.36.16'])
+def upload_json_files():
+    import boto3
+    import os
+
+    MINIO_ENDPOINT = "minio.local:9000"
+    ACCESS_KEY = "minio"
+    SECRET_KEY = "minio123"
+    DATA_BUCKET = "data"
+    PREFIX = "embeddings/new/"
+
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=MINIO_ENDPOINT,
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY
+    )
+
+    json_files = ["/tmp/movies.json", "/tmp/series.json"]
+
+    for file_path in json_files:
+        if os.path.exists(file_path):
+            file_name = os.path.basename(file_path)
+            s3_key = f'{PREFIX}{file_name}'
+            s3_client.upload_file(file_path, DATA_BUCKET, s3_key)
+            print(f"Uploaded {file_path} to s3://{DATA_BUCKET}/{s3_key}")
         else:
-            print(f"JSON file not found: {json_file}")
+            print(f"File not found: {file_path}")
 
+
+@dsl.component
+def cleanup():
+    import os
+    import shutil
+
+    paths_to_remove = [
+        "/tmp/new_csv_data",
+        "/tmp/movies.json",
+        "/tmp/series.json",
+        "/tmp/movies_with_embeddings.csv",
+        "/tmp/series_with_embeddings.csv",
+        "/tmp/models"
+    ]
+    for path in paths_to_remove:
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+                print(f"Deleted directory: {path}")
+            else:
+                os.remove(path)
+                print(f"Deleted file: {path}")
 
 
 @dsl.pipeline(
@@ -147,18 +318,27 @@ def cleanup_files(csv_dir: str, json_files: List[str]):
     description="A pipeline for downloading, processing, and cleaning up movie data"
 )
 def data_processing_pipeline():
-    download_task = download_csv_files()
-    output_dir = "/tmp/new_movies_data"
-    process_task = process_csv_files(
-        input_dir=output_dir
-    )
-    process_task.after(download_task)
+    csv_download_task = download_csv_files()
 
-    cleanup_task = cleanup_files(
-        csv_dir=output_dir,
-        json_files=["/tmp/movies.json", "/tmp/series.json"]
+    process_task = process_csv_files()
+    process_task.after(csv_download_task)
+
+    model_name='watchwise-20-ep'
+    model_download_task = download_and_extract_model(model_name=model_name)
+    model_download_task.after(process_task)
+
+    fields_to_use = ['name', 'plot', 'genres', 'directors', 'actors']
+    generate_and_save_embeddings_task = generate_and_save_embeddings(
+        model_name=model_name,
+        fields_to_use=fields_to_use
     )
-    cleanup_task.after(process_task)
+    generate_and_save_embeddings_task.after(model_download_task)
+
+    upload_task = upload_json_files()
+    upload_task.after(generate_and_save_embeddings_task)
+
+    cleanup_task = cleanup()
+    cleanup_task.after(upload_task)
 
 
 # Compile the pipeline
