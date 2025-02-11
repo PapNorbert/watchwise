@@ -1,6 +1,5 @@
 import kfp
 from kfp import dsl
-from typing import List
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16'])
@@ -261,16 +260,15 @@ def generate_and_save_embeddings(model_name: str, fields_to_use: list):
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16'])
-def upload_json_files():
-    import boto3
+def upload_and_cleanup_processed_data():
     import os
+    import boto3
+    from datetime import datetime
 
     MINIO_ENDPOINT = "minio.local:9000"
     ACCESS_KEY = "minio"
     SECRET_KEY = "minio123"
     DATA_BUCKET = "data"
-    PREFIX = "embeddings/new/"
-
     s3_client = boto3.client(
         "s3",
         endpoint_url=MINIO_ENDPOINT,
@@ -278,16 +276,24 @@ def upload_json_files():
         aws_secret_access_key=SECRET_KEY
     )
 
-    json_files = ["/tmp/movies.json", "/tmp/series.json"]
-
-    for file_path in json_files:
-        if os.path.exists(file_path):
-            file_name = os.path.basename(file_path)
-            s3_key = f'{PREFIX}{file_name}'
-            s3_client.upload_file(file_path, DATA_BUCKET, s3_key)
-            print(f"Uploaded {file_path} to s3://{DATA_BUCKET}/{s3_key}")
-        else:
-            print(f"File not found: {file_path}")
+    current_date = datetime.now().strftime("%Y%m%d")
+    local_movie_file = "/tmp/movies_with_embeddings.csv"
+    local_series_file = "/tmp/series_with_embeddings.csv"
+    remote_movie_file = f"embeddings/new/movies_w_embeddings_{current_date}.csv"
+    remote_series_file = f"embeddings/new/series_w_embeddings_{current_date}.csv"
+    if os.path.exists(local_movie_file):
+        s3_client.upload_file(local_movie_file, DATA_BUCKET, remote_movie_file)
+        print(f"Uploaded {local_movie_file} to {remote_movie_file}")
+    if os.path.exists(local_series_file):
+        s3_client.upload_file(local_series_file, DATA_BUCKET, remote_series_file)
+        print(f"Uploaded {local_series_file} to {remote_series_file}")
+    prefixes_to_delete = ["new_movies/", "new_series/"]
+    for prefix in prefixes_to_delete:
+        objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET, Prefix=prefix)
+        if "Contents" in objects:
+            for obj in objects["Contents"]:
+                s3_client.delete_object(Bucket=DATA_BUCKET, Key=obj["Key"])
+                print(f"Deleted {obj['Key']} from {DATA_BUCKET}")
 
 
 @dsl.component
@@ -314,8 +320,8 @@ def cleanup():
 
 
 @dsl.pipeline(
-    name="Data Processing Pipeline",
-    description="A pipeline for downloading, processing, and cleaning up movie data"
+    name="New Show Data Processing Pipeline",
+    description="A pipeline for downloading, creating embeddings, and cleaning up new show data"
 )
 def data_processing_pipeline():
     csv_download_task = download_csv_files()
@@ -334,7 +340,7 @@ def data_processing_pipeline():
     )
     generate_and_save_embeddings_task.after(model_download_task)
 
-    upload_task = upload_json_files()
+    upload_task = upload_and_cleanup_processed_data()
     upload_task.after(generate_and_save_embeddings_task)
 
     cleanup_task = cleanup()
