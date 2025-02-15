@@ -7,7 +7,7 @@ def download_csv_files():
     import os
     import boto3
 
-    MINIO_ENDPOINT = "minio.local:9000"
+    MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
     ACCESS_KEY = "minio"
     SECRET_KEY = "minio123"
     DATA_BUCKET = "data"
@@ -25,6 +25,7 @@ def download_csv_files():
     prefixes = ["new_movies/", "new_series/"]
     for prefix in prefixes:
         output_folder = f'{output_dir}/{prefix}'
+        os.makedirs(output_folder, exist_ok=True)
         objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET, Prefix=prefix)
         if "Contents" in objects:
             for obj in objects["Contents"]:
@@ -141,7 +142,8 @@ def download_and_extract_model(model_name: str):
     import os
     import zipfile
 
-    MINIO_ENDPOINT = "minio.local:9000"
+    MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
+
     ACCESS_KEY = "minio"
     SECRET_KEY = "minio123"
     MODEL_BUCKET = "models"
@@ -154,7 +156,7 @@ def download_and_extract_model(model_name: str):
         aws_access_key_id=ACCESS_KEY,
         aws_secret_access_key=SECRET_KEY
     )
-
+    os.makedirs(TEMP_DIR, exist_ok=True)
     try:
         s3_client.download_file(MODEL_BUCKET, f"{model_name}.zip", MODEL_ZIP_PATH)
         print(f"Downloaded {model_name}.zip to {MODEL_ZIP_PATH}")
@@ -265,7 +267,8 @@ def upload_and_cleanup_processed_data():
     import boto3
     from datetime import datetime
 
-    MINIO_ENDPOINT = "minio.local:9000"
+    MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
+
     ACCESS_KEY = "minio"
     SECRET_KEY = "minio123"
     DATA_BUCKET = "data"
@@ -331,13 +334,13 @@ def data_processing_pipeline():
 
     model_name='watchwise-20-ep'
     model_download_task = download_and_extract_model(model_name=model_name)
-    model_download_task.after(process_task)
 
     fields_to_use = ['name', 'plot', 'genres', 'directors', 'actors']
     generate_and_save_embeddings_task = generate_and_save_embeddings(
         model_name=model_name,
         fields_to_use=fields_to_use
     )
+    generate_and_save_embeddings_task.after(process_task)
     generate_and_save_embeddings_task.after(model_download_task)
 
     upload_task = upload_and_cleanup_processed_data()

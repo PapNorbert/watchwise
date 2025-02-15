@@ -9,7 +9,7 @@ SECRET_KEY = 'minio123'
 
 DATA_FOLDER = 'data'
 MODEL_FOLDER = 'model'
-ZIP_FILE = 'watchwise-recom-model-20-epoch.zip'
+ZIP_FILE = 'watchwise-20-ep.zip'
 
 DATA_BUCKET = 'data'
 MODEL_BUCKET = 'models'
