@@ -5,10 +5,9 @@ from kfp import dsl
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16'])
-def download_csv_files(output_dir: dsl.OutputPath(str)):
+def download_csv_files(output_dir: dsl.OutputPath()):
     import os
     import boto3
-    import shutil
 
     MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
     ACCESS_KEY = "minio"
@@ -22,26 +21,26 @@ def download_csv_files(output_dir: dsl.OutputPath(str)):
         aws_secret_access_key=SECRET_KEY
     )
     
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
     os.makedirs(output_dir, exist_ok=True)
 
     prefixes = ["new_movies/", "new_series/"]
     for prefix in prefixes:
-        output_folder = f'{output_dir}/{prefix}'
+        output_folder = os.path.join(output_dir, prefix)
         os.makedirs(output_folder, exist_ok=True)
         objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET, Prefix=prefix)
         if "Contents" in objects:
-            for obj in objects["Contents"]:
+            for obj in objects.get("Contents", []):
                 file_key = obj["Key"]
                 local_file_path = os.path.join(output_folder, os.path.basename(file_key))
                 s3_client.download_file(DATA_BUCKET, file_key, local_file_path)
                 print(f"Downloaded: {file_key} → {local_file_path}")
 
+    print(f"Download complete for all files in {output_dir}")
+
 
 @dsl.component
 def process_csv_files(
-        input_dir: dsl.InputPath(str),
+        input_dir: dsl.InputPath(),
         movies_output: dsl.OutputPath(str), 
         series_output: dsl.OutputPath(str)):
     import os
@@ -145,7 +144,7 @@ def process_csv_files(
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16'])
-def download_and_extract_model(model_name: str, model_dir: dsl.OutputPath(str)):
+def get_model(model_name: str, model_dir: dsl.OutputPath()):
     import boto3
     import os
     import zipfile
@@ -158,7 +157,6 @@ def download_and_extract_model(model_name: str, model_dir: dsl.OutputPath(str)):
     MODEL_BUCKET = "models"
     TEMP_DIR = "/tmp/models"
     MODEL_ZIP_PATH = os.path.join(TEMP_DIR, f"{model_name}.zip")
-    MODEL_DIR = os.path.join(TEMP_DIR, model_name)
     s3_client = boto3.client(
         "s3",
         endpoint_url=MINIO_ENDPOINT,
@@ -172,36 +170,40 @@ def download_and_extract_model(model_name: str, model_dir: dsl.OutputPath(str)):
     except Exception as e:
         print(f"Error downloading {model_name}.zip: {e}")
         return
-    TEMP_MODEL_DIR = os.path.join(TEMP_DIR, model_name)
-    os.makedirs(TEMP_MODEL_DIR, exist_ok=True)
     try:
         with zipfile.ZipFile(MODEL_ZIP_PATH, "r") as zip_ref:
-            zip_ref.extractall(MODEL_DIR)
-        print(f"Extracted {model_name}.zip to {MODEL_DIR}")
+            zip_ref.extractall(TEMP_DIR)
+        print(f"Extracted {model_name}.zip to {TEMP_DIR}")
     except zipfile.BadZipFile:
         print(f"Error: {MODEL_ZIP_PATH} is not a valid zip file")
         return
     os.remove(MODEL_ZIP_PATH)
     print(f"Deleted {MODEL_ZIP_PATH}, only keeping extracted files")
+
+    os.makedirs(model_dir, exist_ok=True)
+    TEMP_MODEL_DIR = os.path.join(TEMP_DIR, model_name)
     shutil.move(TEMP_MODEL_DIR, model_dir)
     print(f"Moved extracted model to {model_dir}")
 
 
 @dsl.component(packages_to_install=['transformers==4.45.2', 'sentence-transformers==3.1.1'])
-def generate_and_save_embeddings(
-    model_dir: dsl.InputPath(str), 
-    movies_json: dsl.InputPath(str), 
-    series_json: dsl.InputPath(str),
-    fields_to_use: list,
-    movies_output: dsl.OutputPath(str), 
-    series_output: dsl.OutputPath(str)
-):
+def create_embeddings(
+        model_name: str,
+        model_dir: dsl.InputPath(), 
+        movies_json: dsl.InputPath(str), 
+        series_json: dsl.InputPath(str),
+        fields_to_use: list,
+        movies_output: dsl.OutputPath(str), 
+        series_output: dsl.OutputPath(str)
+        ):
     import os
     import json
     import csv
     from sentence_transformers import SentenceTransformer
 
-    
+    model_path = os.path.join(model_dir, model_name)
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model directory {model_path} does not exist.")
     with open(movies_json, "r", encoding="utf-8") as file:
         movies = json.load(file)
     with open(series_json, "r", encoding="utf-8") as file:
@@ -209,7 +211,7 @@ def generate_and_save_embeddings(
 
     print(f"Loaded {len(movies)} movies and {len(series)} series.")
 
-    model = SentenceTransformer(model_dir)
+    model = SentenceTransformer(model_path)
     print(f"Loaded model from {model_dir}")
 
     def generate_embeddings_sentence_transformer(shows, fields_to_use, model):
@@ -271,7 +273,7 @@ def generate_and_save_embeddings(
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16'])
-def upload_and_cleanup_processed_data(movies_csv: dsl.InputPath(str), series_csv: dsl.InputPath(str)):
+def upload_and_cleanup(movies_csv: dsl.InputPath(str), series_csv: dsl.InputPath(str)):
     import os
     import boto3
     from datetime import datetime
@@ -319,17 +321,18 @@ def data_processing_pipeline():
     )
     
     model_name='watchwise-20-ep'
-    model_download_task = download_and_extract_model(model_name=model_name)
+    model_download_task = get_model(model_name=model_name)
 
     fields_to_use = ['name', 'plot', 'genres', 'directors', 'actors']
-    embedding_task = generate_and_save_embeddings(
+    embedding_task = create_embeddings(
+        model_name=model_name,
         model_dir=model_download_task.output, 
         movies_json=process_task.outputs["movies_output"],
         series_json=process_task.outputs["series_output"],
         fields_to_use=fields_to_use
     )
 
-    upload_task = upload_and_cleanup_processed_data(
+    upload_task = upload_and_cleanup(
         movies_csv=embedding_task.outputs["movies_output"],
         series_csv=embedding_task.outputs["series_output"]
     )
