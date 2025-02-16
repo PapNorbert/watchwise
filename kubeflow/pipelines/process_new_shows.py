@@ -124,11 +124,13 @@ def process_csv_files():
         for file_name in os.listdir(movies_dir):
             file_path = os.path.join(movies_dir, file_name)
             if file_name.endswith(".csv"):
+                print(f'Processing {file_path}')
                 processed_movies.extend(read_collected_movies(file_path))
     if os.path.exists(series_dir):
         for file_name in os.listdir(series_dir):
             file_path = os.path.join(series_dir, file_name)
             if file_name.endswith(".csv"):
+                print(f'Processing {file_path}')
                 processed_series.extend(read_collected_series(file_path))
     with open('/tmp/movies.json', "w", encoding="utf-8") as movies_file:
         json.dump(processed_movies, movies_file, indent=4)
@@ -175,12 +177,11 @@ def download_and_extract_model(model_name: str):
     print(f"Deleted {MODEL_ZIP_PATH}, only keeping extracted files")
 
 
-@dsl.component(packages_to_install=['sentence-transformers==2.2.2', 'numpy==1.23.5'])
+@dsl.component(packages_to_install=['transformers==4.45.2', 'sentence-transformers==3.1.1'])
 def generate_and_save_embeddings(model_name: str, fields_to_use: list):
     import os
     import json
     import csv
-    import numpy as np
     from sentence_transformers import SentenceTransformer
 
     movies_json_path = "/tmp/movies.json"
