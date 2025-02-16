@@ -10,21 +10,29 @@ components:
           artifactType:
             schemaTitle: system.Artifact
             schemaVersion: 0.0.1
+        movies_json:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+        series_json:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
       parameters:
         fields_to_use:
           parameterType: LIST
         model_name:
           parameterType: STRING
-        movies_json:
-          parameterType: STRING
-        series_json:
-          parameterType: STRING
     outputDefinitions:
-      parameters:
+      artifacts:
         movies_output:
-          parameterType: STRING
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
         series_output:
-          parameterType: STRING
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
   comp-download-csv-files:
     executorLabel: exec-download-csv-files
     outputDefinitions:
@@ -54,19 +62,27 @@ components:
             schemaTitle: system.Artifact
             schemaVersion: 0.0.1
     outputDefinitions:
-      parameters:
+      artifacts:
         movies_output:
-          parameterType: STRING
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
         series_output:
-          parameterType: STRING
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
   comp-upload-and-cleanup:
     executorLabel: exec-upload-and-cleanup
     inputDefinitions:
-      parameters:
+      artifacts:
         movies_csv:
-          parameterType: STRING
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
         series_csv:
-          parameterType: STRING
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
 deploymentSpec:
   executors:
     exec-create-embeddings:
@@ -97,10 +113,10 @@ deploymentSpec:
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef create_embeddings(\n        model_name: str,\n        model_dir:\
-          \ dsl.InputPath(), \n        movies_json: dsl.InputPath(str), \n       \
-          \ series_json: dsl.InputPath(str),\n        fields_to_use: list,\n     \
-          \   movies_output: dsl.OutputPath(str), \n        series_output: dsl.OutputPath(str)\n\
-          \        ):\n    import os\n    import json\n    import csv\n    from sentence_transformers\
+          \ dsl.InputPath(), \n        movies_json: dsl.InputPath(), \n        series_json:\
+          \ dsl.InputPath(),\n        fields_to_use: list,\n        movies_output:\
+          \ dsl.OutputPath(), \n        series_output: dsl.OutputPath()\n        ):\n\
+          \    import os\n    import json\n    import csv\n    from sentence_transformers\
           \ import SentenceTransformer\n\n    model_path = os.path.join(model_dir,\
           \ model_name)\n    if not os.path.exists(model_path):\n        raise FileNotFoundError(f\"\
           Model directory {model_path} does not exist.\")\n    with open(movies_json,\
@@ -265,7 +281,7 @@ deploymentSpec:
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef process_csv_files(\n        input_dir: dsl.InputPath(),\n   \
-          \     movies_output: dsl.OutputPath(str), \n        series_output: dsl.OutputPath(str)):\n\
+          \     movies_output: dsl.OutputPath(), \n        series_output: dsl.OutputPath()):\n\
           \    import os\n    import json\n    import csv\n    import ast\n\n    def\
           \ read_collected_movies(file_path):\n        with open(file_path, mode=\"\
           r\", encoding=\"utf-8\") as file:\n            csv_reader = csv.reader(file)\n\
@@ -361,11 +377,11 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef upload_and_cleanup(movies_csv: dsl.InputPath(str), series_csv:\
-          \ dsl.InputPath(str)):\n    import os\n    import boto3\n    from datetime\
-          \ import datetime\n\n    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\
-          \n\n    ACCESS_KEY = \"minio\"\n    SECRET_KEY = \"minio123\"\n    DATA_BUCKET\
-          \ = \"data\"\n    s3_client = boto3.client(\n        \"s3\",\n        endpoint_url=MINIO_ENDPOINT,\n\
+          \ *\n\ndef upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath()):\n\
+          \    import os\n    import boto3\n    from datetime import datetime\n\n\
+          \    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\n\n    ACCESS_KEY\
+          \ = \"minio\"\n    SECRET_KEY = \"minio123\"\n    DATA_BUCKET = \"data\"\
+          \n    s3_client = boto3.client(\n        \"s3\",\n        endpoint_url=MINIO_ENDPOINT,\n\
           \        aws_access_key_id=ACCESS_KEY,\n        aws_secret_access_key=SECRET_KEY\n\
           \    )\n    current_date = datetime.now().strftime(\"%Y%m%d\")\n    remote_movie_file\
           \ = f\"embeddings/new/movies_w_embeddings_{current_date}.csv\"\n    remote_series_file\
@@ -403,6 +419,14 @@ root:
               taskOutputArtifact:
                 outputArtifactKey: model_dir
                 producerTask: get-model
+            movies_json:
+              taskOutputArtifact:
+                outputArtifactKey: movies_output
+                producerTask: process-csv-files
+            series_json:
+              taskOutputArtifact:
+                outputArtifactKey: series_output
+                producerTask: process-csv-files
           parameters:
             fields_to_use:
               runtimeValue:
@@ -415,14 +439,6 @@ root:
             model_name:
               runtimeValue:
                 constant: watchwise-20-ep
-            movies_json:
-              taskOutputParameter:
-                outputParameterKey: movies_output
-                producerTask: process-csv-files
-            series_json:
-              taskOutputParameter:
-                outputParameterKey: series_output
-                producerTask: process-csv-files
         taskInfo:
           name: create-embeddings
       download-csv-files:
@@ -467,14 +483,14 @@ root:
         dependentTasks:
         - create-embeddings
         inputs:
-          parameters:
+          artifacts:
             movies_csv:
-              taskOutputParameter:
-                outputParameterKey: movies_output
+              taskOutputArtifact:
+                outputArtifactKey: movies_output
                 producerTask: create-embeddings
             series_csv:
-              taskOutputParameter:
-                outputParameterKey: series_output
+              taskOutputArtifact:
+                outputArtifactKey: series_output
                 producerTask: create-embeddings
         taskInfo:
           name: upload-and-cleanup

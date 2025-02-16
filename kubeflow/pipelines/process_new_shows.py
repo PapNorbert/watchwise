@@ -41,8 +41,8 @@ def download_csv_files(output_dir: dsl.OutputPath()):
 @dsl.component
 def process_csv_files(
         input_dir: dsl.InputPath(),
-        movies_output: dsl.OutputPath(str), 
-        series_output: dsl.OutputPath(str)):
+        movies_output: dsl.OutputPath(), 
+        series_output: dsl.OutputPath()):
     import os
     import json
     import csv
@@ -190,11 +190,11 @@ def get_model(model_name: str, model_dir: dsl.OutputPath()):
 def create_embeddings(
         model_name: str,
         model_dir: dsl.InputPath(), 
-        movies_json: dsl.InputPath(str), 
-        series_json: dsl.InputPath(str),
+        movies_json: dsl.InputPath(), 
+        series_json: dsl.InputPath(),
         fields_to_use: list,
-        movies_output: dsl.OutputPath(str), 
-        series_output: dsl.OutputPath(str)
+        movies_output: dsl.OutputPath(), 
+        series_output: dsl.OutputPath()
         ):
     import os
     import json
@@ -273,7 +273,7 @@ def create_embeddings(
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16'])
-def upload_and_cleanup(movies_csv: dsl.InputPath(str), series_csv: dsl.InputPath(str)):
+def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath()):
     import os
     import boto3
     from datetime import datetime
