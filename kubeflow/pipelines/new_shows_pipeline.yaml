@@ -1,0 +1,464 @@
+# PIPELINE DEFINITION
+# Name: new-show-data-processing-pipeline
+# Description: A pipeline for downloading, creating embeddings, and cleaning up new show data
+components:
+  comp-download-and-extract-model:
+    executorLabel: exec-download-and-extract-model
+    inputDefinitions:
+      parameters:
+        model_name:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        model_dir:
+          parameterType: STRING
+  comp-download-csv-files:
+    executorLabel: exec-download-csv-files
+    outputDefinitions:
+      parameters:
+        output_dir:
+          parameterType: STRING
+  comp-generate-and-save-embeddings:
+    executorLabel: exec-generate-and-save-embeddings
+    inputDefinitions:
+      parameters:
+        fields_to_use:
+          parameterType: LIST
+        model_dir:
+          parameterType: STRING
+        movies_json:
+          parameterType: STRING
+        series_json:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        movies_output:
+          parameterType: STRING
+        series_output:
+          parameterType: STRING
+  comp-process-csv-files:
+    executorLabel: exec-process-csv-files
+    inputDefinitions:
+      parameters:
+        input_dir:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        movies_output:
+          parameterType: STRING
+        series_output:
+          parameterType: STRING
+  comp-upload-and-cleanup-processed-data:
+    executorLabel: exec-upload-and-cleanup-processed-data
+    inputDefinitions:
+      parameters:
+        movies_csv:
+          parameterType: STRING
+        series_csv:
+          parameterType: STRING
+deploymentSpec:
+  executors:
+    exec-download-and-extract-model:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - download_and_extract_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'boto3==1.36.16'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef download_and_extract_model(model_name: str, model_dir: dsl.OutputPath(str)):\n\
+          \    import boto3\n    import os\n    import zipfile\n    import shutil\n\
+          \n    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\n\n    ACCESS_KEY\
+          \ = \"minio\"\n    SECRET_KEY = \"minio123\"\n    MODEL_BUCKET = \"models\"\
+          \n    TEMP_DIR = \"/tmp/models\"\n    MODEL_ZIP_PATH = os.path.join(TEMP_DIR,\
+          \ f\"{model_name}.zip\")\n    MODEL_DIR = os.path.join(TEMP_DIR, model_name)\n\
+          \    s3_client = boto3.client(\n        \"s3\",\n        endpoint_url=MINIO_ENDPOINT,\n\
+          \        aws_access_key_id=ACCESS_KEY,\n        aws_secret_access_key=SECRET_KEY\n\
+          \    )\n    os.makedirs(TEMP_DIR, exist_ok=True)\n    try:\n        s3_client.download_file(MODEL_BUCKET,\
+          \ f\"{model_name}.zip\", MODEL_ZIP_PATH)\n        print(f\"Downloaded {model_name}.zip\
+          \ to {MODEL_ZIP_PATH}\")\n    except Exception as e:\n        print(f\"\
+          Error downloading {model_name}.zip: {e}\")\n        return\n    TEMP_MODEL_DIR\
+          \ = os.path.join(TEMP_DIR, model_name)\n    os.makedirs(TEMP_MODEL_DIR,\
+          \ exist_ok=True)\n    try:\n        with zipfile.ZipFile(MODEL_ZIP_PATH,\
+          \ \"r\") as zip_ref:\n            zip_ref.extractall(MODEL_DIR)\n      \
+          \  print(f\"Extracted {model_name}.zip to {MODEL_DIR}\")\n    except zipfile.BadZipFile:\n\
+          \        print(f\"Error: {MODEL_ZIP_PATH} is not a valid zip file\")\n \
+          \       return\n    os.remove(MODEL_ZIP_PATH)\n    print(f\"Deleted {MODEL_ZIP_PATH},\
+          \ only keeping extracted files\")\n    shutil.move(TEMP_MODEL_DIR, model_dir)\n\
+          \    print(f\"Moved extracted model to {model_dir}\")\n\n"
+        image: python:3.9
+    exec-download-csv-files:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - download_csv_files
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'boto3==1.36.16'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef download_csv_files(output_dir: dsl.OutputPath(str)):\n    import\
+          \ os\n    import boto3\n    import shutil\n\n    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\
+          \n    ACCESS_KEY = \"minio\"\n    SECRET_KEY = \"minio123\"\n    DATA_BUCKET\
+          \ = \"data\"\n\n    s3_client = boto3.client(\n        \"s3\",\n       \
+          \ endpoint_url=MINIO_ENDPOINT,\n        aws_access_key_id=ACCESS_KEY,\n\
+          \        aws_secret_access_key=SECRET_KEY\n    )\n\n    if os.path.exists(output_dir):\n\
+          \        shutil.rmtree(output_dir)\n    os.makedirs(output_dir, exist_ok=True)\n\
+          \n    prefixes = [\"new_movies/\", \"new_series/\"]\n    for prefix in prefixes:\n\
+          \        output_folder = f'{output_dir}/{prefix}'\n        os.makedirs(output_folder,\
+          \ exist_ok=True)\n        objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET,\
+          \ Prefix=prefix)\n        if \"Contents\" in objects:\n            for obj\
+          \ in objects[\"Contents\"]:\n                file_key = obj[\"Key\"]\n \
+          \               local_file_path = os.path.join(output_folder, os.path.basename(file_key))\n\
+          \                s3_client.download_file(DATA_BUCKET, file_key, local_file_path)\n\
+          \                print(f\"Downloaded: {file_key} \u2192 {local_file_path}\"\
+          )\n\n"
+        image: python:3.9
+    exec-generate-and-save-embeddings:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - generate_and_save_embeddings
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'transformers==4.45.2'\
+          \ 'sentence-transformers==3.1.1' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef generate_and_save_embeddings(\n    model_dir: dsl.InputPath(str),\
+          \ \n    movies_json: dsl.InputPath(str), \n    series_json: dsl.InputPath(str),\n\
+          \    fields_to_use: list,\n    movies_output: dsl.OutputPath(str), \n  \
+          \  series_output: dsl.OutputPath(str)\n):\n    import os\n    import json\n\
+          \    import csv\n    from sentence_transformers import SentenceTransformer\n\
+          \n\n    with open(movies_json, \"r\", encoding=\"utf-8\") as file:\n   \
+          \     movies = json.load(file)\n    with open(series_json, \"r\", encoding=\"\
+          utf-8\") as file:\n        series = json.load(file)\n\n    print(f\"Loaded\
+          \ {len(movies)} movies and {len(series)} series.\")\n\n    model = SentenceTransformer(model_dir)\n\
+          \    print(f\"Loaded model from {model_dir}\")\n\n    def generate_embeddings_sentence_transformer(shows,\
+          \ fields_to_use, model):\n        show_texts = []\n        for show in shows:\n\
+          \            combined_text = []\n            for field in fields_to_use:\n\
+          \                if isinstance(show[field], list):\n                   \
+          \ combined_text.append(', '.join(show[field]))\n                else:\n\
+          \                    combined_text.append(show[field])\n            show_texts.append('\
+          \ '.join(combined_text))\n        embeddings = model.encode(show_texts,\
+          \ show_progress_bar=True)\n        for i, show in enumerate(shows):\n  \
+          \          show['embedding'] = embeddings[i].tolist()\n        return shows\n\
+          \n    movies_with_embeddings = generate_embeddings_sentence_transformer(movies,\
+          \ fields_to_use, model)\n    series_with_embeddings = generate_embeddings_sentence_transformer(series,\
+          \ fields_to_use, model)\n\n    print(\"Embeddings generated successfully.\"\
+          )\n\n    # Save functions\n    def save_movies_with_embedding_to_csv(movies_data,\
+          \ filename):\n        header = [\n            'movieId', 'title', 'genres',\
+          \ 'imdb_link', 'name', 'directors', 'writers', 'actors', 'plot',\n     \
+          \       'languages', 'country_of_origin', 'awards', 'poster', 'ratings',\
+          \ 'embedding'\n        ]\n        with open(filename, 'w', newline='', encoding='utf-8')\
+          \ as f:\n            writer = csv.DictWriter(f, fieldnames=header)\n   \
+          \         writer.writeheader()\n            for movie in movies_data:\n\
+          \                try:\n                    ordered_movie = {key: movie.get(key,\
+          \ '') for key in header}\n                    writer.writerow(ordered_movie)\n\
+          \                except Exception as e:\n                    print(f\"Error\
+          \ processing movie {movie['title']}: {e}\")\n\n    def save_series_with_embedding_to_csv(series_data,\
+          \ filename):\n        header = [\n            'series_id', 'vote_average',\
+          \ 'vote_count', 'name', 'year', 'release_date', 'genres', 'directors',\n\
+          \            'writers', 'actors', 'plot', 'languages', 'country_of_origin',\
+          \ 'awards', 'poster',\n            'ratings', 'imdb_link', 'total_seasons',\
+          \ 'embedding'\n        ]\n        with open(filename, 'w', newline='', encoding='utf-8')\
+          \ as f:\n            writer = csv.DictWriter(f, fieldnames=header)\n   \
+          \         writer.writeheader()\n            for serie in series_data:\n\
+          \                try:\n                    ordered_serie = {key: serie.get(key,\
+          \ '') for key in header}\n                    writer.writerow(ordered_serie)\n\
+          \                except Exception as e:\n                    print(f\"Error\
+          \ processing series {serie['name']}: {e}\")\n\n    save_movies_with_embedding_to_csv(movies_with_embeddings,\
+          \ movies_output)\n    save_series_with_embedding_to_csv(series_with_embeddings,\
+          \ series_output)\n    print(f\"Saved movie embeddings to {movies_output}\"\
+          )\n    print(f\"Saved series embeddings to {series_output}\")\n\n"
+        image: python:3.9
+    exec-process-csv-files:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - process_csv_files
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef process_csv_files(\n        input_dir: dsl.InputPath(str),\n\
+          \        movies_output: dsl.OutputPath(str), \n        series_output: dsl.OutputPath(str)):\n\
+          \    import os\n    import json\n    import csv\n    import ast\n\n    def\
+          \ read_collected_movies(file_path):\n        with open(file_path, mode=\"\
+          r\", encoding=\"utf-8\") as file:\n            csv_reader = csv.reader(file)\n\
+          \            header = next(csv_reader)\n            movies_collected = []\n\
+          \            for row in csv_reader:\n                row_genres = ast.literal_eval(row[2])\
+          \ if row[2] else []\n                row_ratings = ast.literal_eval(row[13])\
+          \ if row[13] else []\n                row_directors = row[5].split(\", \"\
+          ) if row[5] else []\n                row_writers = row[6].split(\", \")\
+          \ if row[6] else []\n                row_actors = row[7].split(\", \") if\
+          \ row[7] else []\n                row_languages = row[9].split(\", \") if\
+          \ row[9] else []\n\n                movies_collected.append(\n         \
+          \           {\n                        \"movieId\": row[0],\n          \
+          \              \"title\": row[1],\n                        \"genres\": row_genres,\n\
+          \                        \"imdb_link\": row[3],\n                      \
+          \  \"name\": row[4],\n                        \"directors\": row_directors,\n\
+          \                        \"writers\": row_writers,\n                   \
+          \     \"actors\": row_actors,\n                        \"plot\": row[8],\n\
+          \                        \"languages\": row_languages,\n               \
+          \         \"country_of_origin\": row[10],\n                        \"awards\"\
+          : row[11],\n                        \"poster\": row[12],\n             \
+          \           \"ratings\": row_ratings,\n                    }\n         \
+          \       )\n        return movies_collected\n\n    def read_collected_series(file_path):\n\
+          \        with open(file_path, mode=\"r\", encoding=\"utf-8\") as file:\n\
+          \            csv_reader = csv.reader(file)\n            header = next(csv_reader)\n\
+          \            series_collected = []\n            for row in csv_reader:\n\
+          \                row_genres = [genre.strip() for genre in row[6].split(\"\
+          , \") if genre.strip() and genre.strip() != \"N/A\"] if row[6] else []\n\
+          \                ratings_row = ast.literal_eval(row[15]) if row[15] else\
+          \ []\n                vote_average = (float(row[1]) / 2) if row[1] else\
+          \ 0.0\n                vote_count = int(row[2]) if row[2] else 0\n     \
+          \           directors_row = [director.strip() for director in row[7].split(\"\
+          , \") if director.strip() and director.strip() != \"N/A\"] if row[7] else\
+          \ []\n                writers_row = [writer.strip() for writer in row[8].split(\"\
+          , \") if writer.strip() and writer.strip() != \"N/A\"] if row[8] else []\n\
+          \                actors_row = [actor.strip() for actor in row[9].split(\"\
+          , \") if actor.strip() and actor.strip() != \"N/A\"] if row[9] else []\n\
+          \                row_languages = [language.strip() for language in row[11].split(\"\
+          , \") if language.strip() and language.strip() != \"N/A\"] if row[11] else\
+          \ []\n\n                series_collected.append(\n                    {\n\
+          \                        \"series_id\": row[0],\n                      \
+          \  \"vote_average\": vote_average,\n                        \"vote_count\"\
+          : vote_count,\n                        \"name\": row[3],\n             \
+          \           \"year\": row[4],\n                        \"release_date\"\
+          : row[5],\n                        \"genres\": row_genres,\n           \
+          \             \"directors\": directors_row,\n                        \"\
+          writers\": writers_row,\n                        \"actors\": actors_row,\n\
+          \                        \"plot\": row[10],\n                        \"\
+          languages\": row_languages,\n                        \"country_of_origin\"\
+          : row[12],\n                        \"awards\": row[13],\n             \
+          \           \"poster\": row[14],\n                        \"ratings\": ratings_row,\n\
+          \                        \"imdb_link\": row[16],\n                     \
+          \   \"total_seasons\": row[17],\n                    }\n               \
+          \ )\n        return series_collected\n\n    processed_movies = []\n    processed_series\
+          \ = []\n    movies_dir = os.path.join(input_dir, \"new_movies\")\n    series_dir\
+          \ = os.path.join(input_dir, \"new_series\")\n\n    if os.path.exists(movies_dir):\n\
+          \        for file_name in os.listdir(movies_dir):\n            file_path\
+          \ = os.path.join(movies_dir, file_name)\n            if file_name.endswith(\"\
+          .csv\"):\n                print(f'Processing {file_path}')\n           \
+          \     processed_movies.extend(read_collected_movies(file_path))\n    if\
+          \ os.path.exists(series_dir):\n        for file_name in os.listdir(series_dir):\n\
+          \            file_path = os.path.join(series_dir, file_name)\n         \
+          \   if file_name.endswith(\".csv\"):\n                print(f'Processing\
+          \ {file_path}')\n                processed_series.extend(read_collected_series(file_path))\n\
+          \    with open(movies_output, \"w\", encoding=\"utf-8\") as movies_file:\n\
+          \        json.dump(processed_movies, movies_file, indent=4)\n    with open(series_output,\
+          \ \"w\", encoding=\"utf-8\") as series_file:\n        json.dump(processed_series,\
+          \ series_file, indent=4)\n\n"
+        image: python:3.9
+    exec-upload-and-cleanup-processed-data:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - upload_and_cleanup_processed_data
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'boto3==1.36.16'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef upload_and_cleanup_processed_data(movies_csv: dsl.InputPath(str),\
+          \ series_csv: dsl.InputPath(str)):\n    import os\n    import boto3\n  \
+          \  from datetime import datetime\n\n    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\
+          \n\n    ACCESS_KEY = \"minio\"\n    SECRET_KEY = \"minio123\"\n    DATA_BUCKET\
+          \ = \"data\"\n    s3_client = boto3.client(\n        \"s3\",\n        endpoint_url=MINIO_ENDPOINT,\n\
+          \        aws_access_key_id=ACCESS_KEY,\n        aws_secret_access_key=SECRET_KEY\n\
+          \    )\n    current_date = datetime.now().strftime(\"%Y%m%d\")\n    remote_movie_file\
+          \ = f\"embeddings/new/movies_w_embeddings_{current_date}.csv\"\n    remote_series_file\
+          \ = f\"embeddings/new/series_w_embeddings_{current_date}.csv\"\n\n    if\
+          \ os.path.exists(movies_csv):\n        s3_client.upload_file(movies_csv,\
+          \ DATA_BUCKET, remote_movie_file)\n        print(f\"Uploaded {movies_csv}\
+          \ to {remote_movie_file}\")\n    if os.path.exists(series_csv):\n      \
+          \  s3_client.upload_file(series_csv, DATA_BUCKET, remote_series_file)\n\
+          \        print(f\"Uploaded {series_csv} to {remote_series_file}\")\n\n \
+          \   prefixes_to_delete = [\"new_movies/\", \"new_series/\"]\n    for prefix\
+          \ in prefixes_to_delete:\n        objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET,\
+          \ Prefix=prefix)\n        if \"Contents\" in objects:\n            for obj\
+          \ in objects[\"Contents\"]:\n                s3_client.delete_object(Bucket=DATA_BUCKET,\
+          \ Key=obj[\"Key\"])\n                print(f\"Deleted {obj['Key']} from\
+          \ {DATA_BUCKET}\")\n\n"
+        image: python:3.9
+pipelineInfo:
+  description: A pipeline for downloading, creating embeddings, and cleaning up new
+    show data
+  name: new-show-data-processing-pipeline
+root:
+  dag:
+    tasks:
+      download-and-extract-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-download-and-extract-model
+        inputs:
+          parameters:
+            model_name:
+              runtimeValue:
+                constant: watchwise-20-ep
+        taskInfo:
+          name: download-and-extract-model
+      download-csv-files:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-download-csv-files
+        taskInfo:
+          name: download-csv-files
+      generate-and-save-embeddings:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-generate-and-save-embeddings
+        dependentTasks:
+        - download-and-extract-model
+        - process-csv-files
+        inputs:
+          parameters:
+            fields_to_use:
+              runtimeValue:
+                constant:
+                - name
+                - plot
+                - genres
+                - directors
+                - actors
+            model_dir:
+              taskOutputParameter:
+                outputParameterKey: model_dir
+                producerTask: download-and-extract-model
+            movies_json:
+              taskOutputParameter:
+                outputParameterKey: movies_output
+                producerTask: process-csv-files
+            series_json:
+              taskOutputParameter:
+                outputParameterKey: series_output
+                producerTask: process-csv-files
+        taskInfo:
+          name: generate-and-save-embeddings
+      process-csv-files:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-process-csv-files
+        dependentTasks:
+        - download-csv-files
+        inputs:
+          parameters:
+            input_dir:
+              taskOutputParameter:
+                outputParameterKey: output_dir
+                producerTask: download-csv-files
+        taskInfo:
+          name: process-csv-files
+      upload-and-cleanup-processed-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-upload-and-cleanup-processed-data
+        dependentTasks:
+        - generate-and-save-embeddings
+        inputs:
+          parameters:
+            movies_csv:
+              taskOutputParameter:
+                outputParameterKey: movies_output
+                producerTask: generate-and-save-embeddings
+            series_csv:
+              taskOutputParameter:
+                outputParameterKey: series_output
+                producerTask: generate-and-save-embeddings
+        taskInfo:
+          name: upload-and-cleanup-processed-data
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.11.0
