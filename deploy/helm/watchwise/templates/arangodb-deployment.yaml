@@ -3,41 +3,17 @@ kind: ArangoDeployment
 metadata:
   name: arangodb
 spec:
-  mode: Cluster
+  mode: Single
   image: arangodb/arangodb:3.12.0
-  environment: Production
+  environment: Development
   auth:
     jwtSecretName: arangodb-jwt
-  agents:
-    count: 3
+  single:
     resources:
       requests:
-        cpu: "100m"       # Reduced CPU request
-        memory: "128Mi"    # Reduced memory request
+        cpu: "200m"       # Adjusted CPU request
+        memory: "512Mi"   # Adjusted memory request
       limits:
-        cpu: "250m"        # Reduced CPU limit
-        memory: "256Mi"    # Reduced memory limit
-  dbservers:
-    count: 3
-    resources:
-      requests:
-        cpu: "200m"       # Reduced CPU request
-        memory: "512Mi"    # Reduced memory request
-      limits:
-        cpu: "500m"        # Reduced CPU limit
-        memory: "1Gi"      # Reduced memory limit
-  coordinators:
-    count: 3
-    resources:
-      requests:
-        cpu: "100m"       # Reduced CPU request
-        memory: "128Mi"    # Reduced memory request
-      limits:
-        cpu: "250m"        # Reduced CPU limit
-        memory: "256Mi"    # Reduced memory limit
-  bootstrap:
-    databases:
-      - name: your_database_name
-        users:
-          - username: your_username
-            password: your_password
+        cpu: "500m"       # Adjusted CPU limit
+        memory: "1Gi"     # Adjusted memory limit
+

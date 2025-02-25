@@ -30,3 +30,21 @@ Deploying from that folder:
 helm uninstall watchwise-release
 helm uninstall arangodb-operator
 ```
+
+# Local testing - minikube
+
+minikube start:
+```bash
+minikube start --memory=7776 --cpus=4
+```
+
+Access ArangoDB
+```bash
+minikube service arangodb-ea
+```
+
+Make sure to use https.
+Default credentials:
+
+Username: root
+Password - empty
