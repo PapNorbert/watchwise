@@ -1,4 +1,4 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
 
 export async function findRecommendations(showKey, limit) {
@@ -24,6 +24,7 @@ export async function findRecommendations(showKey, limit) {
       similarity: similarity
     }
     `;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { targetShowKey: showKey, count: limit });
     return (await cursor.all());
   } catch (err) {

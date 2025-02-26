@@ -1,4 +1,4 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
 
 export async function findShows(limit) {
@@ -15,6 +15,7 @@ export async function findShows(limit) {
       )
   RETURN UNION(movies, series)
   `;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { count: limit });
     return (await cursor.all())[0];
   } catch (err) {
@@ -39,6 +40,7 @@ export async function findFilteredShows(nameFilter, limit) {
       )
   RETURN UNION(movies, series)
   `;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { nameFilter: nameFilter, count: limit });
     return (await cursor.all())[0];
   } catch (err) {

@@ -12,6 +12,7 @@ import './config.js';
 
 import allowedOrigin from './config/allowedOrigin.js'
 import { createCollections, createEdgeCollections, insertAdminUser, insertModeratorEmploymentFile } from './db/setup_db.js'
+import { createDatabaseIfNotExists } from './db/connection_db.js'
 import { insertWatchGroupChatComment, findWatchGroupChatByWGKey } from './db/watch_groups_chats.js'
 import { readLanguageDataFiles } from './i18n/i18n_files.js'
 import { credentialsAllow } from './middlewares/credentialsAllow.js'
@@ -124,7 +125,8 @@ io.on('connection', (socket) => {
 
 const ipAddress = '0.0.0.0';
 
-createCollections()
+createDatabaseIfNotExists()
+  .then(createCollections)
   .then(createEdgeCollections)
   .then(insertAdminUser)
   .then(insertModeratorEmploymentFile)

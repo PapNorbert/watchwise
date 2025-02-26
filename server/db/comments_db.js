@@ -1,4 +1,4 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
 
 export async function findComments(id, collectionName) {
@@ -7,6 +7,7 @@ export async function findComments(id, collectionName) {
     FILTER doc._key == @key
     FOR comment in doc.comments
       RETURN comment`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: id, '@collection': collectionName });
     return await cursor.all();
   } catch (err) {
@@ -22,6 +23,7 @@ export async function findCommentByKey(id, comment_id, collectionName) {
     FOR comment in doc.comments
       FILTER comment.key == @comment_id
       RETURN comment`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: id, comment_id: comment_id, '@collection': collectionName });
     return (await cursor.all())[0];
   } catch (err) {
@@ -37,6 +39,7 @@ export async function getCommentCountForThreadByKey(id) {
         FILTER doc._key == @key
         FOR comment in doc.comments
             RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: id });
     return (await cursor.all())[0];
   } catch (err) {
@@ -52,6 +55,7 @@ export async function getCommentCountForGroupByKey(id) {
         FILTER doc._key == @key
         FOR comment in doc.comments
             RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: id });
     return (await cursor.all())[0];
   } catch (err) {
@@ -65,6 +69,7 @@ export async function insertComment(id, commentJson, collectionName) {
     const aqlQuery = `FOR doc IN @@collection
     FILTER doc._key == @key
     UPDATE doc WITH { comments: APPEND(doc.comments, @comment)} IN @@collection`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: id, comment: commentJson, '@collection': collectionName });
     return commentJson.key;
   } catch (err) {
@@ -86,6 +91,7 @@ export async function updateComment(id, comment_id, newTextValue, collectionName
         RETURN newItem)
     UPDATE doc WITH { comments: newComments} IN @@collection
     RETURN true`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, {
       key: id, comment_id: comment_id, newTextValue, '@collection': collectionName
     });
@@ -104,6 +110,7 @@ export async function deleteComment(id, comment_id, collectionName) {
       FILTER comment.key == @comment_id
           UPDATE doc WITH { comments: REMOVE_VALUE(doc.comments, comment)} IN @@collection
           RETURN true`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: id, comment_id: comment_id, '@collection': collectionName});
     const deleted = await cursor.all();
     return deleted.length > 0;

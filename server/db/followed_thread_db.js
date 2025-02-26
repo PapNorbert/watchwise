@@ -1,4 +1,4 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
 
 
@@ -8,6 +8,7 @@ export async function checkEdgeExists(from, to) {
       FILTER doc._from == @from
       FILTER doc._to == @to
       LIMIT 1 RETURN true) > 0`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { from: from, to: to });
     return (await cursor.all())[0];
   } catch (err) {
@@ -19,6 +20,7 @@ export async function checkEdgeExists(from, to) {
 export async function insertFollowedEdge(from, to) {
   try {
     const aqlQuery = `INSERT { _from: @from, _to: @to } INTO follows_thread`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { from: from, to: to });
     return cursor._key;
   } catch (err) {
@@ -33,6 +35,7 @@ export async function deleteFollowedEdge(from, to) {
     FILTER edge._from == @from
     FILTER edge._to == @to
     REMOVE { _key: edge._key } IN follows_thread`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { from: from, to: to });
     return true;
   } catch (err) {

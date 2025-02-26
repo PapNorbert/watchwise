@@ -1,8 +1,14 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 import { sortTypesOT } from '../config/sortTypes.js'
 
-const opinionThreadCollection = pool.collection("opinion_threads");
+let opinionThreadCollection;
 
+async function initializeCollection() {
+  const pool = await getPool();
+  opinionThreadCollection = pool.collection("opinion_threads");
+}
+
+initializeCollection();
 
 export async function findOpinionThreads(page, limit, titleSearch, showSearch, creatorSearch, tags, sortBy) {
   try {
@@ -71,6 +77,7 @@ export async function findOpinionThreads(page, limit, titleSearch, showSearch, c
     aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(doc, "comments")`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -152,6 +159,7 @@ export async function findOpinionThreadsWithFollowedInformation(userId, page, li
       FILTER edge._to == doc._id
       LIMIT 1 RETURN true) > 0
     RETURN { doc: UNSET(doc, "comments"), followed: follow }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -223,6 +231,7 @@ export async function findOpinionThreadsByCreator(creator, page, limit, titleSea
     aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(doc, "comments")`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -300,6 +309,7 @@ export async function findOpinionThreadsByUserFollowed(userId, page, limit, titl
     aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(vertex, "comments")`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -313,6 +323,7 @@ export async function findOpinionThreadByKeyWithoutComments(key) {
     const aqlQuery = `FOR doc IN opinion_threads
     FILTER doc._key == @key
     RETURN UNSET(doc, "comments")`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: key });
     return (await cursor.all())[0];
   } catch (err) {
@@ -347,6 +358,7 @@ export async function findOpinionThreadByKey(key, page, limit) {
         RETURN comment
       )
     } `;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: key, offset: (page - 1) * limit, count: limit });
     return (await cursor.all())[0];
   } catch (err) {
@@ -388,6 +400,7 @@ export async function findOpinionThreadByKeyWithFollowedInformation(userId, key,
       },
       followed: follow
     } `;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { from: userId, key: key, offset: (page - 1) * limit, count: limit });
     return (await cursor.all())[0];
   } catch (err) {
@@ -432,6 +445,7 @@ export async function getOpinionThreadCount(titleSearch, showSearch, creatorSear
     }
     aqlQuery += `
     RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
@@ -473,6 +487,7 @@ export async function getOpinionThreadCountByCreator(creator, titleSearch, showS
     }
     aqlQuery += `
     RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
@@ -519,6 +534,7 @@ export async function getOpinionThreadCountByUserFollowed(userId, titleSearch, s
 
     aqlQuery += `
         RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
@@ -530,6 +546,9 @@ export async function getOpinionThreadCountByUserFollowed(userId, titleSearch, s
 
 export async function insertOpinionThread(opinionThreadDocument) {
   try {
+    if (!opinionThreadCollection) {
+      await initializeCollection();
+    }
     const cursor = await opinionThreadCollection.save(opinionThreadDocument);
     return cursor._key;
   } catch (err) {
@@ -540,6 +559,9 @@ export async function insertOpinionThread(opinionThreadDocument) {
 
 export async function updateOpinionThread(key, newOpinionThreadAttributes) {
   try {
+    if (!opinionThreadCollection) {
+      await initializeCollection();
+    }
     const cursor = await opinionThreadCollection.update(key, newOpinionThreadAttributes);
     return true;
   } catch (err) {
@@ -561,6 +583,7 @@ export async function deleteOpinionThreadAndEdges(key) {
         FILTER edge._to == @to
         REMOVE edge IN follows_thread 
     RETURN true`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: key, to: ('opinion_threads/' + key) });
     return true;
   } catch (err) {
