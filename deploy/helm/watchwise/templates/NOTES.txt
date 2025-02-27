@@ -1,3 +1,4 @@
 Services deployed:
 
 - ArangoDB database
+- Watchwise server

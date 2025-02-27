@@ -1,5 +1,23 @@
 # Deploying to Kubernetes using Helm
 
+## Build and push docker images
+
+Server:
+```bash
+cd server
+docker login
+docker build -t <username>/watchwise-server:latest .
+docker push <username>/watchwise-server:latest
+```
+
+Client:
+```bash
+cd client
+docker login
+docker build -t <username>/watchwise-client:latest .
+docker push <username>/watchwise-client:latest
+```
+
 ## Arangodb operator
 
 Add the helm repo
