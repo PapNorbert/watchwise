@@ -1,4 +1,7 @@
 Services deployed:
 
 - ArangoDB database
+- Watchwise app secret
 - Watchwise server
+- Watchwise client
+- Ingress
