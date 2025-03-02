@@ -10,9 +10,13 @@ export async function createDatabaseIfNotExists() {
   try {
     const temporaryDb = new createPool({
       url: poolUrl,
+      agentOptions: {
+        rejectUnauthorized: false,
+      },
       auth: { username: dbUsername, password: dbPasswd },
     });
     const databases = await temporaryDb.listDatabases();
+    console.log(`Connected to ${poolUrl}.`);
     if (!databases.includes(dbName)) {
       await temporaryDb.createDatabase(dbName);
       console.log(`Database ${dbName} created successfully.`);
@@ -28,6 +32,9 @@ async function initializePool() {
   try {
     pool = new createPool({
       url: poolUrl,
+      agentOptions: {
+        rejectUnauthorized: false,
+      },
       databaseName: dbName,
       auth: { username: dbUsername, password: dbPasswd },
       max: poolMax, 
