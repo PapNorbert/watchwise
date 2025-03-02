@@ -23,7 +23,7 @@ spec:
           image: papnorbert25/watchwise-client:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3800
+            - containerPort: 3000
               protocol: TCP
           env:
             - name: REACT_APP_SERVER_URL
@@ -43,8 +43,8 @@ metadata:
 spec:
   ports:
     - name: http
-      port: 3800
-      targetPort: 3800
+      port: 3001 # expose 3001, since server is 3000
+      targetPort: 3000 # The container still runs on 3000
       protocol: TCP
   selector:
     app: pn-watchwise-client
