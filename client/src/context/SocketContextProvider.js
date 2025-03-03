@@ -5,7 +5,9 @@ import { serverUrl } from '../config/serverConfig.js'
 
 export const SocketContext = createContext(null);
 
-const socket = io(serverUrl);
+const socket = io(serverUrl, {
+  path: '/websocket',
+});
 
 export default function SocketContextProvider({ children }) {
   const [selectedGroupChat, setSelectedGroupChat] = useState(null);

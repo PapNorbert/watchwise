@@ -35,8 +35,9 @@ helm install arangodb-operator arangodb/kube-arangodb
 
 A helm chart for the application can be found in the `helm/watchwise` folder.
 
-Deploying from that folder:
+Deploying:
 ```bash
+cd deploy/helm/watchwise
 helm install watchwise-release .
 ```
 

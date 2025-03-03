@@ -76,6 +76,7 @@ app.use('/api/recommendations', recommendationRoute);
 
 
 const io = new Server(server, {
+  path: '/websocket',
   cors: {
     origin: allowedOrigin,
     methods: ['GET', 'POST'],
