@@ -20,7 +20,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: kubernetes-watchwise-client
-          image: papnorbert25/watchwise-client:latest
+          image: papnorbert25/watchwise-client:2.0.3
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
