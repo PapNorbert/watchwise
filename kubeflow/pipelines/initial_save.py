@@ -879,24 +879,26 @@ def initial_save_pipeline():
     username='root'
     db_name='watchwiseRecommend'
 
-    initialize_task = initialize_collections(url, db_name, username, password)
+    initialize_task = initialize_collections(url=url, db_name=db_name, username=username, password=password)
 
     tags_file_key = 'initial_save/movie_tags.csv'
-    save_tags_task = save_tags(url, db_name, username, password, tags_file_key)
+    save_tags_task = save_tags(url=url, db_name=db_name, username=username, password=password, file_key=tags_file_key)
     save_tags_task.after(initialize_task)
 
     ratings_file_key = 'initial_save/movie_ratings.csv'
     movies_collected_file_key = 'initial_save/movies_collected_data.csv'
     series_collected_file_key = 'initial_save/series_collected_data.csv'
-    users_save_task = save_movie_series_and_related_inf(url, db_name, username, password,
-                        movies_collected_file_key, series_collected_file_key, ratings_file_key)
+    users_save_task = save_movie_series_and_related_inf(url=url, db_name=db_name, username=username, password=password,
+                        movies_collected_file_key=movies_collected_file_key,
+                         series_collected_file_key=series_collected_file_key, 
+                         ratings_file_key=ratings_file_key)
     users_save_task.after(initialize_task)
 
 
     movie_emb_key = 'embeddings/initial/movies_w_embedding_st_ext_20_epoch_npgda_data.csv'
     series_emb_key = 'embeddings/initial/series_w_embedding_st_ext_20_epoch_npgda_data.csv'
-    save_embeddings_task = save_embeddings(url, db_name, username, password,
-                            movie_emb_key, series_emb_key)
+    save_embeddings_task = save_embeddings(url=url, db_name=db_name, username=username, password=password,
+                            movies_key=movie_emb_key, series_key=series_emb_key)
 
     save_embeddings_task.after(initialize_task)
 
