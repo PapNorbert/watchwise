@@ -6,7 +6,7 @@ from kfp import dsl
 
 
 @dsl.component(packages_to_install=['python-arango==8.1.0'])
-def initialize_collections(url, db_name, username, password):
+def initialize_collections(url: str, db_name: str, username: str, password: str):
     from arango import ArangoClient
 
     try:
@@ -42,7 +42,7 @@ def initialize_collections(url, db_name, username, password):
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16', 'python-arango==8.1.0'])
-def save_tags(url, db_name, username, password, file_key):
+def save_tags(url: str, db_name: str, username: str, password: str, file_key: str):
     from arango import ArangoClient
     import boto3
     import csv
@@ -119,7 +119,7 @@ def save_tags(url, db_name, username, password, file_key):
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16', 'python-arango==8.1.0'])
-def save_movie_series_and_related_inf(url, db_name, username, password, ratings_file_key, movies_collected_file_key, series_collected_file_key):
+def save_movie_series_and_related_inf(url: str, db_name: str, username: str, password: str, ratings_file_key: str, movies_collected_file_key: str, series_collected_file_key: str):
     from arango import ArangoClient
     import boto3
     import os
@@ -744,7 +744,7 @@ def save_movie_series_and_related_inf(url, db_name, username, password, ratings_
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16', 'python-arango==8.1.0'])
-def save_embeddings(url, db_name, username, password, movies_key, series_key):
+def save_embeddings(url: str, db_name: str, username: str, password: str, movies_key: str, series_key: str):
     from arango import ArangoClient
     import boto3
     import csv
@@ -865,8 +865,6 @@ def save_embeddings(url, db_name, username, password, movies_key, series_key):
     movie_embeddings = read_movie_embeddings('/tmp/series_emb.csv')
     serie_embeddings = read_serie_embeddings('/tmp/movies_emb.csv')
     save_embeddings_to_database(movie_embeddings, serie_embeddings)
-
-
 
 
 
