@@ -743,6 +743,131 @@ def save_movie_series_and_related_inf(url, db_name, username, password, ratings_
     save_op_threads_and_groups(movies_for_groups, series_for_groups, users_to_save)
 
 
+@dsl.component(packages_to_install=['boto3==1.36.16', 'python-arango==8.1.0'])
+def save_embeddings(url, db_name, username, password, movies_key, series_key):
+    from arango import ArangoClient
+    import boto3
+    import csv
+    import ast
+    import uuid
+
+    MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
+    ACCESS_KEY = "minio"
+    SECRET_KEY = "minio123"
+    DATA_BUCKET = "data"
+
+
+    def save_many_to_database(collection_name, data):
+        try:
+            client = ArangoClient(hosts=url, request_timeout=240)
+            db = client.db(db_name, username=username, password=password)
+            collection = db.collection(collection_name)
+            result = collection.insert_many(data, overwrite=True, overwrite_mode='update')
+            return result
+        except Exception as e:
+            print(e)
+            return []
+
+    def read_movie_embeddings(file_path):
+        with open(file_path, mode='r', encoding='utf-8') as file:
+            csv_reader = csv.reader(file)
+            header = next(csv_reader)
+            movies_w_embeddings = []
+            for row in csv_reader:
+                row_embedding = ast.literal_eval(row[14]) if row[14] else []
+                movies_w_embeddings.append({
+                    'movieId': row[0],
+                    'name': row[4],
+                    'poster': row[12],
+                    'embedding': row_embedding,
+                })
+            return movies_w_embeddings
+
+    def read_serie_embeddings(file_path):
+        with open(file_path, mode='r', encoding='utf-8') as file:
+            csv_reader = csv.reader(file)
+            _header = next(csv_reader)
+            movies_w_embeddings = []
+            for row in csv_reader:
+                row_embedding = ast.literal_eval(row[18]) if row[18] else []
+                movies_w_embeddings.append({
+                    'series_id': row[0],
+                    'name': row[3],
+                    'poster': row[14],
+                    'embedding': row_embedding,
+                })
+            return movies_w_embeddings
+
+    def save_embeddings_to_database(movie_embeddings, series_embeddings):
+        try:
+            embeddings = []
+            has_embedding_edges = []
+            for movie_embedding in movie_embeddings:
+                embedding_key = generate_key()
+                movie_key = movie_embedding['movieId']
+                embeddings.append({
+                    '_key': embedding_key,
+                    'show_key': movie_key,
+                    'show_type': 'movie',
+                    'show_name': movie_embedding['name'],
+                    **({'img_name': movie_embedding['poster']} if
+                    'poster' in movie_embedding and movie_embedding['poster'] != 'N/A' else {}),
+                    'embedding_vector': movie_embedding['embedding']
+                })
+                has_embedding_edges.append({
+                    '_key': embedding_key,
+                    '_from': f'movies/{movie_key}',
+                    '_to': f'embeddings/{embedding_key}'
+                })
+            for serie_embeddings in series_embeddings:
+                embedding_key = generate_key()
+                serie_key = serie_embeddings['series_id']
+                embeddings.append({
+                    '_key': embedding_key,
+                    'show_key': serie_key,
+                    'show_type': 'serie',
+                    'show_name': serie_embeddings['name'],
+                    **({'img_name': serie_embeddings['poster']} if
+                    'poster' in serie_embeddings and serie_embeddings['poster'] != 'N/A' else {}),
+                    'embedding_vector': serie_embeddings['embedding']
+                })
+                has_embedding_edges.append({
+                    '_key': embedding_key,
+                    '_from': f'series/{serie_key}',
+                    '_to': f'embeddings/{embedding_key}'
+                })
+
+            print('Saving', len(embeddings), 'embeddings')
+            save_many_to_database('embeddings', embeddings)
+            print('Saving', len(has_embedding_edges), 'has embedding edges')
+            save_many_to_database('has_embedding', has_embedding_edges)
+        except Exception as e:
+            print(e)
+
+    def generate_key() -> str:
+        try:
+            unique_id = uuid.uuid4()
+            numeric_key = unique_id.int
+            return str(numeric_key)
+        except Exception as e:
+            print(e)
+
+
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=MINIO_ENDPOINT,
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY
+    )
+    s3_client.download_file(DATA_BUCKET, movies_key, '/tmp/series_emb.csv')
+    s3_client.download_file(DATA_BUCKET, series_key, '/tmp/movies_emb.csv')
+    
+    movie_embeddings = read_movie_embeddings('/tmp/series_emb.csv')
+    serie_embeddings = read_serie_embeddings('/tmp/movies_emb.csv')
+    save_embeddings_to_database(movie_embeddings, serie_embeddings)
+
+
+
 
 
 
@@ -769,6 +894,13 @@ def initial_save_pipeline():
                         movies_collected_file_key, series_collected_file_key, ratings_file_key)
     users_save_task.after(initialize_task)
 
+
+    movie_emb_key = 'embeddings/initial/movies_w_embedding_st_ext_20_epoch_npgda_data.csv'
+    series_emb_key = 'embeddings/initial/series_w_embedding_st_ext_20_epoch_npgda_data.csv'
+    save_embeddings_task = save_embeddings(url, db_name, username, password,
+                            movie_emb_key, series_emb_key)
+
+    save_embeddings_task.after(initialize_task)
 
 
 
