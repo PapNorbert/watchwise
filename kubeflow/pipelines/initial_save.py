@@ -10,7 +10,7 @@ def initialize_collections(url: str, db_name: str, username: str, password: str)
     from arango import ArangoClient
 
     try:
-        client = ArangoClient(hosts=url, request_timeout=240)
+        client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)
         db = client.db(db_name, username=username, password=password)
         collections = [
             'movies', 'series', 'users', 'watch_groups',
@@ -35,10 +35,8 @@ def initialize_collections(url: str, db_name: str, username: str, password: str)
                     db.create_collection(edge_collection_name, edge=True)
             except Exception as e:
                 print(f"Error creating edge collection {edge_collection_name}: {e}")
-        return True
     except Exception as e:
         print(e)
-        return False
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16', 'python-arango==8.1.0'])
@@ -82,7 +80,7 @@ def save_tags(url: str, db_name: str, username: str, password: str, file_key: st
 
     def save_many_to_database(collection_name, data):
         try:
-            client = ArangoClient(hosts=url, request_timeout=240)
+            client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)
             db = client.db(db_name, username=username, password=password)
             collection = db.collection(collection_name)
             result = collection.insert_many(data, overwrite=True, overwrite_mode='update')
@@ -114,11 +112,10 @@ def save_tags(url: str, db_name: str, username: str, password: str, file_key: st
 
     except Exception as e:
         print(e)
-        return False
 
 
 
-@dsl.component(packages_to_install=['boto3==1.36.16', 'python-arango==8.1.0'])
+@dsl.component(packages_to_install=['boto3==1.36.16', 'python-arango==8.1.0', 'faker==28.4.1'])
 def save_movie_series_and_related_inf(url: str, db_name: str, username: str, password: str, ratings_file_key: str, movies_collected_file_key: str, series_collected_file_key: str):
     from arango import ArangoClient
     import boto3
@@ -187,7 +184,7 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
 
     def save_many_to_database(collection_name, data):
         try:
-            client = ArangoClient(hosts=url, request_timeout=240)
+            client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)
             db = client.db(db_name, username=username, password=password)
             collection = db.collection(collection_name)
             result = collection.insert_many(data, overwrite=True, overwrite_mode='update')
@@ -297,7 +294,7 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                     '_key': genre_key,
                     'name': genre
                 })
-                genre_ids.update({genre: f'genres/{genre_key}'})
+                genre_ids.update({genre: f"genres/{genre_key}"})
             print('Saving', len(genres_list), 'genres')
             save_many_to_database('genres', genres_list)
             return genre_ids
@@ -347,8 +344,8 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                     for genre in movie['genres']:
                         genre_key = genre_ids[genre].split('/')[1]
                         genre_edges.append({
-                            '_key': f'33{movie_id}{genre_key}{genre_key}{movie_id}',
-                            '_from': f'movies/{movie['movieId']}',
+                            '_key': f"33{movie_id}{genre_key}{genre_key}{movie_id}",
+                            '_from': f"movies/{movie_id}",
                             '_to': genre_ids[genre]
                         })
                 movie_list.append(current_movie)
@@ -412,9 +409,9 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
         for rating in ratings:
             movie_id = rating['movieId']
             rating_edges.append({
-                '_key': f'32{rating['userId']}{rating['movieId']}{rating['movieId']}{rating['userId']}',
-                '_from': f'users/{rating['userId']}',
-                '_to': f'movies/{movie_id}',
+                '_key': f"32{rating['userId']}{rating['movieId']}{rating['movieId']}{rating['userId']}",
+                '_from': f"users/{rating['userId']}",
+                '_to': f"movies/{movie_id}",
                 'rating': rating['rating'],
                 'date': rating['timestamp']
             })
@@ -443,8 +440,8 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                     for genre in serie['genres']:
                         genre_key = genre_ids[genre].split('/')[1]
                         genre_edges.append({
-                            '_key': f'88{serie_id}{genre_key}{genre_key}{serie_id}',
-                            '_from': f'series/{serie_id}',
+                            '_key': f"88{serie_id}{genre_key}{genre_key}{serie_id}",
+                            '_from': f"series/{serie_id}",
                             '_to': genre_ids[genre]
                         })
                 # create ratings
@@ -462,9 +459,9 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                 rating_users = random.choices(users, k=vote_count)
                 for user_id in rating_users:
                     rating_edges.append({
-                        # '_key': f'32{user_id}{serie_id}{serie_id}{user_id}',
-                        '_from': f'users/{user_id}',
-                        '_to': f'series/{serie_id}',
+                        '_key': f"32{user_id}{serie_id}{serie_id}{user_id}",
+                        '_from': f"users/{user_id}",
+                        '_to': f"series/{serie_id}",
                         'rating': serie['vote_average'],
                         'date': generate_random_date()
                     })
@@ -546,10 +543,10 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                 # create opinion threads
                 op_threads.append({
                     '_key': thread_key,
-                    'title': f'{movie['name']} opinion thread',
+                    'title': f"{movie['name']} opinion thread",
                     'creator': creator_user['username'],
                     'show': movie['name'],
-                    'description': f'Opinion thread about {movie['name']}',
+                    'description': f"Opinion thread about {movie['name']}",
                     'creation_date': generate_random_date(2023),
                     'show_id': movie_key,
                     'show_type': 'movie',
@@ -558,9 +555,9 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                 })
                 # edge for op thread
                 is_about_show_edges.append({
-                    '_key': f'{movie_key}73{thread_key}',
-                    '_from': f'opinion_threads/{thread_key}',
-                    '_to': f'movies/{movie_key}'
+                    '_key': f"{movie_key}73{thread_key}",
+                    '_from': f"opinion_threads/{thread_key}",
+                    '_to': f"movies/{movie_key}"
                 })
 
                 # create watch group
@@ -569,10 +566,10 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                 current_nr_persons = random.randint(1, person_limit)
                 watch_groups.append({
                     '_key': group_key,
-                    'title': f'{movie['name']} watch group',
+                    'title': f"{movie['name']} watch group",
                     'creator': creator_user2['username'],
                     'show': movie['name'],
-                    'description': f'Watch group for {movie['name']}',
+                    'description': f"Watch group for {movie['name']}",
                     'watch_date': watch_date,
                     'location': [46.768977, 23.589748],
                     'creation_date': create_date,
@@ -585,22 +582,22 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                     'currentNrOfPersons': current_nr_persons
                 })
                 # create watch group chat
-                wg_chat_key = f'{movie_key}9311{group_key}'
+                wg_chat_key = f"{movie_key}9311{group_key}"
                 watch_group_chats.append({
                     '_key': wg_chat_key,
                     'chat_comments': []
                 })
                 # his_group_chat edge for watchgroup
                 his_group_chats.append({
-                    '_key': f'{movie_key}9312{group_key}',
-                    '_from': f'watch_groups/{group_key}',
-                    '_to': f'watch_group_chats/{wg_chat_key}'
+                    '_key': f"{movie_key}9312{group_key}",
+                    '_from': f"watch_groups/{group_key}",
+                    '_to': f"watch_group_chats/{wg_chat_key}"
                 })
                 # is_about_show_edges edge for watchgroup
                 is_about_show_edges.append({
-                    '_key': f'{movie_key}93{group_key}',
-                    '_from': f'watch_groups/{group_key}',
-                    '_to': f'movies/{movie_key}'
+                    '_key': f"{movie_key}93{group_key}",
+                    '_from': f"watch_groups/{group_key}",
+                    '_to': f"movies/{movie_key}"
                 })
 
             for serie in series_for_groups:
@@ -614,10 +611,10 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                 # create opinion threads
                 op_threads.append({
                     '_key': thread_key,
-                    'title': f'{serie['name']} opinion thread',
+                    'title': f"{serie['name']} opinion thread",
                     'creator': creator_user['username'],
                     'show': serie['name'],
-                    'description': f'Opinion thread about {serie['name']}',
+                    'description': f"Opinion thread about {serie['name']}",
                     'creation_date': generate_random_date(2023),
                     'show_id': serie_key,
                     'show_type': 'serie',
@@ -625,9 +622,9 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                     'comments': []
                 })
                 is_about_show_edges.append({
-                    '_key': f'{serie_key}75{thread_key}',
-                    '_from': f'opinion_threads/{thread_key}',
-                    '_to': f'series/{serie_key}'
+                    '_key': f"{serie_key}75{thread_key}",
+                    '_from': f"opinion_threads/{thread_key}",
+                    '_to': f"series/{serie_key}"
                 })
 
                 # create watch group
@@ -636,10 +633,10 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                 current_nr_persons = random.randint(1, person_limit)
                 watch_groups.append({
                     '_key': group_key,
-                    'title': f'{serie['name']} watch group',
+                    'title': f"{serie['name']} watch group",
                     'creator': creator_user2['username'],
                     'show': serie['name'],
-                    'description': f'Watch group for {serie['name']}',
+                    'description': f"Watch group for {serie['name']}",
                     'watch_date': watch_date,
                     'location': [46.768977, 23.589748],
                     'creation_date': create_date,
@@ -652,22 +649,22 @@ def save_movie_series_and_related_inf(url: str, db_name: str, username: str, pas
                     'currentNrOfPersons': current_nr_persons
                 })
                 # create watch group chat
-                wg_chat_key = f'{serie_key}9321{group_key}'
+                wg_chat_key = f"{serie_key}9321{group_key}"
                 watch_group_chats.append({
                     '_key': wg_chat_key,
                     'chat_comments': []
                 })
                 # his_group_chat edge for watchgroup
                 his_group_chats.append({
-                    '_key': f'{serie_key}9322{group_key}',
-                    '_from': f'watch_groups/{group_key}',
-                    '_to': f'watch_group_chats/{wg_chat_key}'
+                    '_key': f"{serie_key}9322{group_key}",
+                    '_from': f"watch_groups/{group_key}",
+                    '_to': f"watch_group_chats/{wg_chat_key}"
                 })
                 # is_about_show_edges edge for watchgroup
                 is_about_show_edges.append({
-                    '_key': f'{serie_key}95{group_key}',
-                    '_from': f'watch_groups/{group_key}',
-                    '_to': f'series/{serie_key}'
+                    '_key': f"{serie_key}95{group_key}",
+                    '_from': f"watch_groups/{group_key}",
+                    '_to': f"series/{serie_key}"
                 })
 
             print('Saving', len(op_threads), 'opinion threads')
@@ -759,7 +756,7 @@ def save_embeddings(url: str, db_name: str, username: str, password: str, movies
 
     def save_many_to_database(collection_name, data):
         try:
-            client = ArangoClient(hosts=url, request_timeout=240)
+            client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)
             db = client.db(db_name, username=username, password=password)
             collection = db.collection(collection_name)
             result = collection.insert_many(data, overwrite=True, overwrite_mode='update')
@@ -816,8 +813,8 @@ def save_embeddings(url: str, db_name: str, username: str, password: str, movies
                 })
                 has_embedding_edges.append({
                     '_key': embedding_key,
-                    '_from': f'movies/{movie_key}',
-                    '_to': f'embeddings/{embedding_key}'
+                    '_from': f"movies/{movie_key}",
+                    '_to': f"embeddings/{embedding_key}"
                 })
             for serie_embeddings in series_embeddings:
                 embedding_key = generate_key()
@@ -833,8 +830,8 @@ def save_embeddings(url: str, db_name: str, username: str, password: str, movies
                 })
                 has_embedding_edges.append({
                     '_key': embedding_key,
-                    '_from': f'series/{serie_key}',
-                    '_to': f'embeddings/{embedding_key}'
+                    '_from': f"series/{serie_key}",
+                    '_to': f"embeddings/{embedding_key}"
                 })
 
             print('Saving', len(embeddings), 'embeddings')
@@ -874,7 +871,7 @@ def save_embeddings(url: str, db_name: str, username: str, password: str, movies
     description="A pipeline for downloading, creating embeddings, and cleaning up new show data"
 )
 def initial_save_pipeline():
-    url = ''
+    url = 'https://arangodb.default.svc.cluster.local:8529'
     password=''
     username='root'
     db_name='watchwiseRecommend'

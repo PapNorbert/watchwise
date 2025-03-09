@@ -93,23 +93,23 @@ deploymentSpec:
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef initialize_collections(url: str, db_name: str, username: str,\
           \ password: str):\n    from arango import ArangoClient\n\n    try:\n   \
-          \     client = ArangoClient(hosts=url, request_timeout=240)\n        db\
-          \ = client.db(db_name, username=username, password=password)\n        collections\
-          \ = [\n            'movies', 'series', 'users', 'watch_groups',\n      \
-          \      'genres', 'opinion_threads', 'moderator_requests',\n            'watch_group_chats',\
-          \ 'tags', 'announcements', 'embeddings'\n        ]\n        edge_collections\
-          \ = [\n            'joined_group', 'his_group_chat', 'join_request',\n \
-          \           'follows_thread', 'his_type', 'is_about_show',\n           \
-          \ 'has_rated', 'has_embedding'\n        ]\n        for collection_name in\
-          \ collections:\n            try:\n                if not db.has_collection(collection_name):\n\
+          \     client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)\n\
+          \        db = client.db(db_name, username=username, password=password)\n\
+          \        collections = [\n            'movies', 'series', 'users', 'watch_groups',\n\
+          \            'genres', 'opinion_threads', 'moderator_requests',\n      \
+          \      'watch_group_chats', 'tags', 'announcements', 'embeddings'\n    \
+          \    ]\n        edge_collections = [\n            'joined_group', 'his_group_chat',\
+          \ 'join_request',\n            'follows_thread', 'his_type', 'is_about_show',\n\
+          \            'has_rated', 'has_embedding'\n        ]\n        for collection_name\
+          \ in collections:\n            try:\n                if not db.has_collection(collection_name):\n\
           \                    db.create_collection(collection_name)\n           \
           \ except Exception as e:\n                print(f\"Error creating collection\
           \ {collection_name}: {e}\")\n\n        for edge_collection_name in edge_collections:\n\
           \            try:\n                if not db.has_collection(edge_collection_name):\n\
           \                    db.create_collection(edge_collection_name, edge=True)\n\
           \            except Exception as e:\n                print(f\"Error creating\
-          \ edge collection {edge_collection_name}: {e}\")\n        return True\n\
-          \    except Exception as e:\n        print(e)\n        return False\n\n"
+          \ edge collection {edge_collection_name}: {e}\")\n    except Exception as\
+          \ e:\n        print(e)\n\n"
         image: python:3.9
     exec-save-embeddings:
       container:
@@ -144,8 +144,8 @@ deploymentSpec:
           \   MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\n    ACCESS_KEY\
           \ = \"minio\"\n    SECRET_KEY = \"minio123\"\n    DATA_BUCKET = \"data\"\
           \n\n\n    def save_many_to_database(collection_name, data):\n        try:\n\
-          \            client = ArangoClient(hosts=url, request_timeout=240)\n   \
-          \         db = client.db(db_name, username=username, password=password)\n\
+          \            client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)\n\
+          \            db = client.db(db_name, username=username, password=password)\n\
           \            collection = db.collection(collection_name)\n            result\
           \ = collection.insert_many(data, overwrite=True, overwrite_mode='update')\n\
           \            return result\n        except Exception as e:\n           \
@@ -177,20 +177,21 @@ deploymentSpec:
           \ and movie_embedding['poster'] != 'N/A' else {}),\n                   \
           \ 'embedding_vector': movie_embedding['embedding']\n                })\n\
           \                has_embedding_edges.append({\n                    '_key':\
-          \ embedding_key,\n                    '_from': f'movies/{movie_key}',\n\
-          \                    '_to': f'embeddings/{embedding_key}'\n            \
-          \    })\n            for serie_embeddings in series_embeddings:\n      \
-          \          embedding_key = generate_key()\n                serie_key = serie_embeddings['series_id']\n\
-          \                embeddings.append({\n                    '_key': embedding_key,\n\
-          \                    'show_key': serie_key,\n                    'show_type':\
-          \ 'serie',\n                    'show_name': serie_embeddings['name'],\n\
-          \                    **({'img_name': serie_embeddings['poster']} if\n  \
-          \                  'poster' in serie_embeddings and serie_embeddings['poster']\
-          \ != 'N/A' else {}),\n                    'embedding_vector': serie_embeddings['embedding']\n\
-          \                })\n                has_embedding_edges.append({\n    \
-          \                '_key': embedding_key,\n                    '_from': f'series/{serie_key}',\n\
-          \                    '_to': f'embeddings/{embedding_key}'\n            \
-          \    })\n\n            print('Saving', len(embeddings), 'embeddings')\n\
+          \ embedding_key,\n                    '_from': f\"movies/{movie_key}\",\n\
+          \                    '_to': f\"embeddings/{embedding_key}\"\n          \
+          \      })\n            for serie_embeddings in series_embeddings:\n    \
+          \            embedding_key = generate_key()\n                serie_key =\
+          \ serie_embeddings['series_id']\n                embeddings.append({\n \
+          \                   '_key': embedding_key,\n                    'show_key':\
+          \ serie_key,\n                    'show_type': 'serie',\n              \
+          \      'show_name': serie_embeddings['name'],\n                    **({'img_name':\
+          \ serie_embeddings['poster']} if\n                    'poster' in serie_embeddings\
+          \ and serie_embeddings['poster'] != 'N/A' else {}),\n                  \
+          \  'embedding_vector': serie_embeddings['embedding']\n                })\n\
+          \                has_embedding_edges.append({\n                    '_key':\
+          \ embedding_key,\n                    '_from': f\"series/{serie_key}\",\n\
+          \                    '_to': f\"embeddings/{embedding_key}\"\n          \
+          \      })\n\n            print('Saving', len(embeddings), 'embeddings')\n\
           \            save_many_to_database('embeddings', embeddings)\n         \
           \   print('Saving', len(has_embedding_edges), 'has embedding edges')\n \
           \           save_many_to_database('has_embedding', has_embedding_edges)\n\
@@ -221,7 +222,7 @@ deploymentSpec:
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
           \  python3 -m pip install --quiet --no-warn-script-location 'boto3==1.36.16'\
-          \ 'python-arango==8.1.0' && \"$0\" \"$@\"\n"
+          \ 'python-arango==8.1.0' 'faker==28.4.1' && \"$0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -262,10 +263,10 @@ deploymentSpec:
           \n    def save_users_to_database(users):\n        try:\n            print('Saving',\
           \ len(users), 'users')\n            save_many_to_database('users', users)\n\
           \        except Exception as e:\n            print(e)\n\n    def save_many_to_database(collection_name,\
-          \ data):\n        try:\n            client = ArangoClient(hosts=url, request_timeout=240)\n\
-          \            db = client.db(db_name, username=username, password=password)\n\
-          \            collection = db.collection(collection_name)\n            result\
-          \ = collection.insert_many(data, overwrite=True, overwrite_mode='update')\n\
+          \ data):\n        try:\n            client = ArangoClient(hosts=url, request_timeout=240,\
+          \ verify_override=False)\n            db = client.db(db_name, username=username,\
+          \ password=password)\n            collection = db.collection(collection_name)\n\
+          \            result = collection.insert_many(data, overwrite=True, overwrite_mode='update')\n\
           \            return result\n        except Exception as e:\n           \
           \ print(e)\n            return []\n\n    def read_collected_movies(file_path):\n\
           \        with open(file_path, mode='r', encoding='utf-8') as file:\n   \
@@ -334,7 +335,7 @@ deploymentSpec:
           \               genre_key = string_to_5_digit_number(genre)\n          \
           \      genres_list.append({\n                    '_key': genre_key,\n  \
           \                  'name': genre\n                })\n                genre_ids.update({genre:\
-          \ f'genres/{genre_key}'})\n            print('Saving', len(genres_list),\
+          \ f\"genres/{genre_key}\"})\n            print('Saving', len(genres_list),\
           \ 'genres')\n            save_many_to_database('genres', genres_list)\n\
           \            return genre_ids\n        except Exception as e:\n        \
           \    print(e)\n\n    def string_to_5_digit_number(s: str) -> str:\n    \
@@ -363,11 +364,11 @@ deploymentSpec:
           \                # create genre edges\n                if movie['genres']:\n\
           \                    for genre in movie['genres']:\n                   \
           \     genre_key = genre_ids[genre].split('/')[1]\n                     \
-          \   genre_edges.append({\n                            '_key': f'33{movie_id}{genre_key}{genre_key}{movie_id}',\n\
-          \                            '_from': f'movies/{movie['movieId']}',\n  \
-          \                          '_to': genre_ids[genre]\n                   \
-          \     })\n                movie_list.append(current_movie)\n\n         \
-          \   # save movies to db\n            print('Saving', len(movie_list), 'movies')\n\
+          \   genre_edges.append({\n                            '_key': f\"33{movie_id}{genre_key}{genre_key}{movie_id}\"\
+          ,\n                            '_from': f\"movies/{movie_id}\",\n      \
+          \                      '_to': genre_ids[genre]\n                       \
+          \ })\n                movie_list.append(current_movie)\n\n            #\
+          \ save movies to db\n            print('Saving', len(movie_list), 'movies')\n\
           \            save_many_to_database('movies', movie_list)\n            #\
           \ save the genres of movies\n            print('Saving', len(genre_edges),\
           \ 'his_type edges - genres of movies')\n            save_many_to_database('his_type',\
@@ -405,9 +406,9 @@ deploymentSpec:
           \      current_movie.update({'imdb_link': movie['imdb_link']})\n\n    def\
           \ create_rating_edges(ratings):\n        rating_edges = []\n        movie_rating_values\
           \ = {}\n        for rating in ratings:\n            movie_id = rating['movieId']\n\
-          \            rating_edges.append({\n                '_key': f'32{rating['userId']}{rating['movieId']}{rating['movieId']}{rating['userId']}',\n\
-          \                '_from': f'users/{rating['userId']}',\n               \
-          \ '_to': f'movies/{movie_id}',\n                'rating': rating['rating'],\n\
+          \            rating_edges.append({\n                '_key': f\"32{rating['userId']}{rating['movieId']}{rating['movieId']}{rating['userId']}\"\
+          ,\n                '_from': f\"users/{rating['userId']}\",\n           \
+          \     '_to': f\"movies/{movie_id}\",\n                'rating': rating['rating'],\n\
           \                'date': rating['timestamp']\n            })\n         \
           \   if movie_id not in movie_rating_values:\n                movie_rating_values[movie_id]\
           \ = {\n                    'sum_of_ratings': 0,\n                    'total_ratings':\
@@ -422,10 +423,10 @@ deploymentSpec:
           \               # create genre edges\n                if serie['genres']:\n\
           \                    for genre in serie['genres']:\n                   \
           \     genre_key = genre_ids[genre].split('/')[1]\n                     \
-          \   genre_edges.append({\n                            '_key': f'88{serie_id}{genre_key}{genre_key}{serie_id}',\n\
-          \                            '_from': f'series/{serie_id}',\n          \
-          \                  '_to': genre_ids[genre]\n                        })\n\
-          \                # create ratings\n                vote_count = int(serie['vote_count']\
+          \   genre_edges.append({\n                            '_key': f\"88{serie_id}{genre_key}{genre_key}{serie_id}\"\
+          ,\n                            '_from': f\"series/{serie_id}\",\n      \
+          \                      '_to': genre_ids[genre]\n                       \
+          \ })\n                # create ratings\n                vote_count = int(serie['vote_count']\
           \ * 0.15)\n                current_serie.update({\n                    'total_ratings':\
           \ vote_count,\n                    'average_rating': serie['vote_average'],\n\
           \                    'sum_of_ratings': serie['vote_average'] * vote_count,\n\
@@ -434,14 +435,15 @@ deploymentSpec:
           \                if vote_count > 100:\n                    vote_count =\
           \ vote_count % 100 + 93\n                rating_users = random.choices(users,\
           \ k=vote_count)\n                for user_id in rating_users:\n        \
-          \            rating_edges.append({\n                        # '_key': f'32{user_id}{serie_id}{serie_id}{user_id}',\n\
-          \                        '_from': f'users/{user_id}',\n                \
-          \        '_to': f'series/{serie_id}',\n                        'rating':\
-          \ serie['vote_average'],\n                        'date': generate_random_date()\n\
-          \                    })\n                series_list.append(current_serie)\n\
-          \n            # save series to db\n            print('Saving', len(series_list),\
-          \ 'series')\n            save_many_to_database('series', series_list)\n\
-          \            # save the genres of series\n            print('Saving', len(genre_edges),\
+          \            rating_edges.append({\n                        '_key': f\"\
+          32{user_id}{serie_id}{serie_id}{user_id}\",\n                        '_from':\
+          \ f\"users/{user_id}\",\n                        '_to': f\"series/{serie_id}\"\
+          ,\n                        'rating': serie['vote_average'],\n          \
+          \              'date': generate_random_date()\n                    })\n\
+          \                series_list.append(current_serie)\n\n            # save\
+          \ series to db\n            print('Saving', len(series_list), 'series')\n\
+          \            save_many_to_database('series', series_list)\n            #\
+          \ save the genres of series\n            print('Saving', len(genre_edges),\
           \ 'his_type edges - genres of series')\n            save_many_to_database('his_type',\
           \ genre_edges)\n            # save ratings of series\n            print('Saving',\
           \ len(rating_edges), 'rating edges')\n            save_many_to_database('has_rated',\
@@ -491,94 +493,96 @@ deploymentSpec:
           \       creator_user = random.choice(users)\n                creator_user2\
           \ = random.choice(users)\n\n                # create opinion threads\n \
           \               op_threads.append({\n                    '_key': thread_key,\n\
-          \                    'title': f'{movie['name']} opinion thread',\n     \
-          \               'creator': creator_user['username'],\n                 \
-          \   'show': movie['name'],\n                    'description': f'Opinion\
-          \ thread about {movie['name']}',\n                    'creation_date': generate_random_date(2023),\n\
-          \                    'show_id': movie_key,\n                    'show_type':\
-          \ 'movie',\n                    'tags': ['movie', 'spoilers', 'opinions'],\n\
-          \                    'comments': []\n                })\n              \
-          \  # edge for op thread\n                is_about_show_edges.append({\n\
-          \                    '_key': f'{movie_key}73{thread_key}',\n           \
-          \         '_from': f'opinion_threads/{thread_key}',\n                  \
-          \  '_to': f'movies/{movie_key}'\n                })\n\n                #\
-          \ create watch group\n                create_date, watch_date = generate_random_2_dates(2024)\n\
+          \                    'title': f\"{movie['name']} opinion thread\",\n   \
+          \                 'creator': creator_user['username'],\n               \
+          \     'show': movie['name'],\n                    'description': f\"Opinion\
+          \ thread about {movie['name']}\",\n                    'creation_date':\
+          \ generate_random_date(2023),\n                    'show_id': movie_key,\n\
+          \                    'show_type': 'movie',\n                    'tags':\
+          \ ['movie', 'spoilers', 'opinions'],\n                    'comments': []\n\
+          \                })\n                # edge for op thread\n            \
+          \    is_about_show_edges.append({\n                    '_key': f\"{movie_key}73{thread_key}\"\
+          ,\n                    '_from': f\"opinion_threads/{thread_key}\",\n   \
+          \                 '_to': f\"movies/{movie_key}\"\n                })\n\n\
+          \                # create watch group\n                create_date, watch_date\
+          \ = generate_random_2_dates(2024)\n                person_limit = random.randint(4,\
+          \ 16)\n                current_nr_persons = random.randint(1, person_limit)\n\
+          \                watch_groups.append({\n                    '_key': group_key,\n\
+          \                    'title': f\"{movie['name']} watch group\",\n      \
+          \              'creator': creator_user2['username'],\n                 \
+          \   'show': movie['name'],\n                    'description': f\"Watch\
+          \ group for {movie['name']}\",\n                    'watch_date': watch_date,\n\
+          \                    'location': [46.768977, 23.589748],\n             \
+          \       'creation_date': create_date,\n                    'show_id': movie_key,\n\
+          \                    'show_type': 'movie',\n                    'comments':\
+          \ [],\n                    'locationName': 'Parcare de biciclete Pia\u021B\
+          a Unirii, Pia\u021Ba Unirii, Center, Cluj-Napoca, '\n                  \
+          \                  'Cluj Metropolitan Area, Kolozs, 400113, Romania',\n\
+          \                    'personLimit': person_limit,\n                    'currentNrOfPersons':\
+          \ current_nr_persons\n                })\n                # create watch\
+          \ group chat\n                wg_chat_key = f\"{movie_key}9311{group_key}\"\
+          \n                watch_group_chats.append({\n                    '_key':\
+          \ wg_chat_key,\n                    'chat_comments': []\n              \
+          \  })\n                # his_group_chat edge for watchgroup\n          \
+          \      his_group_chats.append({\n                    '_key': f\"{movie_key}9312{group_key}\"\
+          ,\n                    '_from': f\"watch_groups/{group_key}\",\n       \
+          \             '_to': f\"watch_group_chats/{wg_chat_key}\"\n            \
+          \    })\n                # is_about_show_edges edge for watchgroup\n   \
+          \             is_about_show_edges.append({\n                    '_key':\
+          \ f\"{movie_key}93{group_key}\",\n                    '_from': f\"watch_groups/{group_key}\"\
+          ,\n                    '_to': f\"movies/{movie_key}\"\n                })\n\
+          \n            for serie in series_for_groups:\n                current =\
+          \ serie\n                serie_key = serie['_key']\n                thread_key\
+          \ = generate_key()\n                group_key = generate_key()\n       \
+          \         creator_user = random.choice(users)\n                creator_user2\
+          \ = random.choice(users)\n\n                # create opinion threads\n \
+          \               op_threads.append({\n                    '_key': thread_key,\n\
+          \                    'title': f\"{serie['name']} opinion thread\",\n   \
+          \                 'creator': creator_user['username'],\n               \
+          \     'show': serie['name'],\n                    'description': f\"Opinion\
+          \ thread about {serie['name']}\",\n                    'creation_date':\
+          \ generate_random_date(2023),\n                    'show_id': serie_key,\n\
+          \                    'show_type': 'serie',\n                    'tags':\
+          \ ['serie', 'spoilers', 'opinions'],\n                    'comments': []\n\
+          \                })\n                is_about_show_edges.append({\n    \
+          \                '_key': f\"{serie_key}75{thread_key}\",\n             \
+          \       '_from': f\"opinion_threads/{thread_key}\",\n                  \
+          \  '_to': f\"series/{serie_key}\"\n                })\n\n              \
+          \  # create watch group\n                create_date, watch_date = generate_random_2_dates(2024)\n\
           \                person_limit = random.randint(4, 16)\n                current_nr_persons\
           \ = random.randint(1, person_limit)\n                watch_groups.append({\n\
-          \                    '_key': group_key,\n                    'title': f'{movie['name']}\
-          \ watch group',\n                    'creator': creator_user2['username'],\n\
-          \                    'show': movie['name'],\n                    'description':\
-          \ f'Watch group for {movie['name']}',\n                    'watch_date':\
+          \                    '_key': group_key,\n                    'title': f\"\
+          {serie['name']} watch group\",\n                    'creator': creator_user2['username'],\n\
+          \                    'show': serie['name'],\n                    'description':\
+          \ f\"Watch group for {serie['name']}\",\n                    'watch_date':\
           \ watch_date,\n                    'location': [46.768977, 23.589748],\n\
           \                    'creation_date': create_date,\n                   \
-          \ 'show_id': movie_key,\n                    'show_type': 'movie',\n   \
+          \ 'show_id': serie_key,\n                    'show_type': 'serie',\n   \
           \                 'comments': [],\n                    'locationName': 'Parcare\
           \ de biciclete Pia\u021Ba Unirii, Pia\u021Ba Unirii, Center, Cluj-Napoca,\
           \ '\n                                    'Cluj Metropolitan Area, Kolozs,\
           \ 400113, Romania',\n                    'personLimit': person_limit,\n\
           \                    'currentNrOfPersons': current_nr_persons\n        \
           \        })\n                # create watch group chat\n               \
-          \ wg_chat_key = f'{movie_key}9311{group_key}'\n                watch_group_chats.append({\n\
+          \ wg_chat_key = f\"{serie_key}9321{group_key}\"\n                watch_group_chats.append({\n\
           \                    '_key': wg_chat_key,\n                    'chat_comments':\
           \ []\n                })\n                # his_group_chat edge for watchgroup\n\
-          \                his_group_chats.append({\n                    '_key': f'{movie_key}9312{group_key}',\n\
-          \                    '_from': f'watch_groups/{group_key}',\n           \
-          \         '_to': f'watch_group_chats/{wg_chat_key}'\n                })\n\
-          \                # is_about_show_edges edge for watchgroup\n           \
-          \     is_about_show_edges.append({\n                    '_key': f'{movie_key}93{group_key}',\n\
-          \                    '_from': f'watch_groups/{group_key}',\n           \
-          \         '_to': f'movies/{movie_key}'\n                })\n\n         \
-          \   for serie in series_for_groups:\n                current = serie\n \
-          \               serie_key = serie['_key']\n                thread_key =\
-          \ generate_key()\n                group_key = generate_key()\n         \
-          \       creator_user = random.choice(users)\n                creator_user2\
-          \ = random.choice(users)\n\n                # create opinion threads\n \
-          \               op_threads.append({\n                    '_key': thread_key,\n\
-          \                    'title': f'{serie['name']} opinion thread',\n     \
-          \               'creator': creator_user['username'],\n                 \
-          \   'show': serie['name'],\n                    'description': f'Opinion\
-          \ thread about {serie['name']}',\n                    'creation_date': generate_random_date(2023),\n\
-          \                    'show_id': serie_key,\n                    'show_type':\
-          \ 'serie',\n                    'tags': ['serie', 'spoilers', 'opinions'],\n\
-          \                    'comments': []\n                })\n              \
-          \  is_about_show_edges.append({\n                    '_key': f'{serie_key}75{thread_key}',\n\
-          \                    '_from': f'opinion_threads/{thread_key}',\n       \
-          \             '_to': f'series/{serie_key}'\n                })\n\n     \
-          \           # create watch group\n                create_date, watch_date\
-          \ = generate_random_2_dates(2024)\n                person_limit = random.randint(4,\
-          \ 16)\n                current_nr_persons = random.randint(1, person_limit)\n\
-          \                watch_groups.append({\n                    '_key': group_key,\n\
-          \                    'title': f'{serie['name']} watch group',\n        \
-          \            'creator': creator_user2['username'],\n                   \
-          \ 'show': serie['name'],\n                    'description': f'Watch group\
-          \ for {serie['name']}',\n                    'watch_date': watch_date,\n\
-          \                    'location': [46.768977, 23.589748],\n             \
-          \       'creation_date': create_date,\n                    'show_id': serie_key,\n\
-          \                    'show_type': 'serie',\n                    'comments':\
-          \ [],\n                    'locationName': 'Parcare de biciclete Pia\u021B\
-          a Unirii, Pia\u021Ba Unirii, Center, Cluj-Napoca, '\n                  \
-          \                  'Cluj Metropolitan Area, Kolozs, 400113, Romania',\n\
-          \                    'personLimit': person_limit,\n                    'currentNrOfPersons':\
-          \ current_nr_persons\n                })\n                # create watch\
-          \ group chat\n                wg_chat_key = f'{serie_key}9321{group_key}'\n\
-          \                watch_group_chats.append({\n                    '_key':\
-          \ wg_chat_key,\n                    'chat_comments': []\n              \
-          \  })\n                # his_group_chat edge for watchgroup\n          \
-          \      his_group_chats.append({\n                    '_key': f'{serie_key}9322{group_key}',\n\
-          \                    '_from': f'watch_groups/{group_key}',\n           \
-          \         '_to': f'watch_group_chats/{wg_chat_key}'\n                })\n\
-          \                # is_about_show_edges edge for watchgroup\n           \
-          \     is_about_show_edges.append({\n                    '_key': f'{serie_key}95{group_key}',\n\
-          \                    '_from': f'watch_groups/{group_key}',\n           \
-          \         '_to': f'series/{serie_key}'\n                })\n\n         \
-          \   print('Saving', len(op_threads), 'opinion threads')\n            save_many_to_database('opinion_threads',\
-          \ op_threads)\n            print('Saving', len(is_about_show_edges), 'is_about_show\
-          \ edges - threads and groups')\n            save_many_to_database('is_about_show',\
-          \ is_about_show_edges)\n            print('Saving', len(watch_groups), 'watch\
-          \ groups')\n            save_many_to_database('watch_groups', watch_groups)\n\
-          \            print('Saving', len(watch_group_chats), 'watch group chats')\n\
-          \            save_many_to_database('watch_group_chats', watch_group_chats)\n\
-          \            print('Saving', len(his_group_chats), 'his_group_chats edges\
+          \                his_group_chats.append({\n                    '_key': f\"\
+          {serie_key}9322{group_key}\",\n                    '_from': f\"watch_groups/{group_key}\"\
+          ,\n                    '_to': f\"watch_group_chats/{wg_chat_key}\"\n   \
+          \             })\n                # is_about_show_edges edge for watchgroup\n\
+          \                is_about_show_edges.append({\n                    '_key':\
+          \ f\"{serie_key}95{group_key}\",\n                    '_from': f\"watch_groups/{group_key}\"\
+          ,\n                    '_to': f\"series/{serie_key}\"\n                })\n\
+          \n            print('Saving', len(op_threads), 'opinion threads')\n    \
+          \        save_many_to_database('opinion_threads', op_threads)\n        \
+          \    print('Saving', len(is_about_show_edges), 'is_about_show edges - threads\
+          \ and groups')\n            save_many_to_database('is_about_show', is_about_show_edges)\n\
+          \            print('Saving', len(watch_groups), 'watch groups')\n      \
+          \      save_many_to_database('watch_groups', watch_groups)\n           \
+          \ print('Saving', len(watch_group_chats), 'watch group chats')\n       \
+          \     save_many_to_database('watch_group_chats', watch_group_chats)\n  \
+          \          print('Saving', len(his_group_chats), 'his_group_chats edges\
           \ - threads and groups')\n            save_many_to_database('his_group_chat',\
           \ his_group_chats)\n\n        except Exception as e:\n            print(current)\n\
           \            print(e)\n\n    def generate_random_2_dates(start_year=2010):\n\
@@ -659,10 +663,10 @@ deploymentSpec:
           \                    'name': tag\n                })\n            print('Saving',\
           \ len(tags_list), 'tags')\n            save_many_to_database('tags', tags_list)\n\
           \        except Exception as e:\n            print(e)\n\n    def save_many_to_database(collection_name,\
-          \ data):\n        try:\n            client = ArangoClient(hosts=url, request_timeout=240)\n\
-          \            db = client.db(db_name, username=username, password=password)\n\
-          \            collection = db.collection(collection_name)\n            result\
-          \ = collection.insert_many(data, overwrite=True, overwrite_mode='update')\n\
+          \ data):\n        try:\n            client = ArangoClient(hosts=url, request_timeout=240,\
+          \ verify_override=False)\n            db = client.db(db_name, username=username,\
+          \ password=password)\n            collection = db.collection(collection_name)\n\
+          \            result = collection.insert_many(data, overwrite=True, overwrite_mode='update')\n\
           \            return result\n        except Exception as e:\n           \
           \ print(e)\n            return []\n\n    def string_to_5_digit_number(s:\
           \ str) -> str:\n        try:\n            hash_object = hashlib.md5(s.encode())\n\
@@ -673,7 +677,7 @@ deploymentSpec:
           \            aws_access_key_id=ACCESS_KEY,\n            aws_secret_access_key=SECRET_KEY\n\
           \        )\n        s3_client.download_file(DATA_BUCKET, file_key, '/tmp/movie_tags.csv')\n\
           \        tags = read_tags('/tmp/movie_tags.csv')\n        save_tags_to_database(tags)\n\
-          \n    except Exception as e:\n        print(e)\n        return False\n\n"
+          \n    except Exception as e:\n        print(e)\n\n"
         image: python:3.9
 pipelineInfo:
   description: A pipeline for downloading, creating embeddings, and cleaning up new
@@ -697,7 +701,7 @@ root:
                 constant: ''
             url:
               runtimeValue:
-                constant: ''
+                constant: https://arangodb.default.svc.cluster.local:8529
             username:
               runtimeValue:
                 constant: root
@@ -726,7 +730,7 @@ root:
                 constant: embeddings/initial/series_w_embedding_st_ext_20_epoch_npgda_data.csv
             url:
               runtimeValue:
-                constant: ''
+                constant: https://arangodb.default.svc.cluster.local:8529
             username:
               runtimeValue:
                 constant: root
@@ -758,7 +762,7 @@ root:
                 constant: initial_save/series_collected_data.csv
             url:
               runtimeValue:
-                constant: ''
+                constant: https://arangodb.default.svc.cluster.local:8529
             username:
               runtimeValue:
                 constant: root
@@ -784,7 +788,7 @@ root:
                 constant: ''
             url:
               runtimeValue:
-                constant: ''
+                constant: https://arangodb.default.svc.cluster.local:8529
             username:
               runtimeValue:
                 constant: root

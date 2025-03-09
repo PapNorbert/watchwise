@@ -5,9 +5,9 @@
 #### Deploy Kubeflow pipelines:
 
 ```bash
-kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/cluster-scoped-resources?ref=2.3.0"
-kubectl wait --for condition=established --timeout=60s crd/applications.app.k8s.io
-kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/env/dev?ref=2.3.0"
+kubectl kustomize github.com/kubeflow/pipelines/manifests/kustomize/cluster-scoped-resources | kubectl apply -f -
+kubectl wait crd/applications.app.k8s.io --for condition=established --timeout=60s
+kubectl kustomize github.com/kubeflow/pipelines/manifests/kustomize/env/platform-agnostic/ | kubectl apply -f -
 ```
 
 #### Accessing Kubeflow Pipelines UI:
@@ -37,9 +37,14 @@ Uploading Files:
 
 
 
+### Remove Kubeflow pipelines deployment
 
 
-
+```bash
+kubectl kustomize env/platform-agnostic | kubectl delete -f -
+kubectl delete applications/pipeline -n kubeflow
+kubectl delete -k cluster-scoped-resources/
+```
 
 
 
