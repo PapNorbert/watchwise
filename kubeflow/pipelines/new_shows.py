@@ -143,53 +143,9 @@ def process_csv_files(
         json.dump(processed_series, series_file, indent=4)
 
 
-@dsl.component(packages_to_install=['boto3==1.36.16'])
-def get_model(model_name: str, model_dir: dsl.OutputPath()):
-    import boto3
-    import os
-    import zipfile
-    import shutil
-
-    MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
-
-    ACCESS_KEY = "minio"
-    SECRET_KEY = "minio123"
-    MODEL_BUCKET = "models"
-    TEMP_DIR = "/tmp/models"
-    MODEL_ZIP_PATH = os.path.join(TEMP_DIR, f"{model_name}.zip")
-    s3_client = boto3.client(
-        "s3",
-        endpoint_url=MINIO_ENDPOINT,
-        aws_access_key_id=ACCESS_KEY,
-        aws_secret_access_key=SECRET_KEY
-    )
-    os.makedirs(TEMP_DIR, exist_ok=True)
-    try:
-        s3_client.download_file(MODEL_BUCKET, f"{model_name}.zip", MODEL_ZIP_PATH)
-        print(f"Downloaded {model_name}.zip to {MODEL_ZIP_PATH}")
-    except Exception as e:
-        print(f"Error downloading {model_name}.zip: {e}")
-        return
-    try:
-        with zipfile.ZipFile(MODEL_ZIP_PATH, "r") as zip_ref:
-            zip_ref.extractall(TEMP_DIR)
-        print(f"Extracted {model_name}.zip to {TEMP_DIR}")
-    except zipfile.BadZipFile:
-        print(f"Error: {MODEL_ZIP_PATH} is not a valid zip file")
-        return
-    os.remove(MODEL_ZIP_PATH)
-    print(f"Deleted {MODEL_ZIP_PATH}, only keeping extracted files")
-
-    os.makedirs(model_dir, exist_ok=True)
-    TEMP_MODEL_DIR = os.path.join(TEMP_DIR, model_name)
-    shutil.move(TEMP_MODEL_DIR, model_dir)
-    print(f"Moved extracted model to {model_dir}")
-
-
-@dsl.component(packages_to_install=['transformers==4.45.2', 'sentence-transformers==3.1.1'])
+@dsl.component(packages_to_install=['transformers==4.45.2', 'sentence-transformers==3.1.1', 'boto3==1.36.16'])
 def create_embeddings(
         model_name: str,
-        model_dir: dsl.InputPath(), 
         movies_json: dsl.InputPath(), 
         series_json: dsl.InputPath(),
         fields_to_use: list,
@@ -199,11 +155,31 @@ def create_embeddings(
     import os
     import json
     import csv
+    import boto3
+    import zipfile
     from sentence_transformers import SentenceTransformer
 
-    model_path = os.path.join(model_dir, model_name)
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model directory {model_path} does not exist.")
+    MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
+    ACCESS_KEY = "minio"
+    SECRET_KEY = "minio123"
+    MODEL_BUCKET = "models"
+    TEMP_DIR = "/tmp/models"
+    MODEL_ZIP_PATH = os.path.join(TEMP_DIR, f"{model_name}.zip")
+
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=MINIO_ENDPOINT,
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY
+    )
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    s3_client.download_file(MODEL_BUCKET, f"{model_name}.zip", MODEL_ZIP_PATH)
+    print(f"Downloaded {model_name}.zip to {MODEL_ZIP_PATH}")
+    with zipfile.ZipFile(MODEL_ZIP_PATH, "r") as zip_ref:
+        zip_ref.extractall(TEMP_DIR)
+    print(f"Extracted {model_name}.zip to {TEMP_DIR}")
+    model_path = os.path.join(TEMP_DIR, model_name)
+
     with open(movies_json, "r", encoding="utf-8") as file:
         movies = json.load(file)
     with open(series_json, "r", encoding="utf-8") as file:
@@ -212,7 +188,7 @@ def create_embeddings(
     print(f"Loaded {len(movies)} movies and {len(series)} series.")
 
     model = SentenceTransformer(model_path)
-    print(f"Loaded model from {model_dir}")
+    print(f"Loaded model from {model_path}")
 
     def generate_embeddings_sentence_transformer(shows, fields_to_use, model):
         show_texts = []
@@ -321,12 +297,10 @@ def data_processing_pipeline():
     )
     
     model_name='watchwise-20-ep'
-    model_download_task = get_model(model_name=model_name)
 
     fields_to_use = ['name', 'plot', 'genres', 'directors', 'actors']
     embedding_task = create_embeddings(
         model_name=model_name,
-        model_dir=model_download_task.output, 
         movies_json=process_task.outputs["movies_output"],
         series_json=process_task.outputs["series_output"],
         fields_to_use=fields_to_use

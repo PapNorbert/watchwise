@@ -10,6 +10,10 @@ kubectl wait crd/applications.app.k8s.io --for condition=established --timeout=6
 kubectl kustomize github.com/kubeflow/pipelines/manifests/kustomize/env/platform-agnostic/ | kubectl apply -f -
 ```
 
+kubectl set env deployment/ml-pipeline-ui DISABLE_GKE_METADATA=true -n kubeflow
+kubectl rollout restart deployment/ml-pipeline-ui -n kubeflow
+
+
 #### Accessing Kubeflow Pipelines UI:
 
 ```bash

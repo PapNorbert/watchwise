@@ -6,10 +6,6 @@ components:
     executorLabel: exec-create-embeddings
     inputDefinitions:
       artifacts:
-        model_dir:
-          artifactType:
-            schemaTitle: system.Artifact
-            schemaVersion: 0.0.1
         movies_json:
           artifactType:
             schemaTitle: system.Artifact
@@ -38,18 +34,6 @@ components:
     outputDefinitions:
       artifacts:
         output_dir:
-          artifactType:
-            schemaTitle: system.Artifact
-            schemaVersion: 0.0.1
-  comp-get-model:
-    executorLabel: exec-get-model
-    inputDefinitions:
-      parameters:
-        model_name:
-          parameterType: STRING
-    outputDefinitions:
-      artifacts:
-        model_dir:
           artifactType:
             schemaTitle: system.Artifact
             schemaVersion: 0.0.1
@@ -100,7 +84,7 @@ deploymentSpec:
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
           \  python3 -m pip install --quiet --no-warn-script-location 'transformers==4.45.2'\
-          \ 'sentence-transformers==3.1.1' && \"$0\" \"$@\"\n"
+          \ 'sentence-transformers==3.1.1' 'boto3==1.36.16' && \"$0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -112,19 +96,27 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef create_embeddings(\n        model_name: str,\n        model_dir:\
-          \ dsl.InputPath(), \n        movies_json: dsl.InputPath(), \n        series_json:\
-          \ dsl.InputPath(),\n        fields_to_use: list,\n        movies_output:\
-          \ dsl.OutputPath(), \n        series_output: dsl.OutputPath()\n        ):\n\
-          \    import os\n    import json\n    import csv\n    from sentence_transformers\
-          \ import SentenceTransformer\n\n    model_path = os.path.join(model_dir,\
-          \ model_name)\n    if not os.path.exists(model_path):\n        raise FileNotFoundError(f\"\
-          Model directory {model_path} does not exist.\")\n    with open(movies_json,\
-          \ \"r\", encoding=\"utf-8\") as file:\n        movies = json.load(file)\n\
-          \    with open(series_json, \"r\", encoding=\"utf-8\") as file:\n      \
-          \  series = json.load(file)\n\n    print(f\"Loaded {len(movies)} movies\
-          \ and {len(series)} series.\")\n\n    model = SentenceTransformer(model_path)\n\
-          \    print(f\"Loaded model from {model_dir}\")\n\n    def generate_embeddings_sentence_transformer(shows,\
+          \ *\n\ndef create_embeddings(\n        model_name: str,\n        movies_json:\
+          \ dsl.InputPath(), \n        series_json: dsl.InputPath(),\n        fields_to_use:\
+          \ list,\n        movies_output: dsl.OutputPath(), \n        series_output:\
+          \ dsl.OutputPath()\n        ):\n    import os\n    import json\n    import\
+          \ csv\n    import boto3\n    import zipfile\n    from sentence_transformers\
+          \ import SentenceTransformer\n\n    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\
+          \n    ACCESS_KEY = \"minio\"\n    SECRET_KEY = \"minio123\"\n    MODEL_BUCKET\
+          \ = \"models\"\n    TEMP_DIR = \"/tmp/models\"\n    MODEL_ZIP_PATH = os.path.join(TEMP_DIR,\
+          \ f\"{model_name}.zip\")\n\n    s3_client = boto3.client(\n        \"s3\"\
+          ,\n        endpoint_url=MINIO_ENDPOINT,\n        aws_access_key_id=ACCESS_KEY,\n\
+          \        aws_secret_access_key=SECRET_KEY\n    )\n    os.makedirs(TEMP_DIR,\
+          \ exist_ok=True)\n    s3_client.download_file(MODEL_BUCKET, f\"{model_name}.zip\"\
+          , MODEL_ZIP_PATH)\n    print(f\"Downloaded {model_name}.zip to {MODEL_ZIP_PATH}\"\
+          )\n    with zipfile.ZipFile(MODEL_ZIP_PATH, \"r\") as zip_ref:\n       \
+          \ zip_ref.extractall(TEMP_DIR)\n    print(f\"Extracted {model_name}.zip\
+          \ to {TEMP_DIR}\")\n    model_path = os.path.join(TEMP_DIR, model_name)\n\
+          \n    with open(movies_json, \"r\", encoding=\"utf-8\") as file:\n     \
+          \   movies = json.load(file)\n    with open(series_json, \"r\", encoding=\"\
+          utf-8\") as file:\n        series = json.load(file)\n\n    print(f\"Loaded\
+          \ {len(movies)} movies and {len(series)} series.\")\n\n    model = SentenceTransformer(model_path)\n\
+          \    print(f\"Loaded model from {model_path}\")\n\n    def generate_embeddings_sentence_transformer(shows,\
           \ fields_to_use, model):\n        show_texts = []\n        for show in shows:\n\
           \            combined_text = []\n            for field in fields_to_use:\n\
           \                if isinstance(show[field], list):\n                   \
@@ -205,54 +197,6 @@ deploymentSpec:
           \      s3_client.download_file(DATA_BUCKET, file_key, local_file_path)\n\
           \                print(f\"Downloaded: {file_key} \u2192 {local_file_path}\"\
           )\n\n    print(f\"Download complete for all files in {output_dir}\")\n\n"
-        image: python:3.9
-    exec-get-model:
-      container:
-        args:
-        - --executor_input
-        - '{{$}}'
-        - --function_to_execute
-        - get_model
-        command:
-        - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'boto3==1.36.16'\
-          \ && \"$0\" \"$@\"\n"
-        - sh
-        - -ec
-        - 'program_path=$(mktemp -d)
-
-
-          printf "%s" "$0" > "$program_path/ephemeral_component.py"
-
-          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
-
-          '
-        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef get_model(model_name: str, model_dir: dsl.OutputPath()):\n  \
-          \  import boto3\n    import os\n    import zipfile\n    import shutil\n\n\
-          \    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\n\n    ACCESS_KEY\
-          \ = \"minio\"\n    SECRET_KEY = \"minio123\"\n    MODEL_BUCKET = \"models\"\
-          \n    TEMP_DIR = \"/tmp/models\"\n    MODEL_ZIP_PATH = os.path.join(TEMP_DIR,\
-          \ f\"{model_name}.zip\")\n    s3_client = boto3.client(\n        \"s3\"\
-          ,\n        endpoint_url=MINIO_ENDPOINT,\n        aws_access_key_id=ACCESS_KEY,\n\
-          \        aws_secret_access_key=SECRET_KEY\n    )\n    os.makedirs(TEMP_DIR,\
-          \ exist_ok=True)\n    try:\n        s3_client.download_file(MODEL_BUCKET,\
-          \ f\"{model_name}.zip\", MODEL_ZIP_PATH)\n        print(f\"Downloaded {model_name}.zip\
-          \ to {MODEL_ZIP_PATH}\")\n    except Exception as e:\n        print(f\"\
-          Error downloading {model_name}.zip: {e}\")\n        return\n    try:\n \
-          \       with zipfile.ZipFile(MODEL_ZIP_PATH, \"r\") as zip_ref:\n      \
-          \      zip_ref.extractall(TEMP_DIR)\n        print(f\"Extracted {model_name}.zip\
-          \ to {TEMP_DIR}\")\n    except zipfile.BadZipFile:\n        print(f\"Error:\
-          \ {MODEL_ZIP_PATH} is not a valid zip file\")\n        return\n    os.remove(MODEL_ZIP_PATH)\n\
-          \    print(f\"Deleted {MODEL_ZIP_PATH}, only keeping extracted files\")\n\
-          \n    os.makedirs(model_dir, exist_ok=True)\n    TEMP_MODEL_DIR = os.path.join(TEMP_DIR,\
-          \ model_name)\n    shutil.move(TEMP_MODEL_DIR, model_dir)\n    print(f\"\
-          Moved extracted model to {model_dir}\")\n\n"
         image: python:3.9
     exec-process-csv-files:
       container:
@@ -411,14 +355,9 @@ root:
         componentRef:
           name: comp-create-embeddings
         dependentTasks:
-        - get-model
         - process-csv-files
         inputs:
           artifacts:
-            model_dir:
-              taskOutputArtifact:
-                outputArtifactKey: model_dir
-                producerTask: get-model
             movies_json:
               taskOutputArtifact:
                 outputArtifactKey: movies_output
@@ -448,18 +387,6 @@ root:
           name: comp-download-csv-files
         taskInfo:
           name: download-csv-files
-      get-model:
-        cachingOptions:
-          enableCache: true
-        componentRef:
-          name: comp-get-model
-        inputs:
-          parameters:
-            model_name:
-              runtimeValue:
-                constant: watchwise-20-ep
-        taskInfo:
-          name: get-model
       process-csv-files:
         cachingOptions:
           enableCache: true
