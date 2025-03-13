@@ -5,20 +5,18 @@ from kfp import dsl
 
 
 @dsl.component(packages_to_install=['boto3==1.36.16'])
-def download_csv_files(output_dir: dsl.OutputPath()):
+def download_csv_files(minio_endpoint: str, minio_access_key: str, minio_secret_key: str,
+                       output_dir: dsl.OutputPath()):
     import os
     import boto3
 
-    MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
-    ACCESS_KEY = "minio"
-    SECRET_KEY = "minio123"
     DATA_BUCKET = "data"
     
     s3_client = boto3.client(
         "s3",
-        endpoint_url=MINIO_ENDPOINT,
-        aws_access_key_id=ACCESS_KEY,
-        aws_secret_access_key=SECRET_KEY
+        endpoint_url=minio_endpoint,
+        aws_access_key_id=minio_access_key,
+        aws_secret_access_key=minio_secret_key
     )
     
     os.makedirs(output_dir, exist_ok=True)
@@ -145,6 +143,7 @@ def process_csv_files(
 
 @dsl.component(packages_to_install=['transformers==4.45.2', 'sentence-transformers==3.1.1', 'boto3==1.36.16'])
 def create_embeddings(
+        minio_endpoint: str, minio_access_key: str, minio_secret_key: str,
         model_name: str,
         movies_json: dsl.InputPath(), 
         series_json: dsl.InputPath(),
@@ -159,18 +158,15 @@ def create_embeddings(
     import zipfile
     from sentence_transformers import SentenceTransformer
 
-    MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
-    ACCESS_KEY = "minio"
-    SECRET_KEY = "minio123"
     MODEL_BUCKET = "models"
     TEMP_DIR = "/tmp/models"
     MODEL_ZIP_PATH = os.path.join(TEMP_DIR, f"{model_name}.zip")
 
     s3_client = boto3.client(
         "s3",
-        endpoint_url=MINIO_ENDPOINT,
-        aws_access_key_id=ACCESS_KEY,
-        aws_secret_access_key=SECRET_KEY
+        endpoint_url=minio_endpoint,
+        aws_access_key_id=minio_access_key,
+        aws_secret_access_key=minio_secret_key
     )
     os.makedirs(TEMP_DIR, exist_ok=True)
     s3_client.download_file(MODEL_BUCKET, f"{model_name}.zip", MODEL_ZIP_PATH)
@@ -250,7 +246,8 @@ def create_embeddings(
 
 @dsl.component(packages_to_install=['boto3==1.36.16', 'python-arango==8.1.0'])
 def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
-                    url: str, db_name: str, username: str, password: str):
+                    url: str, db_name: str, username: str, password: str,
+                    minio_endpoint: str, minio_access_key: str, minio_secret_key: str):
     import os
     import boto3
     import uuid
@@ -260,16 +257,13 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
     from datetime import datetime
     from arango import ArangoClient
 
-    MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
 
-    ACCESS_KEY = "minio"
-    SECRET_KEY = "minio123"
     DATA_BUCKET = "data"
     s3_client = boto3.client(
         "s3",
-        endpoint_url=MINIO_ENDPOINT,
-        aws_access_key_id=ACCESS_KEY,
-        aws_secret_access_key=SECRET_KEY
+        endpoint_url=minio_endpoint,
+        aws_access_key_id=minio_access_key,
+        aws_secret_access_key=minio_secret_key
     )
     current_date = datetime.now().strftime("%Y%m%d")
     remote_movie_file = f"embeddings/new/movies_w_embeddings_{current_date}.csv"
@@ -583,7 +577,13 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
     description="A pipeline for downloading, creating embeddings, and cleaning up new show data"
 )
 def data_processing_pipeline():
-    csv_download_task = download_csv_files()
+    minio_endpoint = "http://minio-service.kubeflow:9000"
+    access_key = "minio"
+    secret_key = "minio123"
+
+    csv_download_task = download_csv_files(
+        minio_endpoint=minio_endpoint, minio_access_key=access_key, minio_secret_key=secret_key
+    )
 
     process_task = process_csv_files(
         input_dir=csv_download_task.output,
@@ -593,6 +593,7 @@ def data_processing_pipeline():
 
     fields_to_use = ['name', 'plot', 'genres', 'directors', 'actors']
     embedding_task = create_embeddings(
+        minio_endpoint=minio_endpoint, minio_access_key=access_key, minio_secret_key=secret_key,
         model_name=model_name,
         movies_json=process_task.outputs["movies_output"],
         series_json=process_task.outputs["series_output"],
@@ -607,7 +608,8 @@ def data_processing_pipeline():
     upload_task = upload_and_cleanup(
         movies_csv=embedding_task.outputs["movies_output"],
         series_csv=embedding_task.outputs["series_output"],
-        url=url, db_name=db_name, username=username, password=password
+        url=url, db_name=db_name, username=username, password=password,
+        minio_endpoint=minio_endpoint, minio_access_key=access_key, minio_secret_key=secret_key
     )
 
 
