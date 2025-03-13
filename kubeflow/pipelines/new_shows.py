@@ -256,6 +256,7 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
     import uuid
     import csv
     import ast
+    import re
     from datetime import datetime
     from arango import ArangoClient
 
@@ -273,6 +274,7 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
     current_date = datetime.now().strftime("%Y%m%d")
     remote_movie_file = f"embeddings/new/movies_w_embeddings_{current_date}.csv"
     remote_series_file = f"embeddings/new/series_w_embeddings_{current_date}.csv"
+    genre_cache = {}
 
     def read_movie_with_embeddings(file_path):
         with open(file_path, mode='r', encoding='utf-8') as file:
@@ -347,6 +349,152 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
                     'embedding': embedding_row
                 })
             return series
+
+    def set_series_values(current_serie, serie):
+        if serie['name'] and serie['name'] != 'N/A':
+            current_serie.update({'name': serie['name']})
+        if (serie['directors'] and serie['directors'] != 'N/A' and serie['directors'] != ['N/A']
+                and serie['directors'] != []):
+            current_serie.update({'directors': serie['directors']})
+        if (serie['writers'] and serie['writers'] != 'N/A' and serie['writers'] != ['N/A']
+                and serie['writers'] != []):
+            current_serie.update({'writers': serie['writers']})
+        if (serie['actors'] and serie['actors'] != 'N/A' and serie['actors'] != ['N/A']
+                and serie['actors'] != []):
+            current_serie.update({'actors': serie['actors']})
+        if serie['release_date'] and serie['release_date'] != 'N/A':
+            current_serie.update({'original_release': serie['release_date']})
+        if serie['year'] and serie['year'] != 'N/A':
+            current_serie.update({'year': serie['year']})
+        if serie['total_seasons'] and serie['total_seasons'] != 'N/A':
+            current_serie.update({'nr_seasons': serie['total_seasons']})
+        if (serie['plot'] and serie['plot'] != 'N/A' and serie['plot'] != ['N/A']
+                and serie['plot'] != []):
+            current_serie.update({'storyline': serie['plot']})
+        if (serie['country_of_origin'] and serie['country_of_origin'] != 'N/A' and
+                serie['country_of_origin'] != ['N/A'] and serie['country_of_origin'] != []):
+            current_serie.update({'country_of_origin': serie['country_of_origin']})
+        if (serie['languages'] and serie['languages'] != 'N/A' and serie['languages'] != ['N/A']
+                and serie['languages'] != []):
+            current_serie.update({'languages': serie['languages']})
+        if (serie['awards'] and serie['awards'] != 'N/A' and serie['awards'] != ['N/A']
+                and serie['awards'] != []):
+            current_serie.update({'awards': serie['awards']})
+        if (serie['poster'] and serie['poster'] != 'N/A' and serie['poster'] != ['N/A']
+                and serie['poster'] != []):
+            current_serie.update({'img_name': serie['poster']})
+        if serie['imdb_link'] and serie['imdb_link'] != 'N/A':
+            current_serie.update({'imdb_link': serie['imdb_link']})
+
+    def extract_year_from_title(title):
+        match = re.search(r'\(([^()]+)\)\s*$', title)
+        if match:
+            return match.group(1)
+        return None
+
+    def set_movie_values(current_movie, movie):
+        if movie['name'] and movie['name'] != 'N/A':
+            current_movie.update({'name': movie['name']})
+        if (movie['directors'] and movie['directors'] != 'N/A' and movie['directors'] != ['N/A']
+                and movie['directors'] != []):
+            current_movie.update({'directors': movie['directors']})
+        if (movie['writers'] and movie['writers'] != 'N/A' and movie['writers'] != ['N/A']
+                and movie['writers'] != []):
+            current_movie.update({'writers': movie['writers']})
+        if (movie['actors'] and movie['actors'] != 'N/A' and movie['actors'] != ['N/A']
+                and movie['actors'] != []):
+            current_movie.update({'actors': movie['actors']})
+        movie_year = extract_year_from_title(movie['title'])
+        if movie_year:
+            current_movie.update({'year': movie_year})
+        if (movie['plot'] and movie['plot'] != 'N/A' and movie['plot'] != ['N/A']
+                and movie['plot'] != []):
+            current_movie.update({'storyline': movie['plot']})
+        if (movie['country_of_origin'] and movie['country_of_origin'] != 'N/A' and
+                movie['country_of_origin'] != ['N/A'] and movie['country_of_origin'] != []):
+            current_movie.update({'country_of_origin': movie['country_of_origin']})
+        if (movie['languages'] and movie['languages'] != 'N/A' and movie['languages'] != ['N/A']
+                and movie['languages'] != []):
+            current_movie.update({'languages': movie['languages']})
+        if (movie['awards'] and movie['awards'] != 'N/A' and movie['awards'] != ['N/A']
+                and movie['awards'] != []):
+            current_movie.update({'awards': movie['awards']})
+        if (movie['poster'] and movie['poster'] != 'N/A' and movie['poster'] != ['N/A']
+                and movie['poster'] != []):
+            current_movie.update({'img_name': movie['poster']})
+        if movie['imdb_link'] and movie['imdb_link'] != 'N/A':
+            current_movie.update({'imdb_link': movie['imdb_link']})
+
+    def get_genre_key(genre_name):
+        if genre_name in genre_cache:
+            return genre_cache[genre_name]
+        try:
+            client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)
+            db = client.db(db_name, username=username, password=password)
+            genres_collection = db.collection('genres')
+            genre = genres_collection.find({'name': genre_name}, limit=1)
+            return genre[0]['_key'] if genre else None
+        except Exception as e:
+            print(e)
+            return None
+
+    def save_series(series):
+        try:
+            series_list = []
+            genre_edges = []
+            for serie in series:
+                serie_id = serie['series_id']
+                current_serie = {'_key': serie_id}
+                set_series_values(current_serie, serie)
+                if serie['genres']:
+                    for genre in serie['genres']:
+                        genre_key = get_genre_key(genre)
+                        genre_edges.append({
+                            '_key': f'88{serie_id}{genre_key}{genre_key}{serie_id}',
+                            '_from': f'series/{serie_id}',
+                            '_to': f'genres/{genre_key}'
+                        })
+                current_serie.update({
+                    'total_ratings': 0,
+                    'average_rating': 0.0,
+                    'sum_of_ratings': 0.0,
+                })
+                series_list.append(current_serie)
+            print('Saving', len(series_list), 'series')
+            save_many_to_database('series', series_list)
+            print('Saving', len(genre_edges), 'his_type edges - genres of series')
+            save_many_to_database('his_type', genre_edges)
+        except Exception as e:
+            print(e)
+
+    def save_movies(movies):
+        try:
+            movie_list = []
+            genre_edges = []
+            for movie in movies:
+                movie_id = movie['movieId']
+                current_movie = {'_key': movie_id}
+                set_movie_values(current_movie, movie)
+                if movie['genres']:
+                    for genre in movie['genres']:
+                        genre_key = get_genre_key(genre)
+                        genre_edges.append({
+                            '_key': f'33{movie_id}{genre_key}{genre_key}{movie_id}',
+                            '_from': f'movies/{movie['movieId']}',
+                            '_to': f'genres/{genre_key}'
+                        })
+                current_movie.update({
+                    'sum_of_ratings': 0,
+                    'total_ratings': 0.0,
+                    'average_rating': 0.0
+                })
+                movie_list.append(current_movie)
+            print('Saving', len(movie_list), 'movies')
+            save_many_to_database('movies', movie_list)
+            print('Saving', len(genre_edges), 'his_type edges - genres of movies')
+            save_many_to_database('his_type', genre_edges)
+        except Exception as e:
+            print(e)
 
     def save_embeddings_to_database(movie_embeddings, series_embeddings):
         try:
