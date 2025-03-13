@@ -248,11 +248,16 @@ def create_embeddings(
     print(f"Saved series embeddings to {series_output}")
 
 
-@dsl.component(packages_to_install=['boto3==1.36.16'])
-def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath()):
+@dsl.component(packages_to_install=['boto3==1.36.16', 'python-arango==8.1.0'])
+def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
+                    url: str, db_name: str, username: str, password: str):
     import os
     import boto3
+    import uuid
+    import csv
+    import ast
     from datetime import datetime
+    from arango import ArangoClient
 
     MINIO_ENDPOINT = "http://minio-service.kubeflow:9000"
 
@@ -268,6 +273,146 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath())
     current_date = datetime.now().strftime("%Y%m%d")
     remote_movie_file = f"embeddings/new/movies_w_embeddings_{current_date}.csv"
     remote_series_file = f"embeddings/new/series_w_embeddings_{current_date}.csv"
+
+    def read_movie_with_embeddings(file_path):
+        with open(file_path, mode='r', encoding='utf-8') as file:
+            csv_reader = csv.reader(file)
+            header = next(csv_reader)
+            movies = []
+            for row in csv_reader:
+                # arrays
+                row_genres = ast.literal_eval(row[2]) if row[2] else []
+                row_directors = row[5].split(', ') if row[5] else []
+                row_writers = row[6].split(', ') if row[6] else []
+                row_actors = row[7].split(', ') if row[7] else []
+                row_languages = row[9].split(', ') if row[9] else []
+                row_ratings = ast.literal_eval(row[13]) if row[13] else []
+                embedding = ast.literal_eval(row[14]) if row[14] else []
+
+                movies.append({
+                    'movieId': row[0],
+                    'title': row[1],
+                    'genres': row_genres,
+                    'imdb_link': row[3],
+                    'name': row[4],
+                    'directors': row_directors,
+                    'writers': row_writers,
+                    'actors': row_actors,
+                    'plot': row[8],
+                    'languages': row_languages,
+                    'country_of_origin': row[10],
+                    'awards': row[11],
+                    'poster': row[12],
+                    'ratings': row_ratings,
+                    'embedding': embedding
+                })
+            return movies
+
+    def read_serie_with_embeddings(file_path):
+        with open(file_path, mode='r', encoding='utf-8') as file:
+            csv_reader = csv.reader(file)
+            header = next(csv_reader)
+            series = []
+            for row in csv_reader:
+                # arrays
+                vote_average = (float(row[1]) / 2) if row[1] else 0.0
+                vote_count = int(row[2]) if row[2] else 0
+                row_genres = ast.literal_eval(row[6]) if row[6] else []
+                directors_row = ast.literal_eval(row[7]) if row[7] else []
+                writers_row = ast.literal_eval(row[8]) if row[8] else []
+                actors_row = ast.literal_eval(row[9]) if row[9] else []
+                row_languages = ast.literal_eval(row[11]) if row[11] else []
+                ratings_row = ast.literal_eval(row[15]) if row[15] else []
+                embedding_row = ast.literal_eval(row[18]) if row[18] else []
+
+                series.append({
+                    'series_id': row[0],
+                    'vote_average': vote_average,
+                    'vote_count': vote_count,
+                    'name': row[3],
+                    'year': row[4],
+                    'release_date': row[5],
+                    'genres': row_genres,
+                    'directors': directors_row,
+                    'writers': writers_row,
+                    'actors': actors_row,
+                    'plot': row[10],
+                    'languages': row_languages,
+                    'country_of_origin': row[12],
+                    'awards': row[13],
+                    'poster': row[14],
+                    'ratings': ratings_row,
+                    'imdb_link': row[16],
+                    'total_seasons': row[17],
+                    'embedding': embedding_row
+                })
+            return series
+
+    def save_embeddings_to_database(movie_embeddings, series_embeddings):
+        try:
+            embeddings = []
+            has_embedding_edges = []
+            for movie_embedding in movie_embeddings:
+                embedding_key = generate_key()
+                movie_key = movie_embedding['movieId']
+                embeddings.append({
+                    '_key': embedding_key,
+                    'show_key': movie_key,
+                    'show_type': 'movie',
+                    'show_name': movie_embedding['name'],
+                    **({'img_name': movie_embedding['poster']} if
+                    'poster' in movie_embedding and movie_embedding['poster'] != 'N/A' else {}),
+                    'embedding_vector': movie_embedding['embedding']
+                })
+                has_embedding_edges.append({
+                    '_key': embedding_key,
+                    '_from': f'movies/{movie_key}',
+                    '_to': f'embeddings/{embedding_key}'
+                })
+            for serie_embeddings in series_embeddings:
+                embedding_key = generate_key()
+                serie_key = serie_embeddings['series_id']
+                embeddings.append({
+                    '_key': embedding_key,
+                    'show_key': serie_key,
+                    'show_type': 'serie',
+                    'show_name': serie_embeddings['name'],
+                    **({'img_name': serie_embeddings['poster']} if
+                    'poster' in serie_embeddings and serie_embeddings['poster'] != 'N/A' else {}),
+                    'embedding_vector': serie_embeddings['embedding']
+                })
+                has_embedding_edges.append({
+                    '_key': embedding_key,
+                    '_from': f'series/{serie_key}',
+                    '_to': f'embeddings/{embedding_key}'
+                })
+
+            print('Saving', len(embeddings), 'embeddings')
+            save_many_to_database('embeddings', embeddings)
+            print('Saving', len(has_embedding_edges), 'has embedding edges')
+            save_many_to_database('has_embedding', has_embedding_edges)
+        except Exception as e:
+            print(e)
+
+    def save_many_to_database(collection_name, data):
+        try:
+            client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)
+            db = client.db(db_name, username=username, password=password)
+            collection = db.collection(collection_name)
+            result = collection.insert_many(data, overwrite=True, overwrite_mode='update')
+            return result
+        except Exception as e:
+            print(e)
+            return []
+        
+    def generate_key() -> str:
+        try:
+            unique_id = uuid.uuid4()
+            numeric_key = unique_id.int
+            return str(numeric_key)
+        except Exception as e:
+            print(e)
+
 
     if os.path.exists(movies_csv):
         s3_client.upload_file(movies_csv, DATA_BUCKET, remote_movie_file)
@@ -306,9 +451,15 @@ def data_processing_pipeline():
         fields_to_use=fields_to_use
     )
 
+    url = 'https://arangodb.default.svc.cluster.local:8529'
+    password=''
+    username='root'
+    db_name='watchwiseRecommend'
+
     upload_task = upload_and_cleanup(
         movies_csv=embedding_task.outputs["movies_output"],
-        series_csv=embedding_task.outputs["series_output"]
+        series_csv=embedding_task.outputs["series_output"],
+        url=url, db_name=db_name, username=username, password=password
     )
 
 
