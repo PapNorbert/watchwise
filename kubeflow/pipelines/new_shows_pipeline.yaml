@@ -17,6 +17,12 @@ components:
       parameters:
         fields_to_use:
           parameterType: LIST
+        minio_access_key:
+          parameterType: STRING
+        minio_endpoint:
+          parameterType: STRING
+        minio_secret_key:
+          parameterType: STRING
         model_name:
           parameterType: STRING
     outputDefinitions:
@@ -31,6 +37,14 @@ components:
             schemaVersion: 0.0.1
   comp-download-csv-files:
     executorLabel: exec-download-csv-files
+    inputDefinitions:
+      parameters:
+        minio_access_key:
+          parameterType: STRING
+        minio_endpoint:
+          parameterType: STRING
+        minio_secret_key:
+          parameterType: STRING
     outputDefinitions:
       artifacts:
         output_dir:
@@ -67,6 +81,21 @@ components:
           artifactType:
             schemaTitle: system.Artifact
             schemaVersion: 0.0.1
+      parameters:
+        db_name:
+          parameterType: STRING
+        minio_access_key:
+          parameterType: STRING
+        minio_endpoint:
+          parameterType: STRING
+        minio_secret_key:
+          parameterType: STRING
+        password:
+          parameterType: STRING
+        url:
+          parameterType: STRING
+        username:
+          parameterType: STRING
 deploymentSpec:
   executors:
     exec-create-embeddings:
@@ -96,27 +125,27 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef create_embeddings(\n        model_name: str,\n        movies_json:\
+          \ *\n\ndef create_embeddings(\n        minio_endpoint: str, minio_access_key:\
+          \ str, minio_secret_key: str,\n        model_name: str,\n        movies_json:\
           \ dsl.InputPath(), \n        series_json: dsl.InputPath(),\n        fields_to_use:\
           \ list,\n        movies_output: dsl.OutputPath(), \n        series_output:\
           \ dsl.OutputPath()\n        ):\n    import os\n    import json\n    import\
           \ csv\n    import boto3\n    import zipfile\n    from sentence_transformers\
-          \ import SentenceTransformer\n\n    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\
-          \n    ACCESS_KEY = \"minio\"\n    SECRET_KEY = \"minio123\"\n    MODEL_BUCKET\
-          \ = \"models\"\n    TEMP_DIR = \"/tmp/models\"\n    MODEL_ZIP_PATH = os.path.join(TEMP_DIR,\
-          \ f\"{model_name}.zip\")\n\n    s3_client = boto3.client(\n        \"s3\"\
-          ,\n        endpoint_url=MINIO_ENDPOINT,\n        aws_access_key_id=ACCESS_KEY,\n\
-          \        aws_secret_access_key=SECRET_KEY\n    )\n    os.makedirs(TEMP_DIR,\
-          \ exist_ok=True)\n    s3_client.download_file(MODEL_BUCKET, f\"{model_name}.zip\"\
-          , MODEL_ZIP_PATH)\n    print(f\"Downloaded {model_name}.zip to {MODEL_ZIP_PATH}\"\
-          )\n    with zipfile.ZipFile(MODEL_ZIP_PATH, \"r\") as zip_ref:\n       \
-          \ zip_ref.extractall(TEMP_DIR)\n    print(f\"Extracted {model_name}.zip\
-          \ to {TEMP_DIR}\")\n    model_path = os.path.join(TEMP_DIR, model_name)\n\
-          \n    with open(movies_json, \"r\", encoding=\"utf-8\") as file:\n     \
-          \   movies = json.load(file)\n    with open(series_json, \"r\", encoding=\"\
-          utf-8\") as file:\n        series = json.load(file)\n\n    print(f\"Loaded\
-          \ {len(movies)} movies and {len(series)} series.\")\n\n    model = SentenceTransformer(model_path)\n\
-          \    print(f\"Loaded model from {model_path}\")\n\n    def generate_embeddings_sentence_transformer(shows,\
+          \ import SentenceTransformer\n\n    MODEL_BUCKET = \"models\"\n    TEMP_DIR\
+          \ = \"/tmp/models\"\n    MODEL_ZIP_PATH = os.path.join(TEMP_DIR, f\"{model_name}.zip\"\
+          )\n\n    s3_client = boto3.client(\n        \"s3\",\n        endpoint_url=minio_endpoint,\n\
+          \        aws_access_key_id=minio_access_key,\n        aws_secret_access_key=minio_secret_key\n\
+          \    )\n    os.makedirs(TEMP_DIR, exist_ok=True)\n    s3_client.download_file(MODEL_BUCKET,\
+          \ f\"{model_name}.zip\", MODEL_ZIP_PATH)\n    print(f\"Downloaded {model_name}.zip\
+          \ to {MODEL_ZIP_PATH}\")\n    with zipfile.ZipFile(MODEL_ZIP_PATH, \"r\"\
+          ) as zip_ref:\n        zip_ref.extractall(TEMP_DIR)\n    print(f\"Extracted\
+          \ {model_name}.zip to {TEMP_DIR}\")\n    model_path = os.path.join(TEMP_DIR,\
+          \ model_name)\n\n    with open(movies_json, \"r\", encoding=\"utf-8\") as\
+          \ file:\n        movies = json.load(file)\n    with open(series_json, \"\
+          r\", encoding=\"utf-8\") as file:\n        series = json.load(file)\n\n\
+          \    print(f\"Loaded {len(movies)} movies and {len(series)} series.\")\n\
+          \n    model = SentenceTransformer(model_path)\n    print(f\"Loaded model\
+          \ from {model_path}\")\n\n    def generate_embeddings_sentence_transformer(shows,\
           \ fields_to_use, model):\n        show_texts = []\n        for show in shows:\n\
           \            combined_text = []\n            for field in fields_to_use:\n\
           \                if isinstance(show[field], list):\n                   \
@@ -181,20 +210,19 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef download_csv_files(output_dir: dsl.OutputPath()):\n    import\
-          \ os\n    import boto3\n\n    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\
-          \n    ACCESS_KEY = \"minio\"\n    SECRET_KEY = \"minio123\"\n    DATA_BUCKET\
-          \ = \"data\"\n\n    s3_client = boto3.client(\n        \"s3\",\n       \
-          \ endpoint_url=MINIO_ENDPOINT,\n        aws_access_key_id=ACCESS_KEY,\n\
-          \        aws_secret_access_key=SECRET_KEY\n    )\n\n    os.makedirs(output_dir,\
-          \ exist_ok=True)\n\n    prefixes = [\"new_movies/\", \"new_series/\"]\n\
-          \    for prefix in prefixes:\n        output_folder = os.path.join(output_dir,\
-          \ prefix)\n        os.makedirs(output_folder, exist_ok=True)\n        objects\
-          \ = s3_client.list_objects_v2(Bucket=DATA_BUCKET, Prefix=prefix)\n     \
-          \   if \"Contents\" in objects:\n            for obj in objects.get(\"Contents\"\
-          , []):\n                file_key = obj[\"Key\"]\n                local_file_path\
-          \ = os.path.join(output_folder, os.path.basename(file_key))\n          \
-          \      s3_client.download_file(DATA_BUCKET, file_key, local_file_path)\n\
+          \ *\n\ndef download_csv_files(minio_endpoint: str, minio_access_key: str,\
+          \ minio_secret_key: str,\n                       output_dir: dsl.OutputPath()):\n\
+          \    import os\n    import boto3\n\n    DATA_BUCKET = \"data\"\n\n    s3_client\
+          \ = boto3.client(\n        \"s3\",\n        endpoint_url=minio_endpoint,\n\
+          \        aws_access_key_id=minio_access_key,\n        aws_secret_access_key=minio_secret_key\n\
+          \    )\n\n    os.makedirs(output_dir, exist_ok=True)\n\n    prefixes = [\"\
+          new_movies/\", \"new_series/\"]\n    for prefix in prefixes:\n        output_folder\
+          \ = os.path.join(output_dir, prefix)\n        os.makedirs(output_folder,\
+          \ exist_ok=True)\n        objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET,\
+          \ Prefix=prefix)\n        if \"Contents\" in objects:\n            for obj\
+          \ in objects.get(\"Contents\", []):\n                file_key = obj[\"Key\"\
+          ]\n                local_file_path = os.path.join(output_folder, os.path.basename(file_key))\n\
+          \                s3_client.download_file(DATA_BUCKET, file_key, local_file_path)\n\
           \                print(f\"Downloaded: {file_key} \u2192 {local_file_path}\"\
           )\n\n    print(f\"Download complete for all files in {output_dir}\")\n\n"
         image: python:3.9
@@ -309,7 +337,7 @@ deploymentSpec:
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
           \  python3 -m pip install --quiet --no-warn-script-location 'boto3==1.36.16'\
-          \ && \"$0\" \"$@\"\n"
+          \ 'python-arango==8.1.0' && \"$0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -321,26 +349,215 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath()):\n\
-          \    import os\n    import boto3\n    from datetime import datetime\n\n\
-          \    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\n\n    ACCESS_KEY\
-          \ = \"minio\"\n    SECRET_KEY = \"minio123\"\n    DATA_BUCKET = \"data\"\
-          \n    s3_client = boto3.client(\n        \"s3\",\n        endpoint_url=MINIO_ENDPOINT,\n\
-          \        aws_access_key_id=ACCESS_KEY,\n        aws_secret_access_key=SECRET_KEY\n\
+          \ *\n\ndef upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),\n\
+          \                    url: str, db_name: str, username: str, password: str,\n\
+          \                    minio_endpoint: str, minio_access_key: str, minio_secret_key:\
+          \ str):\n    import os\n    import boto3\n    import uuid\n    import csv\n\
+          \    import ast\n    import re\n    from datetime import datetime\n    from\
+          \ arango import ArangoClient\n\n\n    DATA_BUCKET = \"data\"\n    s3_client\
+          \ = boto3.client(\n        \"s3\",\n        endpoint_url=minio_endpoint,\n\
+          \        aws_access_key_id=minio_access_key,\n        aws_secret_access_key=minio_secret_key\n\
           \    )\n    current_date = datetime.now().strftime(\"%Y%m%d\")\n    remote_movie_file\
           \ = f\"embeddings/new/movies_w_embeddings_{current_date}.csv\"\n    remote_series_file\
-          \ = f\"embeddings/new/series_w_embeddings_{current_date}.csv\"\n\n    if\
-          \ os.path.exists(movies_csv):\n        s3_client.upload_file(movies_csv,\
-          \ DATA_BUCKET, remote_movie_file)\n        print(f\"Uploaded {movies_csv}\
-          \ to {remote_movie_file}\")\n    if os.path.exists(series_csv):\n      \
-          \  s3_client.upload_file(series_csv, DATA_BUCKET, remote_series_file)\n\
-          \        print(f\"Uploaded {series_csv} to {remote_series_file}\")\n\n \
-          \   prefixes_to_delete = [\"new_movies/\", \"new_series/\"]\n    for prefix\
-          \ in prefixes_to_delete:\n        objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET,\
-          \ Prefix=prefix)\n        if \"Contents\" in objects:\n            for obj\
-          \ in objects[\"Contents\"]:\n                s3_client.delete_object(Bucket=DATA_BUCKET,\
-          \ Key=obj[\"Key\"])\n                print(f\"Deleted {obj['Key']} from\
-          \ {DATA_BUCKET}\")\n\n"
+          \ = f\"embeddings/new/series_w_embeddings_{current_date}.csv\"\n    genre_cache\
+          \ = {}\n\n    def read_movies_with_embeddings(file_path):\n        with\
+          \ open(file_path, mode='r', encoding='utf-8') as file:\n            csv_reader\
+          \ = csv.reader(file)\n            header = next(csv_reader)\n          \
+          \  movies = []\n            for row in csv_reader:\n                # arrays\n\
+          \                row_genres = ast.literal_eval(row[2]) if row[2] else []\n\
+          \                row_directors = row[5].split(', ') if row[5] else []\n\
+          \                row_writers = row[6].split(', ') if row[6] else []\n  \
+          \              row_actors = row[7].split(', ') if row[7] else []\n     \
+          \           row_languages = row[9].split(', ') if row[9] else []\n     \
+          \           row_ratings = ast.literal_eval(row[13]) if row[13] else []\n\
+          \                embedding = ast.literal_eval(row[14]) if row[14] else []\n\
+          \n                movies.append({\n                    'movieId': row[0],\n\
+          \                    'title': row[1],\n                    'genres': row_genres,\n\
+          \                    'imdb_link': row[3],\n                    'name': row[4],\n\
+          \                    'directors': row_directors,\n                    'writers':\
+          \ row_writers,\n                    'actors': row_actors,\n            \
+          \        'plot': row[8],\n                    'languages': row_languages,\n\
+          \                    'country_of_origin': row[10],\n                   \
+          \ 'awards': row[11],\n                    'poster': row[12],\n         \
+          \           'ratings': row_ratings,\n                    'embedding': embedding\n\
+          \                })\n            return movies\n\n    def read_series_with_embeddings(file_path):\n\
+          \        with open(file_path, mode='r', encoding='utf-8') as file:\n   \
+          \         csv_reader = csv.reader(file)\n            header = next(csv_reader)\n\
+          \            series = []\n            for row in csv_reader:\n         \
+          \       # arrays\n                vote_average = (float(row[1]) / 2) if\
+          \ row[1] else 0.0\n                vote_count = int(row[2]) if row[2] else\
+          \ 0\n                row_genres = ast.literal_eval(row[6]) if row[6] else\
+          \ []\n                directors_row = ast.literal_eval(row[7]) if row[7]\
+          \ else []\n                writers_row = ast.literal_eval(row[8]) if row[8]\
+          \ else []\n                actors_row = ast.literal_eval(row[9]) if row[9]\
+          \ else []\n                row_languages = ast.literal_eval(row[11]) if\
+          \ row[11] else []\n                ratings_row = ast.literal_eval(row[15])\
+          \ if row[15] else []\n                embedding_row = ast.literal_eval(row[18])\
+          \ if row[18] else []\n\n                series.append({\n              \
+          \      'series_id': row[0],\n                    'vote_average': vote_average,\n\
+          \                    'vote_count': vote_count,\n                    'name':\
+          \ row[3],\n                    'year': row[4],\n                    'release_date':\
+          \ row[5],\n                    'genres': row_genres,\n                 \
+          \   'directors': directors_row,\n                    'writers': writers_row,\n\
+          \                    'actors': actors_row,\n                    'plot':\
+          \ row[10],\n                    'languages': row_languages,\n          \
+          \          'country_of_origin': row[12],\n                    'awards':\
+          \ row[13],\n                    'poster': row[14],\n                   \
+          \ 'ratings': ratings_row,\n                    'imdb_link': row[16],\n \
+          \                   'total_seasons': row[17],\n                    'embedding':\
+          \ embedding_row\n                })\n            return series\n\n    def\
+          \ set_series_values(current_serie, serie):\n        if serie['name'] and\
+          \ serie['name'] != 'N/A':\n            current_serie.update({'name': serie['name']})\n\
+          \        if (serie['directors'] and serie['directors'] != 'N/A' and serie['directors']\
+          \ != ['N/A']\n                and serie['directors'] != []):\n         \
+          \   current_serie.update({'directors': serie['directors']})\n        if\
+          \ (serie['writers'] and serie['writers'] != 'N/A' and serie['writers'] !=\
+          \ ['N/A']\n                and serie['writers'] != []):\n            current_serie.update({'writers':\
+          \ serie['writers']})\n        if (serie['actors'] and serie['actors'] !=\
+          \ 'N/A' and serie['actors'] != ['N/A']\n                and serie['actors']\
+          \ != []):\n            current_serie.update({'actors': serie['actors']})\n\
+          \        if serie['release_date'] and serie['release_date'] != 'N/A':\n\
+          \            current_serie.update({'original_release': serie['release_date']})\n\
+          \        if serie['year'] and serie['year'] != 'N/A':\n            current_serie.update({'year':\
+          \ serie['year']})\n        if serie['total_seasons'] and serie['total_seasons']\
+          \ != 'N/A':\n            current_serie.update({'nr_seasons': serie['total_seasons']})\n\
+          \        if (serie['plot'] and serie['plot'] != 'N/A' and serie['plot']\
+          \ != ['N/A']\n                and serie['plot'] != []):\n            current_serie.update({'storyline':\
+          \ serie['plot']})\n        if (serie['country_of_origin'] and serie['country_of_origin']\
+          \ != 'N/A' and\n                serie['country_of_origin'] != ['N/A'] and\
+          \ serie['country_of_origin'] != []):\n            current_serie.update({'country_of_origin':\
+          \ serie['country_of_origin']})\n        if (serie['languages'] and serie['languages']\
+          \ != 'N/A' and serie['languages'] != ['N/A']\n                and serie['languages']\
+          \ != []):\n            current_serie.update({'languages': serie['languages']})\n\
+          \        if (serie['awards'] and serie['awards'] != 'N/A' and serie['awards']\
+          \ != ['N/A']\n                and serie['awards'] != []):\n            current_serie.update({'awards':\
+          \ serie['awards']})\n        if (serie['poster'] and serie['poster'] !=\
+          \ 'N/A' and serie['poster'] != ['N/A']\n                and serie['poster']\
+          \ != []):\n            current_serie.update({'img_name': serie['poster']})\n\
+          \        if serie['imdb_link'] and serie['imdb_link'] != 'N/A':\n      \
+          \      current_serie.update({'imdb_link': serie['imdb_link']})\n\n    def\
+          \ extract_year_from_title(title):\n        match = re.search(r'\\(([^()]+)\\\
+          )\\s*$', title)\n        if match:\n            return match.group(1)\n\
+          \        return None\n\n    def set_movie_values(current_movie, movie):\n\
+          \        if movie['name'] and movie['name'] != 'N/A':\n            current_movie.update({'name':\
+          \ movie['name']})\n        if (movie['directors'] and movie['directors']\
+          \ != 'N/A' and movie['directors'] != ['N/A']\n                and movie['directors']\
+          \ != []):\n            current_movie.update({'directors': movie['directors']})\n\
+          \        if (movie['writers'] and movie['writers'] != 'N/A' and movie['writers']\
+          \ != ['N/A']\n                and movie['writers'] != []):\n           \
+          \ current_movie.update({'writers': movie['writers']})\n        if (movie['actors']\
+          \ and movie['actors'] != 'N/A' and movie['actors'] != ['N/A']\n        \
+          \        and movie['actors'] != []):\n            current_movie.update({'actors':\
+          \ movie['actors']})\n        movie_year = extract_year_from_title(movie['title'])\n\
+          \        if movie_year:\n            current_movie.update({'year': movie_year})\n\
+          \        if (movie['plot'] and movie['plot'] != 'N/A' and movie['plot']\
+          \ != ['N/A']\n                and movie['plot'] != []):\n            current_movie.update({'storyline':\
+          \ movie['plot']})\n        if (movie['country_of_origin'] and movie['country_of_origin']\
+          \ != 'N/A' and\n                movie['country_of_origin'] != ['N/A'] and\
+          \ movie['country_of_origin'] != []):\n            current_movie.update({'country_of_origin':\
+          \ movie['country_of_origin']})\n        if (movie['languages'] and movie['languages']\
+          \ != 'N/A' and movie['languages'] != ['N/A']\n                and movie['languages']\
+          \ != []):\n            current_movie.update({'languages': movie['languages']})\n\
+          \        if (movie['awards'] and movie['awards'] != 'N/A' and movie['awards']\
+          \ != ['N/A']\n                and movie['awards'] != []):\n            current_movie.update({'awards':\
+          \ movie['awards']})\n        if (movie['poster'] and movie['poster'] !=\
+          \ 'N/A' and movie['poster'] != ['N/A']\n                and movie['poster']\
+          \ != []):\n            current_movie.update({'img_name': movie['poster']})\n\
+          \        if movie['imdb_link'] and movie['imdb_link'] != 'N/A':\n      \
+          \      current_movie.update({'imdb_link': movie['imdb_link']})\n\n    def\
+          \ get_genre_key(genre_name):\n        if genre_name in genre_cache:\n  \
+          \          return genre_cache[genre_name]\n        try:\n            client\
+          \ = ArangoClient(hosts=url, request_timeout=240, verify_override=False)\n\
+          \            db = client.db(db_name, username=username, password=password)\n\
+          \            genres_collection = db.collection('genres')\n            genre\
+          \ = genres_collection.find({'name': genre_name}, limit=1)\n            return\
+          \ genre[0]['_key'] if genre else None\n        except Exception as e:\n\
+          \            print(e)\n            return None\n\n    def save_series(series):\n\
+          \        try:\n            series_list = []\n            genre_edges = []\n\
+          \            for serie in series:\n                serie_id = serie['series_id']\n\
+          \                current_serie = {'_key': serie_id}\n                set_series_values(current_serie,\
+          \ serie)\n                if serie['genres']:\n                    for genre\
+          \ in serie['genres']:\n                        genre_key = get_genre_key(genre)\n\
+          \                        genre_edges.append({\n                        \
+          \    '_key': f'88{serie_id}{genre_key}{genre_key}{serie_id}',\n        \
+          \                    '_from': f'series/{serie_id}',\n                  \
+          \          '_to': f'genres/{genre_key}'\n                        })\n  \
+          \              current_serie.update({\n                    'total_ratings':\
+          \ 0,\n                    'average_rating': 0.0,\n                    'sum_of_ratings':\
+          \ 0.0,\n                })\n                series_list.append(current_serie)\n\
+          \            print('Saving', len(series_list), 'series')\n            save_many_to_database('series',\
+          \ series_list)\n            print('Saving', len(genre_edges), 'his_type\
+          \ edges - genres of series')\n            save_many_to_database('his_type',\
+          \ genre_edges)\n        except Exception as e:\n            print(e)\n\n\
+          \    def save_movies(movies):\n        try:\n            movie_list = []\n\
+          \            genre_edges = []\n            for movie in movies:\n      \
+          \          movie_id = movie['movieId']\n                current_movie =\
+          \ {'_key': movie_id}\n                set_movie_values(current_movie, movie)\n\
+          \                if movie['genres']:\n                    for genre in movie['genres']:\n\
+          \                        genre_key = get_genre_key(genre)\n            \
+          \            genre_edges.append({\n                            '_key': f'33{movie_id}{genre_key}{genre_key}{movie_id}',\n\
+          \                            '_from': f'movies/{movie['movieId']}',\n  \
+          \                          '_to': f'genres/{genre_key}'\n              \
+          \          })\n                current_movie.update({\n                \
+          \    'sum_of_ratings': 0,\n                    'total_ratings': 0.0,\n \
+          \                   'average_rating': 0.0\n                })\n        \
+          \        movie_list.append(current_movie)\n            print('Saving', len(movie_list),\
+          \ 'movies')\n            save_many_to_database('movies', movie_list)\n \
+          \           print('Saving', len(genre_edges), 'his_type edges - genres of\
+          \ movies')\n            save_many_to_database('his_type', genre_edges)\n\
+          \        except Exception as e:\n            print(e)\n\n    def save_embeddings_to_database(movie_embeddings,\
+          \ series_embeddings):\n        try:\n            embeddings = []\n     \
+          \       has_embedding_edges = []\n            for movie_embedding in movie_embeddings:\n\
+          \                embedding_key = generate_key()\n                movie_key\
+          \ = movie_embedding['movieId']\n                embeddings.append({\n  \
+          \                  '_key': embedding_key,\n                    'show_key':\
+          \ movie_key,\n                    'show_type': 'movie',\n              \
+          \      'show_name': movie_embedding['name'],\n                    **({'img_name':\
+          \ movie_embedding['poster']} if\n                    'poster' in movie_embedding\
+          \ and movie_embedding['poster'] != 'N/A' else {}),\n                   \
+          \ 'embedding_vector': movie_embedding['embedding']\n                })\n\
+          \                has_embedding_edges.append({\n                    '_key':\
+          \ embedding_key,\n                    '_from': f'movies/{movie_key}',\n\
+          \                    '_to': f'embeddings/{embedding_key}'\n            \
+          \    })\n            for serie_embeddings in series_embeddings:\n      \
+          \          embedding_key = generate_key()\n                serie_key = serie_embeddings['series_id']\n\
+          \                embeddings.append({\n                    '_key': embedding_key,\n\
+          \                    'show_key': serie_key,\n                    'show_type':\
+          \ 'serie',\n                    'show_name': serie_embeddings['name'],\n\
+          \                    **({'img_name': serie_embeddings['poster']} if\n  \
+          \                  'poster' in serie_embeddings and serie_embeddings['poster']\
+          \ != 'N/A' else {}),\n                    'embedding_vector': serie_embeddings['embedding']\n\
+          \                })\n                has_embedding_edges.append({\n    \
+          \                '_key': embedding_key,\n                    '_from': f'series/{serie_key}',\n\
+          \                    '_to': f'embeddings/{embedding_key}'\n            \
+          \    })\n\n            print('Saving', len(embeddings), 'embeddings')\n\
+          \            save_many_to_database('embeddings', embeddings)\n         \
+          \   print('Saving', len(has_embedding_edges), 'has embedding edges')\n \
+          \           save_many_to_database('has_embedding', has_embedding_edges)\n\
+          \        except Exception as e:\n            print(e)\n\n    def save_many_to_database(collection_name,\
+          \ data):\n        try:\n            client = ArangoClient(hosts=url, request_timeout=240,\
+          \ verify_override=False)\n            db = client.db(db_name, username=username,\
+          \ password=password)\n            collection = db.collection(collection_name)\n\
+          \            result = collection.insert_many(data, overwrite=True, overwrite_mode='update')\n\
+          \            return result\n        except Exception as e:\n           \
+          \ print(e)\n            return []\n\n    def generate_key() -> str:\n  \
+          \      try:\n            unique_id = uuid.uuid4()\n            numeric_key\
+          \ = unique_id.int\n            return str(numeric_key)\n        except Exception\
+          \ as e:\n            print(e)\n\n\n    movies = read_movies_with_embeddings(movies_csv)\n\
+          \    series = read_series_with_embeddings(series_csv)\n    save_series(series)\n\
+          \    save_movies(movies)\n    save_embeddings_to_database(movie_embeddings=movies,\
+          \ series_embeddings=series)\n\n    if os.path.exists(movies_csv):\n    \
+          \    s3_client.upload_file(movies_csv, DATA_BUCKET, remote_movie_file)\n\
+          \        print(f\"Uploaded {movies_csv} to {remote_movie_file}\")\n    if\
+          \ os.path.exists(series_csv):\n        s3_client.upload_file(series_csv,\
+          \ DATA_BUCKET, remote_series_file)\n        print(f\"Uploaded {series_csv}\
+          \ to {remote_series_file}\")\n\n    prefixes_to_delete = [\"new_movies/\"\
+          , \"new_series/\"]\n    for prefix in prefixes_to_delete:\n        objects\
+          \ = s3_client.list_objects_v2(Bucket=DATA_BUCKET, Prefix=prefix)\n     \
+          \   if \"Contents\" in objects:\n            for obj in objects[\"Contents\"\
+          ]:\n                s3_client.delete_object(Bucket=DATA_BUCKET, Key=obj[\"\
+          Key\"])\n                print(f\"Deleted {obj['Key']} from {DATA_BUCKET}\"\
+          )\n\n"
         image: python:3.9
 pipelineInfo:
   description: A pipeline for downloading, creating embeddings, and cleaning up new
@@ -375,6 +592,15 @@ root:
                 - genres
                 - directors
                 - actors
+            minio_access_key:
+              runtimeValue:
+                constant: minio
+            minio_endpoint:
+              runtimeValue:
+                constant: http://minio-service.kubeflow:9000
+            minio_secret_key:
+              runtimeValue:
+                constant: minio123
             model_name:
               runtimeValue:
                 constant: watchwise-20-ep
@@ -385,6 +611,17 @@ root:
           enableCache: true
         componentRef:
           name: comp-download-csv-files
+        inputs:
+          parameters:
+            minio_access_key:
+              runtimeValue:
+                constant: minio
+            minio_endpoint:
+              runtimeValue:
+                constant: http://minio-service.kubeflow:9000
+            minio_secret_key:
+              runtimeValue:
+                constant: minio123
         taskInfo:
           name: download-csv-files
       process-csv-files:
@@ -419,6 +656,28 @@ root:
               taskOutputArtifact:
                 outputArtifactKey: series_output
                 producerTask: create-embeddings
+          parameters:
+            db_name:
+              runtimeValue:
+                constant: watchwiseRecommend
+            minio_access_key:
+              runtimeValue:
+                constant: minio
+            minio_endpoint:
+              runtimeValue:
+                constant: http://minio-service.kubeflow:9000
+            minio_secret_key:
+              runtimeValue:
+                constant: minio123
+            password:
+              runtimeValue:
+                constant: ''
+            url:
+              runtimeValue:
+                constant: https://arangodb.default.svc.cluster.local:8529
+            username:
+              runtimeValue:
+                constant: root
         taskInfo:
           name: upload-and-cleanup
 schemaVersion: 2.1.0

@@ -270,7 +270,7 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
     remote_series_file = f"embeddings/new/series_w_embeddings_{current_date}.csv"
     genre_cache = {}
 
-    def read_movie_with_embeddings(file_path):
+    def read_movies_with_embeddings(file_path):
         with open(file_path, mode='r', encoding='utf-8') as file:
             csv_reader = csv.reader(file)
             header = next(csv_reader)
@@ -304,7 +304,7 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
                 })
             return movies
 
-    def read_serie_with_embeddings(file_path):
+    def read_series_with_embeddings(file_path):
         with open(file_path, mode='r', encoding='utf-8') as file:
             csv_reader = csv.reader(file)
             header = next(csv_reader)
@@ -555,6 +555,12 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
         except Exception as e:
             print(e)
 
+
+    movies = read_movies_with_embeddings(movies_csv)
+    series = read_series_with_embeddings(series_csv)
+    save_series(series)
+    save_movies(movies)
+    save_embeddings_to_database(movie_embeddings=movies, series_embeddings=series)
 
     if os.path.exists(movies_csv):
         s3_client.upload_file(movies_csv, DATA_BUCKET, remote_movie_file)
