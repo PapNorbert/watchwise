@@ -496,15 +496,14 @@ deploymentSpec:
           \                if movie['genres']:\n                    for genre in movie['genres']:\n\
           \                        genre_key = get_genre_key(genre)\n            \
           \            genre_edges.append({\n                            '_key': f'33{movie_id}{genre_key}{genre_key}{movie_id}',\n\
-          \                            '_from': f'movies/{movie['movieId']}',\n  \
-          \                          '_to': f'genres/{genre_key}'\n              \
-          \          })\n                current_movie.update({\n                \
-          \    'sum_of_ratings': 0,\n                    'total_ratings': 0.0,\n \
-          \                   'average_rating': 0.0\n                })\n        \
-          \        movie_list.append(current_movie)\n            print('Saving', len(movie_list),\
-          \ 'movies')\n            save_many_to_database('movies', movie_list)\n \
-          \           print('Saving', len(genre_edges), 'his_type edges - genres of\
-          \ movies')\n            save_many_to_database('his_type', genre_edges)\n\
+          \                            '_from': f'movies/{movie_id}',\n          \
+          \                  '_to': f'genres/{genre_key}'\n                      \
+          \  })\n                current_movie.update({\n                    'sum_of_ratings':\
+          \ 0,\n                    'total_ratings': 0.0,\n                    'average_rating':\
+          \ 0.0\n                })\n                movie_list.append(current_movie)\n\
+          \            print('Saving', len(movie_list), 'movies')\n            save_many_to_database('movies',\
+          \ movie_list)\n            print('Saving', len(genre_edges), 'his_type edges\
+          \ - genres of movies')\n            save_many_to_database('his_type', genre_edges)\n\
           \        except Exception as e:\n            print(e)\n\n    def save_embeddings_to_database(movie_embeddings,\
           \ series_embeddings):\n        try:\n            embeddings = []\n     \
           \       has_embedding_edges = []\n            for movie_embedding in movie_embeddings:\n\

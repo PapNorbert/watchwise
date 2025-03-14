@@ -474,7 +474,7 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
                         genre_key = get_genre_key(genre)
                         genre_edges.append({
                             '_key': f'33{movie_id}{genre_key}{genre_key}{movie_id}',
-                            '_from': f'movies/{movie['movieId']}',
+                            '_from': f'movies/{movie_id}',
                             '_to': f'genres/{genre_key}'
                         })
                 current_movie.update({
