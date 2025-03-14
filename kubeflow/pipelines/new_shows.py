@@ -270,6 +270,7 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
     remote_series_file = f"embeddings/new/series_w_embeddings_{current_date}.csv"
     genre_cache = {}
 
+
     def read_movies_with_embeddings(file_path):
         with open(file_path, mode='r', encoding='utf-8') as file:
             csv_reader = csv.reader(file)
@@ -278,10 +279,10 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
             for row in csv_reader:
                 # arrays
                 row_genres = ast.literal_eval(row[2]) if row[2] else []
-                row_directors = row[5].split(', ') if row[5] else []
-                row_writers = row[6].split(', ') if row[6] else []
-                row_actors = row[7].split(', ') if row[7] else []
-                row_languages = row[9].split(', ') if row[9] else []
+                row_directors = ast.literal_eval(row[5]) if row[5] else []
+                row_writers = ast.literal_eval(row[6]) if row[6] else []
+                row_actors = ast.literal_eval(row[7]) if row[7] else []
+                row_languages = ast.literal_eval(row[9]) if row[9] else []
                 row_ratings = ast.literal_eval(row[13]) if row[13] else []
                 embedding = ast.literal_eval(row[14]) if row[14] else []
 
@@ -311,7 +312,7 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
             series = []
             for row in csv_reader:
                 # arrays
-                vote_average = (float(row[1]) / 2) if row[1] else 0.0
+                vote_average = float(row[1]) if row[1] else 0.0
                 vote_count = int(row[2]) if row[2] else 0
                 row_genres = ast.literal_eval(row[6]) if row[6] else []
                 directors_row = ast.literal_eval(row[7]) if row[7] else []
@@ -426,8 +427,9 @@ def upload_and_cleanup(movies_csv: dsl.InputPath(), series_csv: dsl.InputPath(),
             client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)
             db = client.db(db_name, username=username, password=password)
             genres_collection = db.collection('genres')
-            genre = genres_collection.find({'name': genre_name}, limit=1)
-            return genre[0]['_key'] if genre else None
+            cursor = genres_collection.find({'name': genre_name}, limit=1)
+            genre = next(cursor, None)
+            return genre['_key'] if genre else None
         except Exception as e:
             print(e)
             return None
