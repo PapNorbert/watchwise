@@ -360,41 +360,42 @@ deploymentSpec:
           \    )\n    current_date = datetime.now().strftime(\"%Y%m%d\")\n    remote_movie_file\
           \ = f\"embeddings/new/movies_w_embeddings_{current_date}.csv\"\n    remote_series_file\
           \ = f\"embeddings/new/series_w_embeddings_{current_date}.csv\"\n    genre_cache\
-          \ = {}\n\n    def read_movies_with_embeddings(file_path):\n        with\
+          \ = {}\n\n\n    def read_movies_with_embeddings(file_path):\n        with\
           \ open(file_path, mode='r', encoding='utf-8') as file:\n            csv_reader\
           \ = csv.reader(file)\n            header = next(csv_reader)\n          \
           \  movies = []\n            for row in csv_reader:\n                # arrays\n\
           \                row_genres = ast.literal_eval(row[2]) if row[2] else []\n\
-          \                row_directors = row[5].split(', ') if row[5] else []\n\
-          \                row_writers = row[6].split(', ') if row[6] else []\n  \
-          \              row_actors = row[7].split(', ') if row[7] else []\n     \
-          \           row_languages = row[9].split(', ') if row[9] else []\n     \
-          \           row_ratings = ast.literal_eval(row[13]) if row[13] else []\n\
-          \                embedding = ast.literal_eval(row[14]) if row[14] else []\n\
-          \n                movies.append({\n                    'movieId': row[0],\n\
-          \                    'title': row[1],\n                    'genres': row_genres,\n\
-          \                    'imdb_link': row[3],\n                    'name': row[4],\n\
-          \                    'directors': row_directors,\n                    'writers':\
-          \ row_writers,\n                    'actors': row_actors,\n            \
-          \        'plot': row[8],\n                    'languages': row_languages,\n\
-          \                    'country_of_origin': row[10],\n                   \
-          \ 'awards': row[11],\n                    'poster': row[12],\n         \
-          \           'ratings': row_ratings,\n                    'embedding': embedding\n\
-          \                })\n            return movies\n\n    def read_series_with_embeddings(file_path):\n\
-          \        with open(file_path, mode='r', encoding='utf-8') as file:\n   \
-          \         csv_reader = csv.reader(file)\n            header = next(csv_reader)\n\
+          \                row_directors = ast.literal_eval(row[5]) if row[5] else\
+          \ []\n                row_writers = ast.literal_eval(row[6]) if row[6] else\
+          \ []\n                row_actors = ast.literal_eval(row[7]) if row[7] else\
+          \ []\n                row_languages = ast.literal_eval(row[9]) if row[9]\
+          \ else []\n                row_ratings = ast.literal_eval(row[13]) if row[13]\
+          \ else []\n                embedding = ast.literal_eval(row[14]) if row[14]\
+          \ else []\n\n                movies.append({\n                    'movieId':\
+          \ row[0],\n                    'title': row[1],\n                    'genres':\
+          \ row_genres,\n                    'imdb_link': row[3],\n              \
+          \      'name': row[4],\n                    'directors': row_directors,\n\
+          \                    'writers': row_writers,\n                    'actors':\
+          \ row_actors,\n                    'plot': row[8],\n                   \
+          \ 'languages': row_languages,\n                    'country_of_origin':\
+          \ row[10],\n                    'awards': row[11],\n                   \
+          \ 'poster': row[12],\n                    'ratings': row_ratings,\n    \
+          \                'embedding': embedding\n                })\n          \
+          \  return movies\n\n    def read_series_with_embeddings(file_path):\n  \
+          \      with open(file_path, mode='r', encoding='utf-8') as file:\n     \
+          \       csv_reader = csv.reader(file)\n            header = next(csv_reader)\n\
           \            series = []\n            for row in csv_reader:\n         \
-          \       # arrays\n                vote_average = (float(row[1]) / 2) if\
-          \ row[1] else 0.0\n                vote_count = int(row[2]) if row[2] else\
-          \ 0\n                row_genres = ast.literal_eval(row[6]) if row[6] else\
-          \ []\n                directors_row = ast.literal_eval(row[7]) if row[7]\
-          \ else []\n                writers_row = ast.literal_eval(row[8]) if row[8]\
-          \ else []\n                actors_row = ast.literal_eval(row[9]) if row[9]\
-          \ else []\n                row_languages = ast.literal_eval(row[11]) if\
-          \ row[11] else []\n                ratings_row = ast.literal_eval(row[15])\
-          \ if row[15] else []\n                embedding_row = ast.literal_eval(row[18])\
-          \ if row[18] else []\n\n                series.append({\n              \
-          \      'series_id': row[0],\n                    'vote_average': vote_average,\n\
+          \       # arrays\n                vote_average = float(row[1]) if row[1]\
+          \ else 0.0\n                vote_count = int(row[2]) if row[2] else 0\n\
+          \                row_genres = ast.literal_eval(row[6]) if row[6] else []\n\
+          \                directors_row = ast.literal_eval(row[7]) if row[7] else\
+          \ []\n                writers_row = ast.literal_eval(row[8]) if row[8] else\
+          \ []\n                actors_row = ast.literal_eval(row[9]) if row[9] else\
+          \ []\n                row_languages = ast.literal_eval(row[11]) if row[11]\
+          \ else []\n                ratings_row = ast.literal_eval(row[15]) if row[15]\
+          \ else []\n                embedding_row = ast.literal_eval(row[18]) if\
+          \ row[18] else []\n\n                series.append({\n                 \
+          \   'series_id': row[0],\n                    'vote_average': vote_average,\n\
           \                    'vote_count': vote_count,\n                    'name':\
           \ row[3],\n                    'year': row[4],\n                    'release_date':\
           \ row[5],\n                    'genres': row_genres,\n                 \
@@ -469,13 +470,14 @@ deploymentSpec:
           \          return genre_cache[genre_name]\n        try:\n            client\
           \ = ArangoClient(hosts=url, request_timeout=240, verify_override=False)\n\
           \            db = client.db(db_name, username=username, password=password)\n\
-          \            genres_collection = db.collection('genres')\n            genre\
-          \ = genres_collection.find({'name': genre_name}, limit=1)\n            return\
-          \ genre[0]['_key'] if genre else None\n        except Exception as e:\n\
-          \            print(e)\n            return None\n\n    def save_series(series):\n\
-          \        try:\n            series_list = []\n            genre_edges = []\n\
-          \            for serie in series:\n                serie_id = serie['series_id']\n\
-          \                current_serie = {'_key': serie_id}\n                set_series_values(current_serie,\
+          \            genres_collection = db.collection('genres')\n            cursor\
+          \ = genres_collection.find({'name': genre_name}, limit=1)\n            genre\
+          \ = next(cursor, None)\n            return genre['_key'] if genre else None\n\
+          \        except Exception as e:\n            print(e)\n            return\
+          \ None\n\n    def save_series(series):\n        try:\n            series_list\
+          \ = []\n            genre_edges = []\n            for serie in series:\n\
+          \                serie_id = serie['series_id']\n                current_serie\
+          \ = {'_key': serie_id}\n                set_series_values(current_serie,\
           \ serie)\n                if serie['genres']:\n                    for genre\
           \ in serie['genres']:\n                        genre_key = get_genre_key(genre)\n\
           \                        genre_edges.append({\n                        \
