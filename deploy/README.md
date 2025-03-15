@@ -57,6 +57,11 @@ minikube start:
 minikube start --memory=7776 --cpus=4
 ```
 
+Enable ingress:
+``bash
+minikube addons enable ingress
+````
+
 Access ArangoDB
 ```bash
 minikube service arangodb-ea
