@@ -58,7 +58,7 @@ minikube start --memory=7776 --cpus=4
 ```
 
 Enable ingress:
-``bash
+```bash
 minikube addons enable ingress
 ````
 
