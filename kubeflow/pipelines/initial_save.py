@@ -885,11 +885,11 @@ def initial_save_pipeline():
     ratings_file_key = 'initial_save/movie_ratings.csv'
     movies_collected_file_key = 'initial_save/movies_collected_data.csv'
     series_collected_file_key = 'initial_save/series_collected_data.csv'
-    users_save_task = save_movie_series_and_related_inf(url=url, db_name=db_name, username=username, password=password,
+    movies_series_save_task = save_movie_series_and_related_inf(url=url, db_name=db_name, username=username, password=password,
                         movies_collected_file_key=movies_collected_file_key,
                          series_collected_file_key=series_collected_file_key, 
                          ratings_file_key=ratings_file_key)
-    users_save_task.after(initialize_task)
+    movies_series_save_task.after(initialize_task)
 
 
     movie_emb_key = 'embeddings/initial/movies_w_embedding_st_ext_20_epoch_npgda_data.csv'
@@ -897,7 +897,7 @@ def initial_save_pipeline():
     save_embeddings_task = save_embeddings(url=url, db_name=db_name, username=username, password=password,
                             movies_key=movie_emb_key, series_key=series_emb_key)
 
-    save_embeddings_task.after(initialize_task)
+    save_embeddings_task.after(movies_series_save_task)
 
 
 

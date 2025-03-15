@@ -713,7 +713,7 @@ root:
         componentRef:
           name: comp-save-embeddings
         dependentTasks:
-        - initialize-collections
+        - save-movie-series-and-related-inf
         inputs:
           parameters:
             db_name:
