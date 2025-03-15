@@ -143,13 +143,17 @@ deploymentSpec:
           \    import boto3\n    import csv\n    import ast\n    import uuid\n\n \
           \   MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\n    ACCESS_KEY\
           \ = \"minio\"\n    SECRET_KEY = \"minio123\"\n    DATA_BUCKET = \"data\"\
-          \n\n\n    def save_many_to_database(collection_name, data):\n        try:\n\
-          \            client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)\n\
-          \            db = client.db(db_name, username=username, password=password)\n\
-          \            collection = db.collection(collection_name)\n            result\
-          \ = collection.insert_many(data, overwrite=True, overwrite_mode='update')\n\
-          \            return result\n        except Exception as e:\n           \
-          \ print(e)\n            return []\n\n    def read_movie_embeddings(file_path):\n\
+          \n\n\n    def save_many_to_database_in_batches(collection_name, data, batch_size=1000):\n\
+          \        try:\n            client = ArangoClient(hosts=url, request_timeout=2000,\
+          \ verify_override=False)\n            db = client.db(db_name, username=username,\
+          \ password=password)\n            collection = db.collection(collection_name)\n\
+          \n            # Break the data into smaller batches and insert them\n  \
+          \          for i in range(0, len(data), batch_size):\n                batch\
+          \ = data[i:i+batch_size]\n                result = collection.insert_many(batch,\
+          \ overwrite=True, overwrite_mode='update')\n                print(f'Saved\
+          \ batch of {len(batch)} items to {collection_name}')\n\n            return\
+          \ result\n        except Exception as e:\n            print(f\"Error saving\
+          \ {collection_name}: {e}\")\n            return []\n\n\n    def read_movie_embeddings(file_path):\n\
           \        with open(file_path, mode='r', encoding='utf-8') as file:\n   \
           \         csv_reader = csv.reader(file)\n            header = next(csv_reader)\n\
           \            movies_w_embeddings = []\n            for row in csv_reader:\n\
@@ -192,9 +196,9 @@ deploymentSpec:
           \ embedding_key,\n                    '_from': f\"series/{serie_key}\",\n\
           \                    '_to': f\"embeddings/{embedding_key}\"\n          \
           \      })\n\n            print('Saving', len(embeddings), 'embeddings')\n\
-          \            save_many_to_database('embeddings', embeddings)\n         \
-          \   print('Saving', len(has_embedding_edges), 'has embedding edges')\n \
-          \           save_many_to_database('has_embedding', has_embedding_edges)\n\
+          \            save_many_to_database_in_batches('embeddings', embeddings)\n\
+          \            print('Saving', len(has_embedding_edges), 'has embedding edges')\n\
+          \            save_many_to_database_in_batches('has_embedding', has_embedding_edges)\n\
           \        except Exception as e:\n            print(e)\n\n    def generate_key()\
           \ -> str:\n        try:\n            unique_id = uuid.uuid4()\n        \
           \    numeric_key = unique_id.int\n            return str(numeric_key)\n\

@@ -754,16 +754,23 @@ def save_embeddings(url: str, db_name: str, username: str, password: str, movies
     DATA_BUCKET = "data"
 
 
-    def save_many_to_database(collection_name, data):
+    def save_many_to_database_in_batches(collection_name, data, batch_size=1000):
         try:
-            client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)
+            client = ArangoClient(hosts=url, request_timeout=2000, verify_override=False)
             db = client.db(db_name, username=username, password=password)
             collection = db.collection(collection_name)
-            result = collection.insert_many(data, overwrite=True, overwrite_mode='update')
+
+            # Break the data into smaller batches and insert them
+            for i in range(0, len(data), batch_size):
+                batch = data[i:i+batch_size]
+                result = collection.insert_many(batch, overwrite=True, overwrite_mode='update')
+                print(f'Saved batch of {len(batch)} items to {collection_name}')
+            
             return result
         except Exception as e:
-            print(e)
+            print(f"Error saving {collection_name}: {e}")
             return []
+
 
     def read_movie_embeddings(file_path):
         with open(file_path, mode='r', encoding='utf-8') as file:
@@ -835,9 +842,9 @@ def save_embeddings(url: str, db_name: str, username: str, password: str, movies
                 })
 
             print('Saving', len(embeddings), 'embeddings')
-            save_many_to_database('embeddings', embeddings)
+            save_many_to_database_in_batches('embeddings', embeddings)
             print('Saving', len(has_embedding_edges), 'has embedding edges')
-            save_many_to_database('has_embedding', has_embedding_edges)
+            save_many_to_database_in_batches('has_embedding', has_embedding_edges)
         except Exception as e:
             print(e)
 
