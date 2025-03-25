@@ -22,24 +22,24 @@ def get_train_data(minio_endpoint: str, minio_access_key: str, minio_secret_key:
 
     prefixes = ["train/new/"]
     for prefix in prefixes:
-        output_folder = os.path.join(output_dir, prefix)
-        os.makedirs(output_folder, exist_ok=True)
         objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET, Prefix=prefix)
         if "Contents" in objects:
             for obj in objects.get("Contents", []):
                 file_key = obj["Key"]
-                local_file_path = os.path.join(output_folder, os.path.basename(file_key))
+                file_name = os.path.basename(file_key)
+                local_file_path = os.path.join(output_dir, file_name)
                 s3_client.download_file(DATA_BUCKET, file_key, local_file_path)
                 print(f"Downloaded: {file_key} → {local_file_path}")
 
     print(f"Download complete for all files in {output_dir}")
 
 
-@dsl.component(packages_to_install=['transformers==4.45.2', 'sentence-transformers==3.1.1', 'boto3==1.36.16'])
+@dsl.component(packages_to_install=['transformers==4.45.2', 'sentence-transformers==3.1.1', 
+    'boto3==1.36.16', 'datasets==3.1.0'])
 def train_model(
         minio_endpoint: str, minio_access_key: str, minio_secret_key: str,
         model_name: str,
-        train_data_json: dsl.InputPath()
+        train_data_folder: dsl.InputPath()
     ):
     import os
     import json
@@ -67,7 +67,9 @@ def train_model(
         Fine-tune the SentenceTransformer model using the provided training data.
 
         Args:
+            model: The model to be fine tuned.
             full_train_data (list): List of training examples with 'text1', 'text2', and 'label'.
+            trained_model_path (string): The location to save the final model.
             epochs (int): Number of epochs for fine-tuning.
 
         Returns:
@@ -135,8 +137,23 @@ def train_model(
     print(f"Extracted {model_name}.zip to {TEMP_DIR}")
     model_path = os.path.join(TEMP_DIR, model_name)
 
-    with open(train_data_json, "r", encoding="utf-8") as file:
-        train_data = json.load(file)
+    print("Files in directory:", os.listdir(train_data_folder))
+    train_data = []
+    for filename in os.listdir(train_data_folder):
+        file_path = os.path.join(train_data_folder, filename)
+        if filename.endswith(".json"):
+            with open(file_path, "r", encoding="utf-8") as file:
+                try:
+                    data = json.load(file)
+                    print(f"{filename} contains: {type(data)}")
+                    print(data)
+                    if isinstance(data, list):
+                        train_data.extend(data)
+                    else:
+                        print(f"Skipping {filename}: not an array")
+                except json.JSONDecodeError:
+                    print(f"Skipping {filename}: invalid JSON")
+    print(f"Processing {len(train_data)} training data.")
 
     model = SentenceTransformer(model_path)
     print(f"Loaded model from {model_path}")
@@ -198,7 +215,7 @@ def data_processing_pipeline():
     train_model_task = train_model(
         minio_endpoint=minio_endpoint, minio_access_key=access_key, minio_secret_key=secret_key,
         model_name=model_name,
-        train_data_json=get_train_data_task.output
+        train_data_folder=get_train_data_task.output
     )
 
     upload_task = upload_and_cleanup(

@@ -22,7 +22,7 @@ components:
     executorLabel: exec-train-model
     inputDefinitions:
       artifacts:
-        train_data_json:
+        train_data_folder:
           artifactType:
             schemaTitle: system.Artifact
             schemaVersion: 0.0.1
@@ -85,13 +85,12 @@ deploymentSpec:
           \ boto3.client(\n        \"s3\",\n        endpoint_url=minio_endpoint,\n\
           \        aws_access_key_id=minio_access_key,\n        aws_secret_access_key=minio_secret_key\n\
           \    )\n\n    os.makedirs(output_dir, exist_ok=True)\n\n    prefixes = [\"\
-          train/new/\"]\n    for prefix in prefixes:\n        output_folder = os.path.join(output_dir,\
-          \ prefix)\n        os.makedirs(output_folder, exist_ok=True)\n        objects\
-          \ = s3_client.list_objects_v2(Bucket=DATA_BUCKET, Prefix=prefix)\n     \
-          \   if \"Contents\" in objects:\n            for obj in objects.get(\"Contents\"\
-          , []):\n                file_key = obj[\"Key\"]\n                local_file_path\
-          \ = os.path.join(output_folder, os.path.basename(file_key))\n          \
-          \      s3_client.download_file(DATA_BUCKET, file_key, local_file_path)\n\
+          train/new/\"]\n    for prefix in prefixes:\n        objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET,\
+          \ Prefix=prefix)\n        if \"Contents\" in objects:\n            for obj\
+          \ in objects.get(\"Contents\", []):\n                file_key = obj[\"Key\"\
+          ]\n                file_name = os.path.basename(file_key)\n            \
+          \    local_file_path = os.path.join(output_dir, file_name)\n           \
+          \     s3_client.download_file(DATA_BUCKET, file_key, local_file_path)\n\
           \                print(f\"Downloaded: {file_key} \u2192 {local_file_path}\"\
           )\n\n    print(f\"Download complete for all files in {output_dir}\")\n\n"
         image: python:3.9
@@ -110,7 +109,8 @@ deploymentSpec:
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
           \  python3 -m pip install --quiet --no-warn-script-location 'transformers==4.45.2'\
-          \ 'sentence-transformers==3.1.1' 'boto3==1.36.16' && \"$0\" \"$@\"\n"
+          \ 'sentence-transformers==3.1.1' 'boto3==1.36.16' 'datasets==3.1.0' && \"\
+          $0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -123,7 +123,7 @@ deploymentSpec:
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef train_model(\n        minio_endpoint: str, minio_access_key:\
-          \ str, minio_secret_key: str,\n        model_name: str,\n        train_data_json:\
+          \ str, minio_secret_key: str,\n        model_name: str,\n        train_data_folder:\
           \ dsl.InputPath()\n    ):\n    import os\n    import json\n    import boto3\n\
           \    import zipfile\n    from datasets import Dataset\n    from sentence_transformers\
           \ import SentenceTransformer, losses, SentenceTransformerTrainingArguments,\
@@ -135,27 +135,28 @@ deploymentSpec:
           \    )\n\n    def fine_tune_model(model, full_train_data, trained_model_path,\
           \ epochs=1):\n        \"\"\"\n        Fine-tune the SentenceTransformer\
           \ model using the provided training data.\n\n        Args:\n           \
-          \ full_train_data (list): List of training examples with 'text1', 'text2',\
-          \ and 'label'.\n            epochs (int): Number of epochs for fine-tuning.\n\
-          \n        Returns:\n            model (SentenceTransformer): Fine-tuned\
-          \ SentenceTransformer model.\n        \"\"\"\n        train_data, eval_data\
-          \ = train_test_split(full_train_data, test_size=0.1, random_state=42)\n\n\
-          \        train_dataset = Dataset.from_dict({\n            'sentence1': [item['text1']\
-          \ for item in train_data],\n            'sentence2': [item['text2'] for\
-          \ item in train_data],\n            'score': [item['label'] for item in\
-          \ train_data],\n        })\n        eval_dataset = Dataset.from_dict({\n\
-          \            'sentence1': [(item['text1']) for item in eval_data],\n   \
-          \         'sentence2': [item['text2'] for item in eval_data],\n        \
-          \    'score': [item['label'] for item in eval_data],\n        })\n     \
-          \   train_loss = losses.CosineSimilarityLoss(model=model)\n\n        args\
-          \ = SentenceTransformerTrainingArguments(\n            # Required parameter:\n\
-          \            output_dir=\"/tmp/model/trained\",\n            # Optional\
-          \ training parameters:\n            num_train_epochs=epochs,\n         \
-          \   warmup_ratio=0.1,\n            # Optional tracking/debugging parameters:\n\
-          \            eval_strategy=\"steps\",\n            eval_steps=300,\n   \
-          \         save_strategy=\"steps\",\n            save_steps=300,\n      \
-          \      save_total_limit=2,\n            load_best_model_at_end=True,\n \
-          \           logging_steps=100\n        )\n        trainer = SentenceTransformerTrainer(\n\
+          \ model: The model to be fine tuned.\n            full_train_data (list):\
+          \ List of training examples with 'text1', 'text2', and 'label'.\n      \
+          \      trained_model_path (string): The location to save the final model.\n\
+          \            epochs (int): Number of epochs for fine-tuning.\n\n       \
+          \ Returns:\n            model (SentenceTransformer): Fine-tuned SentenceTransformer\
+          \ model.\n        \"\"\"\n        train_data, eval_data = train_test_split(full_train_data,\
+          \ test_size=0.1, random_state=42)\n\n        train_dataset = Dataset.from_dict({\n\
+          \            'sentence1': [item['text1'] for item in train_data],\n    \
+          \        'sentence2': [item['text2'] for item in train_data],\n        \
+          \    'score': [item['label'] for item in train_data],\n        })\n    \
+          \    eval_dataset = Dataset.from_dict({\n            'sentence1': [(item['text1'])\
+          \ for item in eval_data],\n            'sentence2': [item['text2'] for item\
+          \ in eval_data],\n            'score': [item['label'] for item in eval_data],\n\
+          \        })\n        train_loss = losses.CosineSimilarityLoss(model=model)\n\
+          \n        args = SentenceTransformerTrainingArguments(\n            # Required\
+          \ parameter:\n            output_dir=\"/tmp/model/trained\",\n         \
+          \   # Optional training parameters:\n            num_train_epochs=epochs,\n\
+          \            warmup_ratio=0.1,\n            # Optional tracking/debugging\
+          \ parameters:\n            eval_strategy=\"steps\",\n            eval_steps=300,\n\
+          \            save_strategy=\"steps\",\n            save_steps=300,\n   \
+          \         save_total_limit=2,\n            load_best_model_at_end=True,\n\
+          \            logging_steps=100\n        )\n        trainer = SentenceTransformerTrainer(\n\
           \            model=model,\n            args=args,\n            train_dataset=train_dataset,\n\
           \            eval_dataset=eval_dataset,\n            loss=train_loss,\n\
           \        )\n        trainer.train()\n        model.save_pretrained(trained_model_path)\n\
@@ -175,8 +176,18 @@ deploymentSpec:
           \ to {MODEL_ZIP_PATH}\")\n    with zipfile.ZipFile(MODEL_ZIP_PATH, \"r\"\
           ) as zip_ref:\n        zip_ref.extractall(TEMP_DIR)\n    print(f\"Extracted\
           \ {model_name}.zip to {TEMP_DIR}\")\n    model_path = os.path.join(TEMP_DIR,\
-          \ model_name)\n\n    with open(train_data_json, \"r\", encoding=\"utf-8\"\
-          ) as file:\n        train_data = json.load(file)\n\n    model = SentenceTransformer(model_path)\n\
+          \ model_name)\n\n    print(\"Files in directory:\", os.listdir(train_data_folder))\n\
+          \    train_data = []\n    for filename in os.listdir(train_data_folder):\n\
+          \        file_path = os.path.join(train_data_folder, filename)\n       \
+          \ if filename.endswith(\".json\"):\n            with open(file_path, \"\
+          r\", encoding=\"utf-8\") as file:\n                try:\n              \
+          \      data = json.load(file)\n                    print(f\"{filename} contains:\
+          \ {type(data)}\")\n                    print(data)\n                   \
+          \ if isinstance(data, list):\n                        train_data.extend(data)\n\
+          \                    else:\n                        print(f\"Skipping {filename}:\
+          \ not an array\")\n                except json.JSONDecodeError:\n      \
+          \              print(f\"Skipping {filename}: invalid JSON\")\n    print(f\"\
+          Processing {len(train_data)} training data.\")\n\n    model = SentenceTransformer(model_path)\n\
           \    print(f\"Loaded model from {model_path}\")\n    trained_model_path\
           \ = \"/tmp/model/trained/final\"\n    fine_tuned_model = fine_tune_model(model,\
           \ train_data, trained_model_path, 3)\n    print(f\"Training done.\")\n \
@@ -261,7 +272,7 @@ root:
         - get-train-data
         inputs:
           artifacts:
-            train_data_json:
+            train_data_folder:
               taskOutputArtifact:
                 outputArtifactKey: output_dir
                 producerTask: get-train-data
