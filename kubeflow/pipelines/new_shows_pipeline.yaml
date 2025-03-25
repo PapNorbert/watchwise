@@ -183,6 +183,11 @@ deploymentSpec:
           \ series_output)\n    print(f\"Saved movie embeddings to {movies_output}\"\
           )\n    print(f\"Saved series embeddings to {series_output}\")\n\n"
         image: python:3.9
+        resources:
+          cpuLimit: 4.0
+          memoryLimit: 6.442450944
+          resourceCpuLimit: '4'
+          resourceMemoryLimit: 6Gi
     exec-download-csv-files:
       container:
         args:

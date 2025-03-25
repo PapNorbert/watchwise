@@ -606,7 +606,7 @@ def data_processing_pipeline():
         movies_json=process_task.outputs["movies_output"],
         series_json=process_task.outputs["series_output"],
         fields_to_use=fields_to_use
-    )
+    ).set_memory_limit("6Gi").set_cpu_limit("4")
 
     url = 'https://arangodb.default.svc.cluster.local:8529'
     password=''
