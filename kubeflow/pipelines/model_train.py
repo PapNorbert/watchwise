@@ -35,7 +35,7 @@ def get_train_data(minio_endpoint: str, minio_access_key: str, minio_secret_key:
 
 
 @dsl.component(packages_to_install=['transformers==4.45.2', 'sentence-transformers==3.1.1', 
-    'boto3==1.36.16', 'datasets==3.1.0'])
+    'boto3==1.36.16', 'datasets==3.1.0', 'torch==2.5.0', 'accelerate==1.1.1'])
 def train_model(
         minio_endpoint: str, minio_access_key: str, minio_secret_key: str,
         model_name: str,
@@ -145,8 +145,6 @@ def train_model(
             with open(file_path, "r", encoding="utf-8") as file:
                 try:
                     data = json.load(file)
-                    print(f"{filename} contains: {type(data)}")
-                    print(data)
                     if isinstance(data, list):
                         train_data.extend(data)
                     else:
@@ -216,7 +214,7 @@ def data_processing_pipeline():
         minio_endpoint=minio_endpoint, minio_access_key=access_key, minio_secret_key=secret_key,
         model_name=model_name,
         train_data_folder=get_train_data_task.output
-    )
+    ).set_memory_limit("6Gi").set_cpu_limit("4")
 
     upload_task = upload_and_cleanup(
         train_data_file=get_train_data_task.output,

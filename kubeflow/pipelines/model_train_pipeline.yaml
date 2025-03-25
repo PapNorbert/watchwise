@@ -109,8 +109,8 @@ deploymentSpec:
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
           \  python3 -m pip install --quiet --no-warn-script-location 'transformers==4.45.2'\
-          \ 'sentence-transformers==3.1.1' 'boto3==1.36.16' 'datasets==3.1.0' && \"\
-          $0\" \"$@\"\n"
+          \ 'sentence-transformers==3.1.1' 'boto3==1.36.16' 'datasets==3.1.0' 'torch==2.5.0'\
+          \ 'accelerate==1.1.1' && \"$0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -181,21 +181,25 @@ deploymentSpec:
           \        file_path = os.path.join(train_data_folder, filename)\n       \
           \ if filename.endswith(\".json\"):\n            with open(file_path, \"\
           r\", encoding=\"utf-8\") as file:\n                try:\n              \
-          \      data = json.load(file)\n                    print(f\"{filename} contains:\
-          \ {type(data)}\")\n                    print(data)\n                   \
-          \ if isinstance(data, list):\n                        train_data.extend(data)\n\
-          \                    else:\n                        print(f\"Skipping {filename}:\
-          \ not an array\")\n                except json.JSONDecodeError:\n      \
-          \              print(f\"Skipping {filename}: invalid JSON\")\n    print(f\"\
-          Processing {len(train_data)} training data.\")\n\n    model = SentenceTransformer(model_path)\n\
-          \    print(f\"Loaded model from {model_path}\")\n    trained_model_path\
-          \ = \"/tmp/model/trained/final\"\n    fine_tuned_model = fine_tune_model(model,\
+          \      data = json.load(file)\n                    if isinstance(data, list):\n\
+          \                        train_data.extend(data)\n                    else:\n\
+          \                        print(f\"Skipping {filename}: not an array\")\n\
+          \                except json.JSONDecodeError:\n                    print(f\"\
+          Skipping {filename}: invalid JSON\")\n    print(f\"Processing {len(train_data)}\
+          \ training data.\")\n\n    model = SentenceTransformer(model_path)\n   \
+          \ print(f\"Loaded model from {model_path}\")\n    trained_model_path = \"\
+          /tmp/model/trained/final\"\n    fine_tuned_model = fine_tune_model(model,\
           \ train_data, trained_model_path, 3)\n    print(f\"Training done.\")\n \
           \   zip_path = f\"/tmp/{model_name}.zip\"\n    zip_folder(trained_model_path,\
           \ zip_path, model_name)\n    s3_client.upload_file(f\"{zip_path}\", MODEL_BUCKET,\
           \ f\"{model_name}.zip\")\n    print(f\"Uploaded model to {model_name}.zip\"\
           )\n\n"
         image: python:3.9
+        resources:
+          cpuLimit: 4.0
+          memoryLimit: 6.442450944
+          resourceCpuLimit: '4'
+          resourceMemoryLimit: 6Gi
     exec-upload-and-cleanup:
       container:
         args:
