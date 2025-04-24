@@ -40,7 +40,9 @@ def train_model(
         minio_endpoint: str, minio_access_key: str, minio_secret_key: str,
         url: str, db_name: str, username: str, password: str,
         model_name: str, fields_to_use: list,
-        train_data_folder: dsl.InputPath()
+        train_data_folder: dsl.InputPath(),
+        new_movie_embeddings_output: dsl.OutputPath(), 
+        new_serie_embeddings_output: dsl.OutputPath()
     ):
     import os
     import json
@@ -263,6 +265,36 @@ def train_model(
                 print(f"Error saving {collection_name}: {e}")
                 return []
         
+        def save_movies_with_embedding_to_csv(movies_data, filename):
+            header = [
+                'movieId', 'title', 'genres', 'imdb_link', 'name', 'directors', 'writers', 'actors', 'plot',
+                'languages', 'country_of_origin', 'awards', 'poster', 'ratings', 'embedding'
+            ]
+            with open(filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=header)
+                writer.writeheader()
+                for movie in movies_data:
+                    try:
+                        ordered_movie = {key: movie.get(key, '') for key in header}
+                        writer.writerow(ordered_movie)
+                    except Exception as e:
+                        print(f"Error processing movie {movie['title']}: {e}")
+
+        def save_series_with_embedding_to_csv(series_data, filename):
+            header = [
+                'series_id', 'vote_average', 'vote_count', 'name', 'year', 'release_date', 'genres', 'directors',
+                'writers', 'actors', 'plot', 'languages', 'country_of_origin', 'awards', 'poster',
+                'ratings', 'imdb_link', 'total_seasons', 'embedding'
+            ]
+            with open(filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=header)
+                writer.writeheader()
+                for serie in series_data:
+                    try:
+                        ordered_serie = {key: serie.get(key, '') for key in header}
+                        writer.writerow(ordered_serie)
+                    except Exception as e:
+                        print(f"Error processing series {serie['name']}: {e}")
 
         DATA_BUCKET = "data"
 
@@ -271,10 +303,12 @@ def train_model(
 
         clear_collection('embeddings')
 
+        print("Updating all embeddings.")
+
         # download show files
         shows_dir = '/tmp/shows'
         os.makedirs(shows_dir, exist_ok=True)
-        prefixes = ["embeddings/initial", "embeddings/new"]
+        prefixes = ["embeddings/initial/", "embeddings/new/"]
         for prefix in prefixes:
             objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET, Prefix=prefix)
             if "Contents" in objects:
@@ -296,9 +330,9 @@ def train_model(
                         serie_embeddings.append(current_series_embedding)
                         save_embeddings_to_database([], current_series_embedding)
 
+        save_movies_with_embedding_to_csv(movie_embeddings, new_movie_embeddings_output)
+        save_series_with_embedding_to_csv(serie_embeddings, new_serie_embeddings_output)
 
-        print("Updating all embeddings.")
-        return
 
     os.makedirs(TEMP_DIR, exist_ok=True)
     s3_client.download_file(MODEL_BUCKET, f"{model_name}.zip", MODEL_ZIP_PATH)
@@ -338,9 +372,12 @@ def train_model(
 
 @dsl.component(packages_to_install=['boto3==1.36.16'])
 def upload_and_cleanup(train_data_file: dsl.InputPath(),
-                    minio_endpoint: str, minio_access_key: str, minio_secret_key: str):
+                    minio_endpoint: str, minio_access_key: str, minio_secret_key: str,
+                    new_movie_embeddings: dsl.InputPath(), 
+                    new_serie_embeddings: dsl.InputPath()):
     import os
     import boto3
+    import json
     from datetime import datetime
 
 
@@ -358,7 +395,7 @@ def upload_and_cleanup(train_data_file: dsl.InputPath(),
         s3_client.upload_file(train_data_file, DATA_BUCKET, remote_train_file)
         print(f"Uploaded {train_data_file} to {remote_train_file}")
 
-    prefixes_to_delete = ["train/new/"]
+    prefixes_to_delete = ["train/new/", "embeddings/initial/", "embeddings/new/"]
     for prefix in prefixes_to_delete:
         objects = s3_client.list_objects_v2(Bucket=DATA_BUCKET, Prefix=prefix)
         if "Contents" in objects:
@@ -366,6 +403,15 @@ def upload_and_cleanup(train_data_file: dsl.InputPath(),
                 s3_client.delete_object(Bucket=DATA_BUCKET, Key=obj["Key"])
                 print(f"Deleted {obj['Key']} from {DATA_BUCKET}")
 
+    remote_movies_file = f"embeddings/initial/movies_w_embeddings_{current_date}.csv"
+    if os.path.exists(new_movie_embeddings):
+        s3_client.upload_file(new_movie_embeddings, DATA_BUCKET, remote_movies_file)
+        print(f"Uploaded {new_movie_embeddings} to {remote_movies_file}")
+
+    remote_series_file = f"embeddings/initial/series_w_embeddings_{current_date}.csv"
+    if os.path.exists(new_serie_embeddings):
+        s3_client.upload_file(new_serie_embeddings, DATA_BUCKET, remote_series_file)
+        print(f"Uploaded {new_serie_embeddings} to {remote_series_file}")
 
 
 @dsl.pipeline(
@@ -397,7 +443,9 @@ def data_processing_pipeline():
 
     upload_task = upload_and_cleanup(
         train_data_file=get_train_data_task.output,
-        minio_endpoint=minio_endpoint, minio_access_key=access_key, minio_secret_key=secret_key
+        minio_endpoint=minio_endpoint, minio_access_key=access_key, minio_secret_key=secret_key,
+        new_movie_embeddings=train_model_task.outputs["new_movie_embeddings_output"],
+        new_serie_embeddings=train_model_task.outputs["new_serie_embeddings_output"],
     )
     upload_task.after(train_model_task)
 
