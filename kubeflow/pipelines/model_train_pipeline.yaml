@@ -392,7 +392,7 @@ deploymentSpec:
           \n    DATA_BUCKET = \"data\"\n    s3_client = boto3.client(\n        \"\
           s3\",\n        endpoint_url=minio_endpoint,\n        aws_access_key_id=minio_access_key,\n\
           \        aws_secret_access_key=minio_secret_key\n    )\n    current_date\
-          \ = datetime.now().strftime(\"%Y%m%d\")\n    remote_train_file = f\"train/processed/training_{current_date}.csv\"\
+          \ = datetime.now().strftime(\"%Y%m%d\")\n    remote_train_file = f\"train/processed/training_{current_date}.json\"\
           \n\n    if os.path.exists(train_data_file):\n        s3_client.upload_file(train_data_file,\
           \ DATA_BUCKET, remote_train_file)\n        print(f\"Uploaded {train_data_file}\
           \ to {remote_train_file}\")\n\n    prefixes_to_delete = [\"train/new/\"\

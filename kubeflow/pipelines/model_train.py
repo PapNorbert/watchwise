@@ -389,7 +389,7 @@ def upload_and_cleanup(train_data_file: dsl.InputPath(),
         aws_secret_access_key=minio_secret_key
     )
     current_date = datetime.now().strftime("%Y%m%d")
-    remote_train_file = f"train/processed/training_{current_date}.csv"
+    remote_train_file = f"train/processed/training_{current_date}.json"
 
     if os.path.exists(train_data_file):
         s3_client.upload_file(train_data_file, DATA_BUCKET, remote_train_file)
