@@ -1,0 +1,5 @@
+# Default values for watchwise.
+
+arangodb:
+  operator:
+    replicaCount: 1

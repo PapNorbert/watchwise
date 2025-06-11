@@ -1,7 +1,14 @@
 import { moderatorRoleCode } from '../config/UserRoleCodes.js';
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
-const moderatorRequestsCollection = pool.collection("moderator_requests");
+let moderatorRequestsCollection;
+
+async function initializeCollection() {
+  const pool = await getPool();
+  moderatorRequestsCollection = pool.collection("moderator_requests");
+}
+
+initializeCollection();
 
 const employmentFileType = 'moderatorEmployementStatus';
 const reqFileType = 'moderatorRequest';
@@ -23,6 +30,9 @@ function addFilters(aqlQuery, aqlParameters, name, docName = 'doc') {
 
 export async function insertEmploymentFile() {
   try {
+    if (!moderatorRequestsCollection) {
+      await initializeCollection();
+    }
     const cursor = await moderatorRequestsCollection.save({
       type: employmentFileType,
       employementIsOpen: false
@@ -37,6 +47,7 @@ export async function checkEmploymentFileExists() {
   try {
     const aqlQuery = `RETURN LENGTH(FOR doc IN moderator_requests
       FILTER doc.type == @type LIMIT 1 RETURN true) > 0`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { type: employmentFileType });
     return (await cursor.all())[0];
   } catch (err) {
@@ -49,6 +60,7 @@ export async function getEmploymentIsOpen() {
     const aqlQuery = `FOR doc IN moderator_requests
       FILTER doc.type == @type
       RETURN doc.employementIsOpen`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { type: employmentFileType });
     return (await cursor.all())[0];
   } catch (err) {
@@ -78,6 +90,7 @@ export async function findModeratorRequests(page, limit, name) {
     SORT doc.create_date
     LIMIT @offset, @count
     RETURN MERGE(doc, { register_date: user.create_date, about_user: user.about_me})`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -95,6 +108,7 @@ export async function getModeratorRequestsCount(name) {
 
     aqlQuery += `
       RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
@@ -106,6 +120,9 @@ export async function getModeratorRequestsCount(name) {
 export async function insertModeratorRequest(modRequestJson) {
   try {
     modRequestJson.type = reqFileType;
+    if (!moderatorRequestsCollection) {
+      await initializeCollection();
+    }
     const cursor = await moderatorRequestsCollection.save(modRequestJson);
     return cursor._key;
   } catch (err) {
@@ -115,6 +132,9 @@ export async function insertModeratorRequest(modRequestJson) {
 
 export async function deleteModeratorRequest(key) {
   try {
+    if (!moderatorRequestsCollection) {
+      await initializeCollection();
+    }
     await moderatorRequestsCollection.remove({ _key: key });
     return true;
   } catch (err) {
@@ -130,6 +150,7 @@ export async function deleteModeratorRequest(key) {
 
 export async function handleHiringStatusChangeTransaction() {
   try {
+    const pool = await getPool();
     const transaction = await pool.beginTransaction({
       write: ["moderator_requests"],
       allowImplicit: false
@@ -140,6 +161,7 @@ export async function handleHiringStatusChangeTransaction() {
       const aqlQuery = `FOR doc IN moderator_requests
       FILTER doc.type == @type
       UPDATE doc._key WITH { employementIsOpen: (! doc.employementIsOpen) } in moderator_requests`;
+      const pool = await getPool();
       await pool.query(aqlQuery, { type: employmentFileType });
     });
 
@@ -148,6 +170,7 @@ export async function handleHiringStatusChangeTransaction() {
       const aqlQuery = `FOR doc IN moderator_requests
       FILTER doc.type == @type
       REMOVE doc in moderator_requests`;
+      const pool = await getPool();
       await pool.query(aqlQuery, { type: reqFileType });
     });
 
@@ -162,6 +185,7 @@ export async function handleHiringStatusChangeTransaction() {
 
 export async function handleRequestAcceptTransaction(key) {
   try {
+    const pool = await getPool();
     const transaction = await pool.beginTransaction({
       write: ["moderator_requests", "users"],
       allowImplicit: false
@@ -169,6 +193,9 @@ export async function handleRequestAcceptTransaction(key) {
 
 
     const moderatorRequest = await transaction.step(async () => {
+      if (!moderatorRequestsCollection) {
+        await initializeCollection();
+      }
       const cursor = await moderatorRequestsCollection.firstExample({ _key: key });
       return cursor;
     });
@@ -200,6 +227,7 @@ export async function handleRequestAcceptTransaction(key) {
         const aqlQuery = `FOR doc IN moderator_requests
         FILTER doc._key == @key
         REMOVE doc in moderator_requests`;
+        const pool = await getPool();
         await pool.query(aqlQuery, { key: key });
       });
 

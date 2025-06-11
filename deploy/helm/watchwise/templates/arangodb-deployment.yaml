@@ -1,0 +1,19 @@
+apiVersion: database.arangodb.com/v1
+kind: ArangoDeployment
+metadata:
+  name: arangodb
+spec:
+  mode: Single
+  image: arangodb/arangodb:3.12.0
+  environment: Development
+  auth:
+    jwtSecretName: arangodb-jwt
+  single:
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "512Mi"
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+

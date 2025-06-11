@@ -1,7 +1,14 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 import { sortTypesWG } from '../config/sortTypes.js'
 
-const watchGroupCollection = pool.collection("watch_groups");
+let watchGroupCollection;
+
+async function initializeCollection() {
+  const pool = await getPool();
+  watchGroupCollection = pool.collection("watch_groups");
+}
+
+initializeCollection();
 
 function addFilters(aqlQuery, aqlParameters, userLocLat, userLocLong, titleSearch, showSearch,
   creatorSearch, watchDateSearch, maxDistanceSearch, onlyNotFullSearch, docName = 'doc') {
@@ -109,6 +116,7 @@ export async function findWatchGroups(page, limit, userLocLat, userLocLong,
     aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(doc, "comments")`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -143,6 +151,7 @@ export async function findWatchGroupsWithJoinedInformation(userId, page, limit, 
       FILTER edge._to == doc._id
       LIMIT 1 RETURN true) > 0
     RETURN { doc: UNSET(doc, "comments"), joined: join, has_request: has_request }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -171,6 +180,7 @@ export async function findWatchGroupsByCreator(creator, page, limit, userLocLat,
     aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(doc, "comments")`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -199,6 +209,7 @@ export async function findWatchGroupsByUserJoined(userId, page, limit, userLocLa
     aqlQuery += `
     LIMIT @offset, @count
     RETURN UNSET(vertex, "comments")`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -238,6 +249,7 @@ export async function findWatchGroupNamesAndKeyByUserJoinedOrCreator(userId) {
           RETURN {name: vertex.title, wg_id: vertex._id, newMessages: lastDate2[0].created_at > joinEdge.lastOpenedDate}
       )
       RETURN APPEND(creatorGroups, joinedGroups)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
@@ -251,6 +263,7 @@ export async function findWatchGroupByKeyWithoutComments(key) {
     const aqlQuery = `FOR doc IN watch_groups
     FILTER doc._key == @key
     RETURN UNSET(doc, "comments")`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: key });
     return (await cursor.all())[0];
   } catch (err) {
@@ -300,6 +313,7 @@ export async function findWatchGroupByKeyWithJoinedInformation(userId, key, page
     }, 
     joined: join,
     has_request: has_request }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { from: userId, key: key, offset: (page - 1) * limit, count: limit });
     return (await cursor.all())[0];
   } catch (err) {
@@ -332,6 +346,7 @@ export async function findWatchGroupByKey(key, page, limit) {
         RETURN comment
       )
     }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: key, offset: (page - 1) * limit, count: limit });
     return (await cursor.all())[0];
   } catch (err) {
@@ -359,6 +374,7 @@ export async function getWatchGroupCount(userLocLat, userLocLong,
 
     aqlQuery += `
         RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
@@ -381,6 +397,7 @@ export async function getWatchGroupCountByCreator(creator, userLocLat, userLocLo
 
     aqlQuery += `
         RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
@@ -403,6 +420,7 @@ export async function getWatchGroupCountByUserJoined(userId, userLocLat, userLoc
 
     aqlQuery += `
         RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
@@ -415,6 +433,9 @@ export async function getWatchGroupCountByUserJoined(userId, userLocLat, userLoc
 
 export async function insertWatchGroup(watchGroupDocument) {
   try {
+    if (!watchGroupCollection) {
+      await initializeCollection();
+    }
     const cursor = await watchGroupCollection.save(watchGroupDocument);
     return cursor._key;
   } catch (err) {
@@ -425,6 +446,9 @@ export async function insertWatchGroup(watchGroupDocument) {
 
 export async function updateWatchGroup(key, newWatchGroupAttributes) {
   try {
+    if (!watchGroupCollection) {
+      await initializeCollection();
+    }
     const cursor = await watchGroupCollection.update(key, newWatchGroupAttributes);
     return true;
   } catch (err) {
@@ -441,6 +465,9 @@ export async function updateWatchGroup(key, newWatchGroupAttributes) {
 
 export async function deleteWatchGroup(key) {
   try {
+    if (!watchGroupCollection) {
+      await initializeCollection();
+    }
     const cursor = await watchGroupCollection.remove({ _key: key });
     return true;
   } catch (err) {
@@ -467,6 +494,7 @@ export async function deleteWatchGroupAndChats(key) {
     FOR doc in watch_groups
       FILTER doc._key == @key
       REMOVE doc IN watch_groups`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: key, from: ("watch_groups/" + key) });
     return true;
   } catch (err) {
@@ -482,6 +510,7 @@ export async function deleteWatchGroupAndChats(key) {
 
 export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
   try {
+    const pool = await getPool();
     const transaction = await pool.beginTransaction({
       write: ["join_request", "joined_group", "watch_groups"],
       read: ["users"],
@@ -491,6 +520,7 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
       const aqlQuery = `FOR doc IN watch_groups
         FILTER doc._key == @key
         RETURN UNSET(doc, "comments")`;
+      const pool = await getPool();
       const cursor = await pool.query(aqlQuery, { key: watchGroupKey });
       return (await cursor.all())[0];
     });
@@ -507,7 +537,8 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
           FILTER doc._from == @from
           FILTER doc._to == @to
           LIMIT 1 RETURN true) > 0`;
-        const cursor = await pool.query(aqlQuery, { from: user._id, to: watchGroup._id });
+          const pool = await getPool();
+          const cursor = await pool.query(aqlQuery, { from: user._id, to: watchGroup._id });
         return (await cursor.all())[0];
       });
 
@@ -518,6 +549,7 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
             FILTER edge._from == @from
             FILTER edge._to == @to
             REMOVE { _key: edge._key } IN joined_group`;
+          const pool = await getPool();
           await pool.query(aqlQuery, { from: user._id, to: watchGroup._id });
           return true;
         });
@@ -531,6 +563,9 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
         }
         // update persons joined count
         const updatedGroupPersonCount = await transaction.step(async () => {
+          if (!watchGroupCollection) {
+            await initializeCollection();
+          }
           await watchGroupCollection.update(watchGroup._key, { currentNrOfPersons: watchGroup.currentNrOfPersons - 1 });
           return true;
         });
@@ -557,6 +592,7 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
             FILTER doc._from == @from
             FILTER doc._to == @to
             LIMIT 1 RETURN true) > 0`;
+          const pool = await getPool();
           const cursor = await pool.query(aqlQuery, { from: user._id, to: watchGroup._id });
           return (await cursor.all())[0];
         });
@@ -581,6 +617,7 @@ export async function handleJoinTransaction(watchGroupKey, jwtUsername) {
                 group_name: @group_name
               } INTO join_request
               RETURN NEW._key`;
+            const pool = await getPool();
             const cursor = await pool.query(aqlQuery, {
               from: user._id, to: watchGroup._id, user: user.username,
               about_user: user.about_me, request_date: request_date,

@@ -524,3 +524,15 @@ def save_many_to_database(collection_name, data):
     except Exception as e:
         print(e)
         return []
+
+
+def clear_collection(collection_name):
+    try:
+        db = get_db()
+        collection = db.collection(collection_name)
+        collection.truncate()
+        print(f"Collection '{collection_name}' has been cleared.")
+        return True
+    except Exception as e:
+        print(f"Error clearing collection '{collection_name}': {e}")
+        return False

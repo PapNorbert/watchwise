@@ -1,10 +1,17 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
-const genresCollection = pool.collection("genres");
+let genresCollection;
 
+async function initializeCollection() {
+  const pool = await getPool();
+  genresCollection = pool.collection("genres");
+}
+
+initializeCollection();
 
 export async function findAllGenres() {
   try {
+    const pool = await getPool();
     const cursor = await pool.query(`
       FOR genre IN genres
       SORT genre.name ASC
@@ -22,6 +29,7 @@ export async function findGenres(page, limit) {
     const aqlQuery = `FOR doc IN genres
     LIMIT @offset, @count
     RETURN doc`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
@@ -32,6 +40,9 @@ export async function findGenres(page, limit) {
 
 export async function findGenreByKey(key) {
   try {
+    if (!genresCollection) {
+      await initializeCollection();
+    }
     const cursor = await genresCollection.firstExample({ _key: key });
     return cursor;
   } catch (err) {
@@ -53,6 +64,7 @@ export async function findGenreByHisTypeEdgeFrom(from) {
     FOR doc in genres
       FILTER doc._id == edge._to
       RETURN doc`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { from: from });
     return await cursor.all();
   } catch (err) {
@@ -62,6 +74,9 @@ export async function findGenreByHisTypeEdgeFrom(from) {
 
 export async function getGenreCount() {
   try {
+    if (!genresCollection) {
+      await initializeCollection();
+    }
     const cursor = await genresCollection.count();
     return cursor.count;
   } catch (err) {
@@ -73,6 +88,9 @@ export async function getGenreCount() {
 
 export async function insertGenre(genreDocument) {
   try {
+    if (!genresCollection) {
+      await initializeCollection();
+    }
     const cursor = await genresCollection.save(genreDocument);
     return cursor._key;
   } catch (err) {
@@ -83,6 +101,9 @@ export async function insertGenre(genreDocument) {
 
 export async function updateGenre(key, newGenreAttributes) {
   try {
+    if (!genresCollection) {
+      await initializeCollection();
+    }
     const cursor = await genresCollection.update(key, newGenreAttributes);
     return true;
   } catch (err) {
@@ -99,6 +120,9 @@ export async function updateGenre(key, newGenreAttributes) {
 
 export async function deleteGenre(key) {
   try {
+    if (!genresCollection) {
+      await initializeCollection();
+    }
     const cursor = await genresCollection.remove({ _key: key });
     return true;
   } catch (err) {
@@ -119,6 +143,7 @@ export async function deleteGenreAndEdges(key) {
     FOR edge in his_type
         FILTER edge._to == @to
         REMOVE edge IN his_type`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: key, to: ("genres/" + key) });
     return true;
   } catch (err) {

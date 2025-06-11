@@ -1,4 +1,4 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
 
 
@@ -9,6 +9,7 @@ export async function getJoinedUsersByGroupKey(watchGroupKey) {
         FOR vertex IN INBOUND
           doc._id joined_group
           RETURN vertex.username`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { watchGroupKey: watchGroupKey });
     return (await cursor.all());
   } catch (err) {
@@ -22,6 +23,7 @@ export async function updateJoinedGroup(userId, newJoinedGroupAttributes) {
     const aqlQuery = `FOR edge IN joined_group
     FILTER edge._from == @from
       UPDATE edge._key WITH @newJoinedGroupAttributes in joined_group`;
+    const pool = await getPool();
     await pool.query(aqlQuery, { from: userId, newJoinedGroupAttributes: newJoinedGroupAttributes });
     return true;
   } catch (err) {
@@ -35,6 +37,7 @@ export async function deleteJoinedGroupEdgeByTo(to) {
     const aqlQuery = `FOR edge IN joined_group
     FILTER edge._to == @to
     REMOVE { _key: edge._key } IN joined_group`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { to: to });
     return true;
   } catch (err) {

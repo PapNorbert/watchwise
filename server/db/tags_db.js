@@ -1,4 +1,4 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
 
 export async function findTags(limit) {
@@ -6,6 +6,7 @@ export async function findTags(limit) {
     const aqlQuery = `FOR tag IN tags
       LIMIT @count
       RETURN tag.name`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { count: limit });
     return (await cursor.all());
   } catch (err) {
@@ -20,6 +21,7 @@ export async function findFilteredTags(nameFilter, limit) {
     FILTER CONTAINS(UPPER(tag.name), @nameFilter)
     LIMIT @count
     RETURN tag.name `;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { nameFilter: nameFilter, count: limit });
     return (await cursor.all());
   } catch (err) {

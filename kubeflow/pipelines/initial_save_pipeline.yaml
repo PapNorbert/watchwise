@@ -1,0 +1,802 @@
+# PIPELINE DEFINITION
+# Name: new-show-data-processing-pipeline
+# Description: A pipeline for downloading, creating embeddings, and cleaning up new show data
+components:
+  comp-initialize-collections:
+    executorLabel: exec-initialize-collections
+    inputDefinitions:
+      parameters:
+        db_name:
+          parameterType: STRING
+        password:
+          parameterType: STRING
+        url:
+          parameterType: STRING
+        username:
+          parameterType: STRING
+  comp-save-embeddings:
+    executorLabel: exec-save-embeddings
+    inputDefinitions:
+      parameters:
+        db_name:
+          parameterType: STRING
+        movies_key:
+          parameterType: STRING
+        password:
+          parameterType: STRING
+        series_key:
+          parameterType: STRING
+        url:
+          parameterType: STRING
+        username:
+          parameterType: STRING
+  comp-save-movie-series-and-related-inf:
+    executorLabel: exec-save-movie-series-and-related-inf
+    inputDefinitions:
+      parameters:
+        db_name:
+          parameterType: STRING
+        movies_collected_file_key:
+          parameterType: STRING
+        password:
+          parameterType: STRING
+        ratings_file_key:
+          parameterType: STRING
+        series_collected_file_key:
+          parameterType: STRING
+        url:
+          parameterType: STRING
+        username:
+          parameterType: STRING
+  comp-save-tags:
+    executorLabel: exec-save-tags
+    inputDefinitions:
+      parameters:
+        db_name:
+          parameterType: STRING
+        file_key:
+          parameterType: STRING
+        password:
+          parameterType: STRING
+        url:
+          parameterType: STRING
+        username:
+          parameterType: STRING
+deploymentSpec:
+  executors:
+    exec-initialize-collections:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - initialize_collections
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'python-arango==8.1.0'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef initialize_collections(url: str, db_name: str, username: str,\
+          \ password: str):\n    from arango import ArangoClient\n\n    try:\n   \
+          \     client = ArangoClient(hosts=url, request_timeout=240, verify_override=False)\n\
+          \        db = client.db(db_name, username=username, password=password)\n\
+          \        collections = [\n            'movies', 'series', 'users', 'watch_groups',\n\
+          \            'genres', 'opinion_threads', 'moderator_requests',\n      \
+          \      'watch_group_chats', 'tags', 'announcements', 'embeddings'\n    \
+          \    ]\n        edge_collections = [\n            'joined_group', 'his_group_chat',\
+          \ 'join_request',\n            'follows_thread', 'his_type', 'is_about_show',\n\
+          \            'has_rated', 'has_embedding'\n        ]\n        for collection_name\
+          \ in collections:\n            try:\n                if not db.has_collection(collection_name):\n\
+          \                    db.create_collection(collection_name)\n           \
+          \ except Exception as e:\n                print(f\"Error creating collection\
+          \ {collection_name}: {e}\")\n\n        for edge_collection_name in edge_collections:\n\
+          \            try:\n                if not db.has_collection(edge_collection_name):\n\
+          \                    db.create_collection(edge_collection_name, edge=True)\n\
+          \            except Exception as e:\n                print(f\"Error creating\
+          \ edge collection {edge_collection_name}: {e}\")\n    except Exception as\
+          \ e:\n        print(e)\n\n"
+        image: python:3.9
+    exec-save-embeddings:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - save_embeddings
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'boto3==1.36.16'\
+          \ 'python-arango==8.1.0' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef save_embeddings(url: str, db_name: str, username: str, password:\
+          \ str, movies_key: str, series_key: str):\n    from arango import ArangoClient\n\
+          \    import boto3\n    import csv\n    import ast\n    import uuid\n\n \
+          \   MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\n    ACCESS_KEY\
+          \ = \"minio\"\n    SECRET_KEY = \"minio123\"\n    DATA_BUCKET = \"data\"\
+          \n\n\n    def save_many_to_database_in_batches(collection_name, data, batch_size=1000):\n\
+          \        try:\n            client = ArangoClient(hosts=url, request_timeout=2000,\
+          \ verify_override=False)\n            db = client.db(db_name, username=username,\
+          \ password=password)\n            collection = db.collection(collection_name)\n\
+          \n            # Break the data into smaller batches and insert them\n  \
+          \          for i in range(0, len(data), batch_size):\n                batch\
+          \ = data[i:i+batch_size]\n                result = collection.insert_many(batch,\
+          \ overwrite=True, overwrite_mode='update')\n                print(f'Saved\
+          \ batch of {len(batch)} items to {collection_name}')\n\n            return\
+          \ result\n        except Exception as e:\n            print(f\"Error saving\
+          \ {collection_name}: {e}\")\n            return []\n\n\n    def read_movie_embeddings(file_path):\n\
+          \        with open(file_path, mode='r', encoding='utf-8') as file:\n   \
+          \         csv_reader = csv.reader(file)\n            header = next(csv_reader)\n\
+          \            movies_w_embeddings = []\n            for row in csv_reader:\n\
+          \                row_embedding = ast.literal_eval(row[14]) if row[14] else\
+          \ []\n                movies_w_embeddings.append({\n                   \
+          \ 'movieId': row[0],\n                    'name': row[4],\n            \
+          \        'poster': row[12],\n                    'embedding': row_embedding,\n\
+          \                })\n            return movies_w_embeddings\n\n    def read_serie_embeddings(file_path):\n\
+          \        with open(file_path, mode='r', encoding='utf-8') as file:\n   \
+          \         csv_reader = csv.reader(file)\n            _header = next(csv_reader)\n\
+          \            movies_w_embeddings = []\n            for row in csv_reader:\n\
+          \                row_embedding = ast.literal_eval(row[18]) if row[18] else\
+          \ []\n                movies_w_embeddings.append({\n                   \
+          \ 'series_id': row[0],\n                    'name': row[3],\n          \
+          \          'poster': row[14],\n                    'embedding': row_embedding,\n\
+          \                })\n            return movies_w_embeddings\n\n    def save_embeddings_to_database(movie_embeddings,\
+          \ series_embeddings):\n        try:\n            embeddings = []\n     \
+          \       has_embedding_edges = []\n            for movie_embedding in movie_embeddings:\n\
+          \                embedding_key = generate_key()\n                movie_key\
+          \ = movie_embedding['movieId']\n                embeddings.append({\n  \
+          \                  '_key': embedding_key,\n                    'show_key':\
+          \ movie_key,\n                    'show_type': 'movie',\n              \
+          \      'show_name': movie_embedding['name'],\n                    **({'img_name':\
+          \ movie_embedding['poster']} if\n                    'poster' in movie_embedding\
+          \ and movie_embedding['poster'] != 'N/A' else {}),\n                   \
+          \ 'embedding_vector': movie_embedding['embedding']\n                })\n\
+          \                has_embedding_edges.append({\n                    '_key':\
+          \ embedding_key,\n                    '_from': f\"movies/{movie_key}\",\n\
+          \                    '_to': f\"embeddings/{embedding_key}\"\n          \
+          \      })\n            for serie_embeddings in series_embeddings:\n    \
+          \            embedding_key = generate_key()\n                serie_key =\
+          \ serie_embeddings['series_id']\n                embeddings.append({\n \
+          \                   '_key': embedding_key,\n                    'show_key':\
+          \ serie_key,\n                    'show_type': 'serie',\n              \
+          \      'show_name': serie_embeddings['name'],\n                    **({'img_name':\
+          \ serie_embeddings['poster']} if\n                    'poster' in serie_embeddings\
+          \ and serie_embeddings['poster'] != 'N/A' else {}),\n                  \
+          \  'embedding_vector': serie_embeddings['embedding']\n                })\n\
+          \                has_embedding_edges.append({\n                    '_key':\
+          \ embedding_key,\n                    '_from': f\"series/{serie_key}\",\n\
+          \                    '_to': f\"embeddings/{embedding_key}\"\n          \
+          \      })\n\n            print('Saving', len(embeddings), 'embeddings')\n\
+          \            save_many_to_database_in_batches('embeddings', embeddings)\n\
+          \            print('Saving', len(has_embedding_edges), 'has embedding edges')\n\
+          \            save_many_to_database_in_batches('has_embedding', has_embedding_edges)\n\
+          \        except Exception as e:\n            print(e)\n\n    def generate_key()\
+          \ -> str:\n        try:\n            unique_id = uuid.uuid4()\n        \
+          \    numeric_key = unique_id.int\n            return str(numeric_key)\n\
+          \        except Exception as e:\n            print(e)\n\n\n    s3_client\
+          \ = boto3.client(\n        \"s3\",\n        endpoint_url=MINIO_ENDPOINT,\n\
+          \        aws_access_key_id=ACCESS_KEY,\n        aws_secret_access_key=SECRET_KEY\n\
+          \    )\n    s3_client.download_file(DATA_BUCKET, movies_key, '/tmp/series_emb.csv')\n\
+          \    s3_client.download_file(DATA_BUCKET, series_key, '/tmp/movies_emb.csv')\n\
+          \n    movie_embeddings = read_movie_embeddings('/tmp/series_emb.csv')\n\
+          \    serie_embeddings = read_serie_embeddings('/tmp/movies_emb.csv')\n \
+          \   save_embeddings_to_database(movie_embeddings, serie_embeddings)\n\n"
+        image: python:3.9
+    exec-save-movie-series-and-related-inf:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - save_movie_series_and_related_inf
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'boto3==1.36.16'\
+          \ 'python-arango==8.1.0' 'faker==28.4.1' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef save_movie_series_and_related_inf(url: str, db_name: str, username:\
+          \ str, password: str, ratings_file_key: str, movies_collected_file_key:\
+          \ str, series_collected_file_key: str):\n    from arango import ArangoClient\n\
+          \    import boto3\n    import os\n    import faker\n    import hashlib\n\
+          \    import csv\n    import ast\n    from datetime import datetime, timezone,\
+          \ timedelta\n    import re\n    import random\n    import uuid\n\n    fake\
+          \ = faker.Faker()\n    user_role_code = 15489\n\n\n    def read_ratings_and_users(file_path):\n\
+          \        with open(file_path, mode='r', encoding='utf-8') as file:\n   \
+          \         csv_reader = csv.reader(file)\n            header = next(csv_reader)\n\
+          \            ratings = []\n            users = set()\n            for row\
+          \ in csv_reader:\n                timestamp = datetime.fromtimestamp(int(row[3]),\
+          \ tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'\n       \
+          \         ratings.append({\n                    'userId': row[0],\n    \
+          \                'movieId': row[1],\n                    'rating': float(row[2]),\n\
+          \                    'timestamp': timestamp\n                })\n      \
+          \          users.add(row[0])\n            return ratings, users\n\n    def\
+          \ generate_users(users):\n        users_list = []\n        for user in users:\n\
+          \            current_user = generate_user(user)\n            users_list.append(current_user)\n\
+          \        return users_list\n\n    def generate_user(user):\n        first_name\
+          \ = fake.first_name()\n        last_name = fake.last_name()\n        return\
+          \ {\n            '_key': user,\n            'first_name': first_name,\n\
+          \            'last_name': last_name,\n            'username': first_name.lower()\
+          \ + last_name.lower(),\n            'role': user_role_code,\n          \
+          \  'about_me': fake.text(80),\n            'create_date': fake.date_time_this_century().isoformat(),\n\
+          \            'password': hash_password()\n        }\n\n    def hash_password():\n\
+          \        random_bytes = os.urandom(16)\n        return hashlib.sha256(random_bytes).hexdigest()\n\
+          \n    def save_users_to_database(users):\n        try:\n            print('Saving',\
+          \ len(users), 'users')\n            save_many_to_database('users', users)\n\
+          \        except Exception as e:\n            print(e)\n\n    def save_many_to_database(collection_name,\
+          \ data):\n        try:\n            client = ArangoClient(hosts=url, request_timeout=240,\
+          \ verify_override=False)\n            db = client.db(db_name, username=username,\
+          \ password=password)\n            collection = db.collection(collection_name)\n\
+          \            result = collection.insert_many(data, overwrite=True, overwrite_mode='update')\n\
+          \            return result\n        except Exception as e:\n           \
+          \ print(e)\n            return []\n\n    def read_collected_movies(file_path):\n\
+          \        with open(file_path, mode='r', encoding='utf-8') as file:\n   \
+          \         csv_reader = csv.reader(file)\n            header = next(csv_reader)\n\
+          \            movies_collected = []\n            genres_collected = set()\n\
+          \            for row in csv_reader:\n                # arrays\n        \
+          \        row_genres = ast.literal_eval(row[2]) if row[2] else []\n     \
+          \           row_ratings = ast.literal_eval(row[13]) if row[13] else []\n\
+          \                row_directors = row[5].split(', ') if row[5] else []\n\
+          \                row_writers = row[6].split(', ') if row[6] else []\n  \
+          \              row_actors = row[7].split(', ') if row[7] else []\n     \
+          \           row_languages = row[9].split(', ') if row[9] else []\n\n   \
+          \             movies_collected.append({\n                    'movieId':\
+          \ row[0],\n                    'title': row[1],\n                    'genres':\
+          \ row_genres,\n                    'imdb_link': row[3],\n              \
+          \      'name': row[4],\n                    'directors': row_directors,\n\
+          \                    'writers': row_writers,\n                    'actors':\
+          \ row_actors,\n                    'plot': row[8],\n                   \
+          \ 'languages': row_languages,\n                    'country_of_origin':\
+          \ row[10],\n                    'awards': row[11],\n                   \
+          \ 'poster': row[12],\n                    'ratings': row_ratings,\n    \
+          \            })\n                genres_collected.update(row_genres) \n\
+          \            return movies_collected, genres_collected       \n\n    def\
+          \ read_collected_series(file_path):\n        with open(file_path, mode='r',\
+          \ encoding='utf-8') as file:\n            csv_reader = csv.reader(file)\n\
+          \            header = next(csv_reader)\n            series_collected = []\n\
+          \            genres_collected = set()\n            for row in csv_reader:\n\
+          \                # arrays\n                row_genres = [genre.strip() for\
+          \ genre in row[6].split(', ') if genre.strip() and genre.strip() != 'N/A']\
+          \ if row[6] else []\n                ratings_row = ast.literal_eval(row[15])\
+          \ if row[15] else []\n                vote_average = (float(row[1]) / 2)\
+          \ if row[1] else 0.0\n                vote_count = int(row[2]) if row[2]\
+          \ else 0\n                directors_row = [director.strip() for director\
+          \ in row[7].split(', ') if director.strip() and director.strip() != 'N/A']\
+          \ if row[7] else []\n                writers_row = [writer.strip() for writer\
+          \ in row[8].split(', ') if writer.strip() and writer.strip() != 'N/A'] if\
+          \ row[8] else []\n                actors_row = [actor.strip() for actor\
+          \ in row[9].split(', ') if actor.strip() and actor.strip() != 'N/A'] if\
+          \ row[9] else []\n                row_languages = [language.strip() for\
+          \ language in row[11].split(', ') if language.strip() and language.strip()\
+          \ != 'N/A'] if row[11] else []\n\n                series_collected.append({\n\
+          \                    'series_id': row[0],\n                    'vote_average':\
+          \ vote_average,\n                    'vote_count': vote_count,\n       \
+          \             'name': row[3],\n                    'year': row[4],\n   \
+          \                 'release_date': row[5],\n                    'genres':\
+          \ row_genres,\n                    'directors': directors_row,\n       \
+          \             'writers': writers_row,\n                    'actors': actors_row,\n\
+          \                    'plot': row[10],\n                    'languages':\
+          \ row_languages,\n                    'country_of_origin': row[12],\n  \
+          \                  'awards': row[13],\n                    'poster': row[14],\n\
+          \                    'ratings': ratings_row,\n                    'imdb_link':\
+          \ row[16],\n                    'total_seasons': row[17]\n             \
+          \   })\n                genres_collected.update(row_genres) \n         \
+          \   return series_collected, genres_collected\n\n    def read_ratings_and_users(file_path):\n\
+          \        with open(file_path, mode='r', encoding='utf-8') as file:\n   \
+          \         csv_reader = csv.reader(file)\n            header = next(csv_reader)\n\
+          \            ratings = []\n            users = set()\n            for row\
+          \ in csv_reader:\n                timestamp = datetime.fromtimestamp(int(row[3]),\
+          \ tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'\n       \
+          \         ratings.append({\n                    'userId': row[0],\n    \
+          \                'movieId': row[1],\n                    'rating': float(row[2]),\n\
+          \                    'timestamp': timestamp\n                })\n      \
+          \          users.add(row[0])\n            return ratings, users\n\n    def\
+          \ save_genres_to_database(genres):\n        try:\n            genres_list\
+          \ = []\n            genre_ids = {}\n            for genre in genres:\n \
+          \               genre_key = string_to_5_digit_number(genre)\n          \
+          \      genres_list.append({\n                    '_key': genre_key,\n  \
+          \                  'name': genre\n                })\n                genre_ids.update({genre:\
+          \ f\"genres/{genre_key}\"})\n            print('Saving', len(genres_list),\
+          \ 'genres')\n            save_many_to_database('genres', genres_list)\n\
+          \            return genre_ids\n        except Exception as e:\n        \
+          \    print(e)\n\n    def string_to_5_digit_number(s: str) -> str:\n    \
+          \    try:\n            hash_object = hashlib.md5(s.encode())\n         \
+          \   hash_hex = hash_object.hexdigest()\n            unique_number = int(hash_hex[:8],\
+          \ 16) % 100000\n            return str(unique_number)\n        except Exception\
+          \ as e:\n            print(e)\n\n    def save_movies_and_ratings_to_database(movies,\
+          \ genre_ids, ratings):\n        try:\n            movies_for_groups = []\n\
+          \            movie_list = []\n            genre_edges = []\n           \
+          \ rating_edges, movie_rating_values = create_rating_edges(ratings)\n   \
+          \         for movie in movies:\n                movie_id = movie['movieId']\n\
+          \                current_movie = {'_key': movie_id}\n                set_movie_values(current_movie,\
+          \ movie)\n                # set rating values\n                if movie_id\
+          \ in movie_rating_values:\n                    sum_of_ratings = movie_rating_values[movie_id]['sum_of_ratings']\n\
+          \                    total_ratings = movie_rating_values[movie_id]['total_ratings']\n\
+          \                    average_rating = sum_of_ratings / total_ratings if\
+          \ total_ratings > 0 else 0\n                    current_movie.update({\n\
+          \                        'sum_of_ratings': sum_of_ratings,\n           \
+          \             'total_ratings': total_ratings,\n                        'average_rating':\
+          \ round(average_rating, 2)\n                    })\n                   \
+          \ # add movie to create an opinion thread/watchgroup for it\n          \
+          \          if total_ratings > 30:\n                        movies_for_groups.append(current_movie)\n\
+          \                else:\n                    current_movie.update({\n   \
+          \                     'sum_of_ratings': 0,\n                        'total_ratings':\
+          \ 0,\n                        'average_rating': 0\n                    })\n\
+          \                # create genre edges\n                if movie['genres']:\n\
+          \                    for genre in movie['genres']:\n                   \
+          \     genre_key = genre_ids[genre].split('/')[1]\n                     \
+          \   genre_edges.append({\n                            '_key': f\"33{movie_id}{genre_key}{genre_key}{movie_id}\"\
+          ,\n                            '_from': f\"movies/{movie_id}\",\n      \
+          \                      '_to': genre_ids[genre]\n                       \
+          \ })\n                movie_list.append(current_movie)\n\n            #\
+          \ save movies to db\n            print('Saving', len(movie_list), 'movies')\n\
+          \            save_many_to_database('movies', movie_list)\n            #\
+          \ save the genres of movies\n            print('Saving', len(genre_edges),\
+          \ 'his_type edges - genres of movies')\n            save_many_to_database('his_type',\
+          \ genre_edges)\n            # save ratings of movies\n            print('Saving',\
+          \ len(rating_edges), 'rating edges')\n            save_many_to_database('has_rated',\
+          \ rating_edges)\n\n            return movies_for_groups\n        except\
+          \ Exception as e:\n            print(e)\n\n    def extract_year_from_title(title):\n\
+          \        match = re.search(r'\\(([^()]+)\\)\\s*$', title)\n        if match:\n\
+          \            return match.group(1)\n        return None\n\n    def set_movie_values(current_movie,\
+          \ movie):\n        if movie['name'] and movie['name'] != 'N/A':\n      \
+          \      current_movie.update({'name': movie['name']})\n        if (movie['directors']\
+          \ and movie['directors'] != 'N/A' and movie['directors'] != ['N/A']\n  \
+          \              and movie['directors'] != []):\n            current_movie.update({'directors':\
+          \ movie['directors']})\n        if (movie['writers'] and movie['writers']\
+          \ != 'N/A' and movie['writers'] != ['N/A']\n                and movie['writers']\
+          \ != []):\n            current_movie.update({'writers': movie['writers']})\n\
+          \        if (movie['actors'] and movie['actors'] != 'N/A' and movie['actors']\
+          \ != ['N/A']\n                and movie['actors'] != []):\n            current_movie.update({'actors':\
+          \ movie['actors']})\n        movie_year = extract_year_from_title(movie['title'])\n\
+          \        if movie_year:\n            current_movie.update({'year': movie_year})\n\
+          \        if (movie['plot'] and movie['plot'] != 'N/A' and movie['plot']\
+          \ != ['N/A']\n                and movie['plot'] != []):\n            current_movie.update({'storyline':\
+          \ movie['plot']})\n        if (movie['country_of_origin'] and movie['country_of_origin']\
+          \ != 'N/A' and\n                movie['country_of_origin'] != ['N/A'] and\
+          \ movie['country_of_origin'] != []):\n            current_movie.update({'country_of_origin':\
+          \ movie['country_of_origin']})\n        if (movie['languages'] and movie['languages']\
+          \ != 'N/A' and movie['languages'] != ['N/A']\n                and movie['languages']\
+          \ != []):\n            current_movie.update({'languages': movie['languages']})\n\
+          \        if (movie['awards'] and movie['awards'] != 'N/A' and movie['awards']\
+          \ != ['N/A']\n                and movie['awards'] != []):\n            current_movie.update({'awards':\
+          \ movie['awards']})\n        if (movie['poster'] and movie['poster'] !=\
+          \ 'N/A' and movie['poster'] != ['N/A']\n                and movie['poster']\
+          \ != []):\n            current_movie.update({'img_name': movie['poster']})\n\
+          \        if movie['imdb_link'] and movie['imdb_link'] != 'N/A':\n      \
+          \      current_movie.update({'imdb_link': movie['imdb_link']})\n\n    def\
+          \ create_rating_edges(ratings):\n        rating_edges = []\n        movie_rating_values\
+          \ = {}\n        for rating in ratings:\n            movie_id = rating['movieId']\n\
+          \            rating_edges.append({\n                '_key': f\"32{rating['userId']}{rating['movieId']}{rating['movieId']}{rating['userId']}\"\
+          ,\n                '_from': f\"users/{rating['userId']}\",\n           \
+          \     '_to': f\"movies/{movie_id}\",\n                'rating': rating['rating'],\n\
+          \                'date': rating['timestamp']\n            })\n         \
+          \   if movie_id not in movie_rating_values:\n                movie_rating_values[movie_id]\
+          \ = {\n                    'sum_of_ratings': 0,\n                    'total_ratings':\
+          \ 0\n                }\n            movie_rating_values[movie_id]['sum_of_ratings']\
+          \ += rating['rating']\n            movie_rating_values[movie_id]['total_ratings']\
+          \ += 1\n\n        return rating_edges, movie_rating_values\n\n    def save_series_and_ratings_to_database(series,\
+          \ genre_ids, users):\n        try:\n            series_for_groups = []\n\
+          \            series_list = []\n            genre_edges = []\n          \
+          \  rating_edges = []\n            for serie in series:\n               \
+          \ serie_id = serie['series_id']\n                current_serie = {'_key':\
+          \ serie_id}\n                set_series_values(current_serie, serie)\n \
+          \               # create genre edges\n                if serie['genres']:\n\
+          \                    for genre in serie['genres']:\n                   \
+          \     genre_key = genre_ids[genre].split('/')[1]\n                     \
+          \   genre_edges.append({\n                            '_key': f\"88{serie_id}{genre_key}{genre_key}{serie_id}\"\
+          ,\n                            '_from': f\"series/{serie_id}\",\n      \
+          \                      '_to': genre_ids[genre]\n                       \
+          \ })\n                # create ratings\n                vote_count = int(serie['vote_count']\
+          \ * 0.15)\n                current_serie.update({\n                    'total_ratings':\
+          \ vote_count,\n                    'average_rating': serie['vote_average'],\n\
+          \                    'sum_of_ratings': serie['vote_average'] * vote_count,\n\
+          \                })\n                # add serie to create an opinion thread/watchgroup\
+          \ for it\n                if vote_count > 100:\n                    series_for_groups.append(current_serie)\n\
+          \                if vote_count > 100:\n                    vote_count =\
+          \ vote_count % 100 + 93\n                rating_users = random.choices(users,\
+          \ k=vote_count)\n                for user_id in rating_users:\n        \
+          \            rating_edges.append({\n                        '_key': f\"\
+          32{user_id}{serie_id}{serie_id}{user_id}\",\n                        '_from':\
+          \ f\"users/{user_id}\",\n                        '_to': f\"series/{serie_id}\"\
+          ,\n                        'rating': serie['vote_average'],\n          \
+          \              'date': generate_random_date()\n                    })\n\
+          \                series_list.append(current_serie)\n\n            # save\
+          \ series to db\n            print('Saving', len(series_list), 'series')\n\
+          \            save_many_to_database('series', series_list)\n            #\
+          \ save the genres of series\n            print('Saving', len(genre_edges),\
+          \ 'his_type edges - genres of series')\n            save_many_to_database('his_type',\
+          \ genre_edges)\n            # save ratings of series\n            print('Saving',\
+          \ len(rating_edges), 'rating edges')\n            save_many_to_database('has_rated',\
+          \ rating_edges)\n\n            return series_for_groups\n        except\
+          \ Exception as e:\n            print(e)\n\n    def generate_random_date(start_year=2010):\n\
+          \        start_date = datetime(start_year, 1, 1)\n        end_date = datetime.now()\n\
+          \        random_seconds = random.randint(0, int((end_date - start_date).total_seconds()))\n\
+          \        random_date = start_date + timedelta(seconds=random_seconds)\n\
+          \        return random_date.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'\n\
+          \n    def set_series_values(current_serie, serie):\n        if serie['name']\
+          \ and serie['name'] != 'N/A':\n            current_serie.update({'name':\
+          \ serie['name']})\n        if (serie['directors'] and serie['directors']\
+          \ != 'N/A' and serie['directors'] != ['N/A']\n                and serie['directors']\
+          \ != []):\n            current_serie.update({'directors': serie['directors']})\n\
+          \        if (serie['writers'] and serie['writers'] != 'N/A' and serie['writers']\
+          \ != ['N/A']\n                and serie['writers'] != []):\n           \
+          \ current_serie.update({'writers': serie['writers']})\n        if (serie['actors']\
+          \ and serie['actors'] != 'N/A' and serie['actors'] != ['N/A']\n        \
+          \        and serie['actors'] != []):\n            current_serie.update({'actors':\
+          \ serie['actors']})\n        if serie['release_date'] and serie['release_date']\
+          \ != 'N/A':\n            current_serie.update({'original_release': serie['release_date']})\n\
+          \        if serie['year'] and serie['year'] != 'N/A':\n            current_serie.update({'year':\
+          \ serie['year']})\n        if serie['total_seasons'] and serie['total_seasons']\
+          \ != 'N/A':\n            current_serie.update({'nr_seasons': serie['total_seasons']})\n\
+          \        if (serie['plot'] and serie['plot'] != 'N/A' and serie['plot']\
+          \ != ['N/A']\n                and serie['plot'] != []):\n            current_serie.update({'storyline':\
+          \ serie['plot']})\n        if (serie['country_of_origin'] and serie['country_of_origin']\
+          \ != 'N/A' and\n                serie['country_of_origin'] != ['N/A'] and\
+          \ serie['country_of_origin'] != []):\n            current_serie.update({'country_of_origin':\
+          \ serie['country_of_origin']})\n        if (serie['languages'] and serie['languages']\
+          \ != 'N/A' and serie['languages'] != ['N/A']\n                and serie['languages']\
+          \ != []):\n            current_serie.update({'languages': serie['languages']})\n\
+          \        if (serie['awards'] and serie['awards'] != 'N/A' and serie['awards']\
+          \ != ['N/A']\n                and serie['awards'] != []):\n            current_serie.update({'awards':\
+          \ serie['awards']})\n        if (serie['poster'] and serie['poster'] !=\
+          \ 'N/A' and serie['poster'] != ['N/A']\n                and serie['poster']\
+          \ != []):\n            current_serie.update({'img_name': serie['poster']})\n\
+          \        if serie['imdb_link'] and serie['imdb_link'] != 'N/A':\n      \
+          \      current_serie.update({'imdb_link': serie['imdb_link']})\n\n    def\
+          \ save_op_threads_and_groups(movies_for_groups, series_for_groups, users):\n\
+          \        current = None\n        try:\n            op_threads = []\n   \
+          \         watch_groups = []\n            watch_group_chats = []\n      \
+          \      his_group_chats = []\n            is_about_show_edges = []\n    \
+          \        for movie in movies_for_groups:\n                current = movie\n\
+          \                movie_key = movie['_key']\n                thread_key =\
+          \ generate_key()\n                group_key = generate_key()\n         \
+          \       creator_user = random.choice(users)\n                creator_user2\
+          \ = random.choice(users)\n\n                # create opinion threads\n \
+          \               op_threads.append({\n                    '_key': thread_key,\n\
+          \                    'title': f\"{movie['name']} opinion thread\",\n   \
+          \                 'creator': creator_user['username'],\n               \
+          \     'show': movie['name'],\n                    'description': f\"Opinion\
+          \ thread about {movie['name']}\",\n                    'creation_date':\
+          \ generate_random_date(2023),\n                    'show_id': movie_key,\n\
+          \                    'show_type': 'movie',\n                    'tags':\
+          \ ['movie', 'spoilers', 'opinions'],\n                    'comments': []\n\
+          \                })\n                # edge for op thread\n            \
+          \    is_about_show_edges.append({\n                    '_key': f\"{movie_key}73{thread_key}\"\
+          ,\n                    '_from': f\"opinion_threads/{thread_key}\",\n   \
+          \                 '_to': f\"movies/{movie_key}\"\n                })\n\n\
+          \                # create watch group\n                create_date, watch_date\
+          \ = generate_random_2_dates(2024)\n                person_limit = random.randint(4,\
+          \ 16)\n                current_nr_persons = random.randint(1, person_limit)\n\
+          \                watch_groups.append({\n                    '_key': group_key,\n\
+          \                    'title': f\"{movie['name']} watch group\",\n      \
+          \              'creator': creator_user2['username'],\n                 \
+          \   'show': movie['name'],\n                    'description': f\"Watch\
+          \ group for {movie['name']}\",\n                    'watch_date': watch_date,\n\
+          \                    'location': [46.768977, 23.589748],\n             \
+          \       'creation_date': create_date,\n                    'show_id': movie_key,\n\
+          \                    'show_type': 'movie',\n                    'comments':\
+          \ [],\n                    'locationName': 'Parcare de biciclete Pia\u021B\
+          a Unirii, Pia\u021Ba Unirii, Center, Cluj-Napoca, '\n                  \
+          \                  'Cluj Metropolitan Area, Kolozs, 400113, Romania',\n\
+          \                    'personLimit': person_limit,\n                    'currentNrOfPersons':\
+          \ current_nr_persons\n                })\n                # create watch\
+          \ group chat\n                wg_chat_key = f\"{movie_key}9311{group_key}\"\
+          \n                watch_group_chats.append({\n                    '_key':\
+          \ wg_chat_key,\n                    'chat_comments': []\n              \
+          \  })\n                # his_group_chat edge for watchgroup\n          \
+          \      his_group_chats.append({\n                    '_key': f\"{movie_key}9312{group_key}\"\
+          ,\n                    '_from': f\"watch_groups/{group_key}\",\n       \
+          \             '_to': f\"watch_group_chats/{wg_chat_key}\"\n            \
+          \    })\n                # is_about_show_edges edge for watchgroup\n   \
+          \             is_about_show_edges.append({\n                    '_key':\
+          \ f\"{movie_key}93{group_key}\",\n                    '_from': f\"watch_groups/{group_key}\"\
+          ,\n                    '_to': f\"movies/{movie_key}\"\n                })\n\
+          \n            for serie in series_for_groups:\n                current =\
+          \ serie\n                serie_key = serie['_key']\n                thread_key\
+          \ = generate_key()\n                group_key = generate_key()\n       \
+          \         creator_user = random.choice(users)\n                creator_user2\
+          \ = random.choice(users)\n\n                # create opinion threads\n \
+          \               op_threads.append({\n                    '_key': thread_key,\n\
+          \                    'title': f\"{serie['name']} opinion thread\",\n   \
+          \                 'creator': creator_user['username'],\n               \
+          \     'show': serie['name'],\n                    'description': f\"Opinion\
+          \ thread about {serie['name']}\",\n                    'creation_date':\
+          \ generate_random_date(2023),\n                    'show_id': serie_key,\n\
+          \                    'show_type': 'serie',\n                    'tags':\
+          \ ['serie', 'spoilers', 'opinions'],\n                    'comments': []\n\
+          \                })\n                is_about_show_edges.append({\n    \
+          \                '_key': f\"{serie_key}75{thread_key}\",\n             \
+          \       '_from': f\"opinion_threads/{thread_key}\",\n                  \
+          \  '_to': f\"series/{serie_key}\"\n                })\n\n              \
+          \  # create watch group\n                create_date, watch_date = generate_random_2_dates(2024)\n\
+          \                person_limit = random.randint(4, 16)\n                current_nr_persons\
+          \ = random.randint(1, person_limit)\n                watch_groups.append({\n\
+          \                    '_key': group_key,\n                    'title': f\"\
+          {serie['name']} watch group\",\n                    'creator': creator_user2['username'],\n\
+          \                    'show': serie['name'],\n                    'description':\
+          \ f\"Watch group for {serie['name']}\",\n                    'watch_date':\
+          \ watch_date,\n                    'location': [46.768977, 23.589748],\n\
+          \                    'creation_date': create_date,\n                   \
+          \ 'show_id': serie_key,\n                    'show_type': 'serie',\n   \
+          \                 'comments': [],\n                    'locationName': 'Parcare\
+          \ de biciclete Pia\u021Ba Unirii, Pia\u021Ba Unirii, Center, Cluj-Napoca,\
+          \ '\n                                    'Cluj Metropolitan Area, Kolozs,\
+          \ 400113, Romania',\n                    'personLimit': person_limit,\n\
+          \                    'currentNrOfPersons': current_nr_persons\n        \
+          \        })\n                # create watch group chat\n               \
+          \ wg_chat_key = f\"{serie_key}9321{group_key}\"\n                watch_group_chats.append({\n\
+          \                    '_key': wg_chat_key,\n                    'chat_comments':\
+          \ []\n                })\n                # his_group_chat edge for watchgroup\n\
+          \                his_group_chats.append({\n                    '_key': f\"\
+          {serie_key}9322{group_key}\",\n                    '_from': f\"watch_groups/{group_key}\"\
+          ,\n                    '_to': f\"watch_group_chats/{wg_chat_key}\"\n   \
+          \             })\n                # is_about_show_edges edge for watchgroup\n\
+          \                is_about_show_edges.append({\n                    '_key':\
+          \ f\"{serie_key}95{group_key}\",\n                    '_from': f\"watch_groups/{group_key}\"\
+          ,\n                    '_to': f\"series/{serie_key}\"\n                })\n\
+          \n            print('Saving', len(op_threads), 'opinion threads')\n    \
+          \        save_many_to_database('opinion_threads', op_threads)\n        \
+          \    print('Saving', len(is_about_show_edges), 'is_about_show edges - threads\
+          \ and groups')\n            save_many_to_database('is_about_show', is_about_show_edges)\n\
+          \            print('Saving', len(watch_groups), 'watch groups')\n      \
+          \      save_many_to_database('watch_groups', watch_groups)\n           \
+          \ print('Saving', len(watch_group_chats), 'watch group chats')\n       \
+          \     save_many_to_database('watch_group_chats', watch_group_chats)\n  \
+          \          print('Saving', len(his_group_chats), 'his_group_chats edges\
+          \ - threads and groups')\n            save_many_to_database('his_group_chat',\
+          \ his_group_chats)\n\n        except Exception as e:\n            print(current)\n\
+          \            print(e)\n\n    def generate_random_2_dates(start_year=2010):\n\
+          \        start_date = datetime(start_year, 1, 1)\n        end_date = datetime.now()\n\
+          \        random_seconds = random.randint(0, int((end_date - start_date).total_seconds()))\n\
+          \        first_date = start_date + timedelta(seconds=random_seconds)\n\n\
+          \        min_distance_seconds = 30 * 24 * 60 * 60  # 30 days\n        max_distance_seconds\
+          \ = 365 * 24 * 60 * 60  # 1 year\n\n        if max_distance_seconds <= min_distance_seconds:\n\
+          \            # if no valid time span, just add 30 days to the first date\n\
+          \            second_date = first_date + timedelta(seconds=min_distance_seconds)\n\
+          \        else:\n            random_additional_seconds = random.randint(min_distance_seconds,\
+          \ max_distance_seconds)\n            second_date = first_date + timedelta(seconds=random_additional_seconds)\n\
+          \n        first_date_str = first_date.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]\
+          \ + 'Z'\n        second_date_str = second_date.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]\
+          \ + 'Z'\n        return first_date_str, second_date_str\n\n    def generate_key()\
+          \ -> str:\n        try:\n            unique_id = uuid.uuid4()\n        \
+          \    numeric_key = unique_id.int\n            return str(numeric_key)\n\
+          \        except Exception as e:\n            print(e)\n\n\n    MINIO_ENDPOINT\
+          \ = \"http://minio-service.kubeflow:9000\"\n    ACCESS_KEY = \"minio\"\n\
+          \    SECRET_KEY = \"minio123\"\n    DATA_BUCKET = \"data\"\n\n    s3_client\
+          \ = boto3.client(\n        \"s3\",\n        endpoint_url=MINIO_ENDPOINT,\n\
+          \        aws_access_key_id=ACCESS_KEY,\n        aws_secret_access_key=SECRET_KEY\n\
+          \    )\n    s3_client.download_file(DATA_BUCKET, ratings_file_key, '/tmp/movie_ratings.csv')\n\
+          \    s3_client.download_file(DATA_BUCKET, movies_collected_file_key, '/tmp/movies_collected.csv')\n\
+          \    s3_client.download_file(DATA_BUCKET, series_collected_file_key, '/tmp/series_collected.csv')\n\
+          \n    movies_collected, genres_collected_movies_set = read_collected_movies('/tmp/movies_collected.csv')\n\
+          \    ratings, users = read_ratings_and_users('/tmp/movie_ratings.csv')\n\
+          \    user_ids_list = list(users)\n    series_collected, genres_collected_series_set\
+          \ = read_collected_series('/tmp/series_collected.csv')\n    genres_total\
+          \ = genres_collected_movies_set.union(genres_collected_series_set)\n   \
+          \ users_to_save = generate_users(users)\n\n    save_users_to_database(users_to_save)\n\
+          \    genre_ids = save_genres_to_database(genres_total)\n    movies_for_groups\
+          \ = save_movies_and_ratings_to_database(movies_collected, genre_ids, ratings)\n\
+          \    series_for_groups = save_series_and_ratings_to_database(series_collected,\
+          \ genre_ids, user_ids_list)\n    save_op_threads_and_groups(movies_for_groups,\
+          \ series_for_groups, users_to_save)\n\n"
+        image: python:3.9
+    exec-save-tags:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - save_tags
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.11.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'boto3==1.36.16'\
+          \ 'python-arango==8.1.0' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef save_tags(url: str, db_name: str, username: str, password: str,\
+          \ file_key: str):\n    from arango import ArangoClient\n    import boto3\n\
+          \    import csv\n    import hashlib\n\n    MINIO_ENDPOINT = \"http://minio-service.kubeflow:9000\"\
+          \n    ACCESS_KEY = \"minio\"\n    SECRET_KEY = \"minio123\"\n    DATA_BUCKET\
+          \ = \"data\"\n\n    def read_tags(file_path):\n        with open(file_path,\
+          \ mode='r', encoding='utf-8') as file:\n            csv_reader = csv.reader(file)\n\
+          \            header = next(csv_reader)\n            tags = set()\n     \
+          \       for row in csv_reader:\n                tags.add(row[2])\n     \
+          \       tags.add('spoilers')\n            tags.add('no spoilers')\n    \
+          \        tags.add('movie')\n            tags.add('serie')\n            tags.add('opinions')\n\
+          \            return tags\n\n    def save_tags_to_database(tags):\n     \
+          \   try:\n            tags_list = []\n            for tag in tags:\n   \
+          \             tags_list.append({\n                    '_key': string_to_5_digit_number(tag),\n\
+          \                    'name': tag\n                })\n            print('Saving',\
+          \ len(tags_list), 'tags')\n            save_many_to_database('tags', tags_list)\n\
+          \        except Exception as e:\n            print(e)\n\n    def save_many_to_database(collection_name,\
+          \ data):\n        try:\n            client = ArangoClient(hosts=url, request_timeout=240,\
+          \ verify_override=False)\n            db = client.db(db_name, username=username,\
+          \ password=password)\n            collection = db.collection(collection_name)\n\
+          \            result = collection.insert_many(data, overwrite=True, overwrite_mode='update')\n\
+          \            return result\n        except Exception as e:\n           \
+          \ print(e)\n            return []\n\n    def string_to_5_digit_number(s:\
+          \ str) -> str:\n        try:\n            hash_object = hashlib.md5(s.encode())\n\
+          \            hash_hex = hash_object.hexdigest()\n            unique_number\
+          \ = int(hash_hex[:8], 16) % 100000\n            return str(unique_number)\n\
+          \        except Exception as e:\n            print(e)\n\n\n    try:\n  \
+          \      s3_client = boto3.client(\n            \"s3\",\n            endpoint_url=MINIO_ENDPOINT,\n\
+          \            aws_access_key_id=ACCESS_KEY,\n            aws_secret_access_key=SECRET_KEY\n\
+          \        )\n        s3_client.download_file(DATA_BUCKET, file_key, '/tmp/movie_tags.csv')\n\
+          \        tags = read_tags('/tmp/movie_tags.csv')\n        save_tags_to_database(tags)\n\
+          \n    except Exception as e:\n        print(e)\n\n"
+        image: python:3.9
+pipelineInfo:
+  description: A pipeline for downloading, creating embeddings, and cleaning up new
+    show data
+  name: new-show-data-processing-pipeline
+root:
+  dag:
+    tasks:
+      initialize-collections:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-initialize-collections
+        inputs:
+          parameters:
+            db_name:
+              runtimeValue:
+                constant: watchwiseRecommend
+            password:
+              runtimeValue:
+                constant: ''
+            url:
+              runtimeValue:
+                constant: https://arangodb.default.svc.cluster.local:8529
+            username:
+              runtimeValue:
+                constant: root
+        taskInfo:
+          name: initialize-collections
+      save-embeddings:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-save-embeddings
+        dependentTasks:
+        - save-movie-series-and-related-inf
+        inputs:
+          parameters:
+            db_name:
+              runtimeValue:
+                constant: watchwiseRecommend
+            movies_key:
+              runtimeValue:
+                constant: embeddings/initial/movies_w_embedding_st_ext_20_epoch_npgda_data.csv
+            password:
+              runtimeValue:
+                constant: ''
+            series_key:
+              runtimeValue:
+                constant: embeddings/initial/series_w_embedding_st_ext_20_epoch_npgda_data.csv
+            url:
+              runtimeValue:
+                constant: https://arangodb.default.svc.cluster.local:8529
+            username:
+              runtimeValue:
+                constant: root
+        taskInfo:
+          name: save-embeddings
+      save-movie-series-and-related-inf:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-save-movie-series-and-related-inf
+        dependentTasks:
+        - initialize-collections
+        inputs:
+          parameters:
+            db_name:
+              runtimeValue:
+                constant: watchwiseRecommend
+            movies_collected_file_key:
+              runtimeValue:
+                constant: initial_save/movies_collected_data.csv
+            password:
+              runtimeValue:
+                constant: ''
+            ratings_file_key:
+              runtimeValue:
+                constant: initial_save/movie_ratings.csv
+            series_collected_file_key:
+              runtimeValue:
+                constant: initial_save/series_collected_data.csv
+            url:
+              runtimeValue:
+                constant: https://arangodb.default.svc.cluster.local:8529
+            username:
+              runtimeValue:
+                constant: root
+        taskInfo:
+          name: save-movie-series-and-related-inf
+      save-tags:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-save-tags
+        dependentTasks:
+        - initialize-collections
+        inputs:
+          parameters:
+            db_name:
+              runtimeValue:
+                constant: watchwiseRecommend
+            file_key:
+              runtimeValue:
+                constant: initial_save/movie_tags.csv
+            password:
+              runtimeValue:
+                constant: ''
+            url:
+              runtimeValue:
+                constant: https://arangodb.default.svc.cluster.local:8529
+            username:
+              runtimeValue:
+                constant: root
+        taskInfo:
+          name: save-tags
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.11.0

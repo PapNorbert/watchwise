@@ -1,7 +1,13 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
-const seriesCollection = pool.collection("series");
+let seriesCollection;
 
+async function initializeCollection() {
+  const pool = await getPool();
+  seriesCollection = pool.collection("series");
+}
+
+initializeCollection();
 
 export async function findSeries(page, limit) {
   try {
@@ -9,6 +15,7 @@ export async function findSeries(page, limit) {
     SORT doc.total_ratings DESC
     LIMIT @offset, @count
     RETURN doc`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
@@ -41,6 +48,7 @@ export async function findSeriesShort(page, limit) {
       average_rating: doc.average_rating,
       total_ratings: doc.total_ratings
     }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
@@ -75,6 +83,7 @@ export async function findSeriesShortByGenreType(page, limit, genreId) {
       average_rating: doc.average_rating,
       total_ratings: doc.total_ratings
     }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, genreId: genreId });
     return await cursor.all();
   } catch (err) {
@@ -108,6 +117,7 @@ export async function findSeriesShortByNameContains(page, limit, name) {
       average_rating: doc.average_rating,
       total_ratings: doc.total_ratings
     }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, nameFilter: name });
     return await cursor.all();
   } catch (err) {
@@ -118,6 +128,9 @@ export async function findSeriesShortByNameContains(page, limit, name) {
 
 export async function findSeriesByKey(key) {
   try {
+    if (!seriesCollection) {
+      await initializeCollection();
+    }
     const cursor = await seriesCollection.firstExample({ _key: key });
     return cursor;
   } catch (err) {
@@ -134,6 +147,9 @@ export async function findSeriesByKey(key) {
 
 export async function findSeriesByName(name) {
   try {
+    if (!seriesCollection) {
+      await initializeCollection();
+    }
     const cursor = await seriesCollection.firstExample({ name: name });
     return cursor;
   } catch (err) {
@@ -150,6 +166,9 @@ export async function findSeriesByName(name) {
 
 export async function getSeriesCount() {
   try {
+    if (!seriesCollection) {
+      await initializeCollection();
+    }
     const cursor = await seriesCollection.count();
     return cursor.count;
   } catch (err) {
@@ -165,6 +184,7 @@ export async function getSeriesCountByGenre(genreId) {
       @genreId his_type
       FILTER CONTAINS(vertex._id, "series")
       RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { genreId: genreId });
     return (await cursor.all())[0];
   } catch (err) {
@@ -179,6 +199,7 @@ export async function getSeriesCountByNameContains(name) {
     const aqlQuery = `RETURN LENGTH(FOR doc IN series
       FILTER CONTAINS(UPPER(doc.name), @nameFilter)
       RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { nameFilter: name });
     return (await cursor.all())[0];
   } catch (err) {
@@ -193,6 +214,7 @@ export async function getSerieKeyByName(name) {
     const aqlQuery = `FOR doc in series
     FILTER doc.name == @name
     return doc._key`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { name: name });
     return (await cursor.all())[0];
   } catch (err) {
@@ -205,6 +227,7 @@ export async function checkSeriesExistsWithName(name) {
   try {
     const aqlQuery = `RETURN LENGTH(FOR doc IN series
       FILTER doc.name == @name LIMIT 1 RETURN true) > 0`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { name: name });
     return (await cursor.all())[0];
   } catch (err) {
@@ -230,6 +253,7 @@ export async function insertSeriesAndGenreEdges(seriesDocument, genres) {
     aqlQuery += `\nINSERT { _from: seriesId, _to: genre._id } INTO his_type
     RETURN seriesId`;
 
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, bindVariables);
     const id = await cursor.all();
     return id[0].split('/')[1];
@@ -242,6 +266,9 @@ export async function insertSeriesAndGenreEdges(seriesDocument, genres) {
 
 export async function updateSeries(key, newSeriesAttributes) {
   try {
+    if (!seriesCollection) {
+      await initializeCollection();
+    }
     const cursor = await seriesCollection.update(key, newSeriesAttributes);
     return true;
   } catch (err) {
@@ -258,6 +285,9 @@ export async function updateSeries(key, newSeriesAttributes) {
 
 export async function deleteSeries(key) {
   try {
+    if (!seriesCollection) {
+      await initializeCollection();
+    }
     const cursor = await seriesCollection.remove({ _key: key });
     return true;
   } catch (err) {
@@ -278,6 +308,7 @@ export async function deleteSeriesAndEdges(key) {
     FOR edge in his_type
         FILTER edge._from == @from
         REMOVE edge IN his_type`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: key, from: ("series/" + key) });
     return true;
   } catch (err) {

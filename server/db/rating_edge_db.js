@@ -1,4 +1,4 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
 
 export async function getRating(userID, show) {
@@ -8,6 +8,7 @@ export async function getRating(userID, show) {
     FILTER edge._to == @to
     LIMIT 1
     RETURN edge.rating`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { from: `users/${userID}`, to: show });
     return (await cursor.all())[0];
   } catch (err) {
@@ -45,6 +46,7 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
       break;
   }
 
+  const pool = await getPool();
   const transaction = await pool.beginTransaction({
     write: writeCollections,
     read: [],
@@ -55,9 +57,11 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
       const aqlQuery = `FOR doc IN ${showType}s
         FILTER doc._key == @key
         RETURN doc`;
+      const pool = await getPool();
       const cursor = await pool.query(aqlQuery, { key: showKey });
       return (await cursor.all())[0];
     });
+    const pool = await getPool();
     const usersCollection = pool.collection("users");
 
     const user = await transaction.step(async () => {
@@ -82,6 +86,7 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
           FILTER edge._to == @to
           LIMIT 1
           RETURN edge`;
+      const pool = await getPool();
       const cursor = await pool.query(aqlQuery, { from: user._id, to: show._id });
       return (await cursor.all())[0];
     });
@@ -93,6 +98,7 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
               FILTER edge._from == @from AND edge._to == @to
               UPDATE edge WITH { rating: @newRating, date: @ratingDate } IN has_rated
             RETURN NEW`;
+        const pool = await getPool();
         const cursor = await pool.query(aqlQuery, {
           from: user._id, to: show._id, newRating: newRating, ratingDate: ratingDate
         });
@@ -110,6 +116,7 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
               total_ratings: @new_total_rating,
               sum_of_ratings: @new_sum_ratings
             } IN ${showType}s`;
+        const pool = await getPool();
         await pool.query(aqlQuery, {
           key: show._key, new_average: new_average,
           new_total_rating: new_total_rating, new_sum_ratings: new_sum_ratings
@@ -132,6 +139,7 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
               _from: @from, _to: @to, rating: @rating, date: @ratingDate
             } INTO has_rated
           RETURN NEW._key`;
+        const pool = await getPool();
         const cursor = await pool.query(aqlQuery, {
           from: user._id, to: show._id, rating: newRating, ratingDate: ratingDate
         });
@@ -149,6 +157,7 @@ export async function handleShowRatedTransaction(showType, showKey, jwtUsername,
               total_ratings: @new_total_rating,
               sum_of_ratings: @new_sum_ratings
             } IN ${showType}s`;
+        const pool = await getPool();
         await pool.query(aqlQuery, {
           key: show._key, new_average: new_average,
           new_total_rating: new_total_rating, new_sum_ratings: new_sum_ratings

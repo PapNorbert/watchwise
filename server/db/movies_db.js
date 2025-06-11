@@ -1,7 +1,13 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
-const moviesCollection = pool.collection("movies");
+let moviesCollection;
 
+async function initializeCollection() {
+  const pool = await getPool();
+  moviesCollection = pool.collection("movies");
+}
+
+initializeCollection();
 
 export async function findMovies(page, limit) {
   try {
@@ -9,6 +15,7 @@ export async function findMovies(page, limit) {
     SORT doc.total_ratings DESC
     LIMIT @offset, @count
     RETURN doc`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
@@ -42,6 +49,7 @@ export async function findMoviesShort(page, limit) {
       average_rating: doc.average_rating,
       total_ratings: doc.total_ratings
     }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
@@ -77,6 +85,7 @@ export async function findMoviesShortByGenreType(page, limit, genreId) {
       average_rating: doc.average_rating,
       total_ratings: doc.total_ratings
     }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, genreId: genreId });
     return await cursor.all();
   } catch (err) {
@@ -111,6 +120,7 @@ export async function findMoviesShortByNameContains(page, limit, name) {
       average_rating: doc.average_rating,
       total_ratings: doc.total_ratings
     }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { offset: (page - 1) * limit, count: limit, nameFilter: name });
     return await cursor.all();
   } catch (err) {
@@ -121,6 +131,9 @@ export async function findMoviesShortByNameContains(page, limit, name) {
 
 export async function findMovieByKey(key) {
   try {
+    if (!moviesCollection) {
+      await initializeCollection();
+    }
     const cursor = await moviesCollection.firstExample({ _key: key });
     return cursor;
   } catch (err) {
@@ -137,6 +150,9 @@ export async function findMovieByKey(key) {
 
 export async function findMovieByName(name) {
   try {
+    if (!moviesCollection) {
+      await initializeCollection();
+    }
     const cursor = await moviesCollection.firstExample({ name: name });
     return cursor;
   } catch (err) {
@@ -153,6 +169,9 @@ export async function findMovieByName(name) {
 
 export async function getMovieCount() {
   try {
+    if (!moviesCollection) {
+      await initializeCollection();
+    }
     const cursor = await moviesCollection.count();
     return cursor.count;
   } catch (err) {
@@ -168,6 +187,7 @@ export async function getMoviesCountByGenre(genreId) {
       @genreId his_type
       FILTER CONTAINS(vertex._id, "movies")
       RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { genreId: genreId });
     return (await cursor.all())[0];
   } catch (err) {
@@ -182,6 +202,7 @@ export async function getMoviesCountByNameContains(name) {
     const aqlQuery = `RETURN LENGTH(FOR doc IN movies
       FILTER CONTAINS(UPPER(doc.name), @nameFilter)
       RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { nameFilter: name });
     return (await cursor.all())[0];
   } catch (err) {
@@ -197,6 +218,7 @@ export async function getMovieKeyByName(name) {
     const aqlQuery = `FOR doc in movies
     FILTER doc.name == @name
     return doc._key`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { name: name });
     return (await cursor.all())[0];
   } catch (err) {
@@ -210,6 +232,7 @@ export async function checkMovieExistsWithName(name) {
   try {
     const aqlQuery = `RETURN LENGTH(FOR doc IN movies
       FILTER doc.name == @name LIMIT 1 RETURN true) > 0`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { name: name });
     return (await cursor.all())[0];
   } catch (err) {
@@ -235,6 +258,7 @@ export async function insertMovieAndGenreEdges(movieDocument, genres) {
     aqlQuery += `\nINSERT { _from: movieId, _to: genre._id } INTO his_type
     RETURN movieId`;
 
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, bindVariables);
     const id = await cursor.all();
     return id[0].split('/')[1];
@@ -247,6 +271,9 @@ export async function insertMovieAndGenreEdges(movieDocument, genres) {
 
 export async function updateMovie(key, newMovieAttributes) {
   try {
+    if (!moviesCollection) {
+      await initializeCollection();
+    }
     const cursor = await moviesCollection.update(key, newMovieAttributes);
     return true;
   } catch (err) {
@@ -263,6 +290,9 @@ export async function updateMovie(key, newMovieAttributes) {
 
 export async function deleteMovie(key) {
   try {
+    if (!moviesCollection) {
+      await initializeCollection();
+    }
     const cursor = await moviesCollection.remove({ _key: key });
     return true;
   } catch (err) {
@@ -283,6 +313,7 @@ export async function deleteMovieAndEdges(key) {
     FOR edge in his_type
         FILTER edge._from == @from
         REMOVE edge IN his_type`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: key, from: ("movies/" + key) });
     return true;
   } catch (err) {

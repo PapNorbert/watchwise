@@ -1,9 +1,15 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 import { userRoleCode, adminRoleCode, moderatorRoleCode } from '../config/UserRoleCodes.js'
 import { banSearchTypes } from '../config/userBanFilterTypes.js'
 
-const usersCollection = pool.collection("users");
+let usersCollection;
 
+async function initializeCollection() {
+  const pool = await getPool();
+  usersCollection = pool.collection("users");
+}
+
+initializeCollection();
 
 function addFilters(aqlQuery, aqlParameters, name, moderatorsOnly, banType, docName = 'doc') {
   if (name) {
@@ -67,6 +73,7 @@ export async function findUsers(page, limit, name, moderatorsOnly, banType) {
       about_me: doc.about_me,
       banned: doc.banned
     }`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return await cursor.all();
   } catch (err) {
@@ -76,6 +83,9 @@ export async function findUsers(page, limit, name, moderatorsOnly, banType) {
 
 export async function findUserByKey(key) {
   try {
+    if (!usersCollection) {
+      await initializeCollection();
+    }
     const cursor = await usersCollection.firstExample({ _key: key });
     return cursor;
   } catch (err) {
@@ -92,6 +102,9 @@ export async function findUserByKey(key) {
 
 export async function findUserByUsername(username) {
   try {
+    if (!usersCollection) {
+      await initializeCollection();
+    }
     const cursor = await usersCollection.firstExample({ username: username });
     return cursor;
   } catch (err) {
@@ -108,6 +121,9 @@ export async function findUserByUsername(username) {
 
 export async function findUserByRefreshToken(refreshToken) {
   try {
+    if (!usersCollection) {
+      await initializeCollection();
+    }
     const cursor = await usersCollection.firstExample({ refreshToken: refreshToken });
     return cursor;
   } catch (err) {
@@ -131,6 +147,7 @@ export async function getUsersCount(name, moderatorsOnly, banType) {
 
     aqlQuery += `
       RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, aqlParameters);
     return (await cursor.all())[0];
   } catch (err) {
@@ -142,6 +159,7 @@ export async function checkUserExistsWithUsername(username) {
   try {
     const aqlQuery = `RETURN LENGTH(FOR doc IN users
       FILTER doc.username == @username LIMIT 1 RETURN true) > 0`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { username: username });
     return (await cursor.all())[0];
   } catch (err) {
@@ -153,6 +171,9 @@ export async function checkUserExistsWithUsername(username) {
 
 export async function insertUser(user) {
   try {
+    if (!usersCollection) {
+      await initializeCollection();
+    }
     const cursor = await usersCollection.save(user);
     return cursor._key;
   } catch (err) {
@@ -163,6 +184,9 @@ export async function insertUser(user) {
 
 export async function updateUser(key, newUserAttributes) {
   try {
+    if (!usersCollection) {
+      await initializeCollection();
+    }
     const cursor = await usersCollection.update(key, newUserAttributes);
     return true;
   } catch (err) {
@@ -179,6 +203,9 @@ export async function updateUser(key, newUserAttributes) {
 
 export async function deleteUser(key) {
   try {
+    if (!usersCollection) {
+      await initializeCollection();
+    }
     const cursor = await usersCollection.remove({ _key: key });
     return true;
   } catch (err) {
@@ -196,12 +223,16 @@ export async function deleteUser(key) {
 export async function handleUserBanTransaction(userKey) {
   // when banning user delete also the his join requests, and remove him from the joined groups
   try {
+    const pool = await getPool();
     const transaction = await pool.beginTransaction({
       write: ["join_request", "joined_group", "watch_groups", "users"],
       allowImplicit: false
     });
 
     const user = await transaction.step(async () => {
+      if (!usersCollection) {
+        await initializeCollection();
+      }
       return await usersCollection.firstExample({ _key: userKey });
     });
 
@@ -226,6 +257,9 @@ export async function handleUserBanTransaction(userKey) {
       actionPerformed = 'unban'
     }
     const updatedUserStatus = await transaction.step(async () => {
+      if (!usersCollection) {
+        await initializeCollection();
+      }
       await usersCollection.update(user._key, { banned: (!user.banned) });
       return true;
     });
@@ -243,6 +277,7 @@ export async function handleUserBanTransaction(userKey) {
         const aqlQuery = `FOR doc IN join_request
           FILTER doc._from == @from
           REMOVE { _key: doc._key } IN join_request`;
+        const pool = await getPool();
         await pool.query(aqlQuery, { from: user._id });
         return true;
       });
@@ -263,6 +298,7 @@ export async function handleUserBanTransaction(userKey) {
             UPDATE group._key WITH { currentNrOfPersons: (group.currentNrOfPersons - 1) } in watch_groups
           REMOVE { _key: doc._key } IN joined_group
           `;
+        const pool = await getPool();
         await pool.query(aqlQuery, { from: user._id });
         return true;
       });

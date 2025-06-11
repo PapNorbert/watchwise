@@ -1,4 +1,4 @@
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 
 
 export async function findJoinRequestByCreator(creator, page, limit) {
@@ -9,6 +9,7 @@ export async function findJoinRequestByCreator(creator, page, limit) {
       FILTER doc._to == group._id
     LIMIT @offset, @count
     RETURN MERGE(doc, { full: group.currentNrOfPersons >= group.personLimit } )`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { creator: creator, offset: (page - 1) * limit, count: limit });
     return await cursor.all();
   } catch (err) {
@@ -24,6 +25,7 @@ export async function getJoinRequestCountByCreator(creator) {
       FOR doc IN join_request
       FILTER doc._from == group._id
         RETURN true)`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { creator: creator });
     return (await cursor.all())[0];
   } catch (err) {
@@ -37,6 +39,7 @@ export async function deleteJoinRequestEdge(from, to) {
     FILTER edge._from == @from
     FILTER edge._to == @to
     REMOVE { _key: edge._key } IN join_request`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { from: from, to: to });
     return true;
   } catch (err) {
@@ -54,6 +57,7 @@ export async function deleteJoinRequestEdge(from, to) {
 export async function deleteJoinRequestEdgeByKey(key) {
   try {
     const aqlQuery = `REMOVE { _key: @key } IN join_request`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { key: key });
     return true;
   } catch (err) {
@@ -73,6 +77,7 @@ export async function deleteJoinRequestEdgeByTo(to) {
     const aqlQuery = `FOR edge IN join_request
     FILTER edge._to == @to
     REMOVE { _key: edge._key } IN join_request`;
+    const pool = await getPool();
     const cursor = await pool.query(aqlQuery, { to: to });
     return true;
   } catch (err) {
@@ -88,6 +93,7 @@ export async function deleteJoinRequestEdgeByTo(to) {
 
 export async function handleJoinReqAcceptTransaction(joinReqKey) {
   try {
+    const pool = await getPool();
     const transaction = await pool.beginTransaction({
       write: ["join_request", "joined_group", "watch_groups"],
       read: ["users"],
@@ -98,6 +104,7 @@ export async function handleJoinReqAcceptTransaction(joinReqKey) {
       const aqlQuery = `FOR doc IN join_request
         FILTER doc._key == @key
         RETURN doc`;
+      const pool = await getPool();
       const cursor = await pool.query(aqlQuery, { key: joinReqKey });
       return (await cursor.all())[0];
     });
@@ -127,6 +134,7 @@ export async function handleJoinReqAcceptTransaction(joinReqKey) {
           FILTER doc._from == @from
           FILTER doc._to == @to
           LIMIT 1 RETURN true) > 0`;
+        const pool = await getPool();
         const cursor = await pool.query(aqlQuery, { from: user._id, to: watchGroup._id });
         return (await cursor.all())[0];
       });
@@ -147,6 +155,7 @@ export async function handleJoinReqAcceptTransaction(joinReqKey) {
           // check user already joined
           const aqlQuery = `INSERT { _from: @from, _to: @to } INTO joined_group
           RETURN NEW._key`;
+          const pool = await getPool();
           const cursor = await pool.query(aqlQuery, { from: user._id, to: watchGroup._id });
           return (await cursor.all())[0];
         });
@@ -183,6 +192,7 @@ export async function handleJoinReqAcceptTransaction(joinReqKey) {
       const deleted = await transaction.step(async () => {
         // check user already joined
         const aqlQuery = `REMOVE { _key: @key } IN join_request`;
+        const pool = await getPool();
         await pool.query(aqlQuery, { key: joinReqKey });
         return true;
       });

@@ -1,12 +1,13 @@
 import bcrypt from 'bcrypt'
 
-import pool from './connection_db.js'
+import getPool from './connection_db.js';
 import { adminRoleCode } from '../config/UserRoleCodes.js'
 import { adminFirstName, adminLastName, adminPassword, adminUsername, about_me } from '../config/adminUserData.js'
 import { checkUserExistsWithUsername, insertUser } from './users_db.js'
 import { checkEmploymentFileExists, insertEmploymentFile } from './moderator_req_db.js'
 
 export async function createCollections() {
+  const pool = await getPool();
   if (! await pool.collection('movies').exists()) {
     await pool.collection('movies').create();
   }
@@ -42,6 +43,7 @@ export async function createCollections() {
 }
 
 export async function createEdgeCollections() {
+  const pool = await getPool();
   if (! await pool.collection('joined_group').exists()) {
     await pool.createEdgeCollection('joined_group');
   }
